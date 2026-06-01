@@ -4,10 +4,13 @@ import android.content.ComponentName
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
+import com.podcastapp.data.db.dao.EpisodeDao
 import com.podcastapp.data.repository.ChapterRepository
+import com.podcastapp.data.repository.toDomain
 import com.podcastapp.domain.model.Chapter
 import com.podcastapp.domain.model.Episode
 import com.podcastapp.service.PlaybackService
@@ -23,7 +26,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val chapterRepo: ChapterRepository
+    private val chapterRepo: ChapterRepository,
+    private val episodeDao: EpisodeDao
 ) : ViewModel() {
 
     private val _chapters = MutableStateFlow<List<Chapter>>(emptyList())
@@ -31,6 +35,9 @@ class PlayerViewModel @Inject constructor(
 
     private val _currentChapterIndex = MutableStateFlow(0)
     val currentChapterIndex: StateFlow<Int> = _currentChapterIndex.asStateFlow()
+
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
     private var chaptersJob: Job? = null
 
@@ -44,8 +51,14 @@ class PlayerViewModel @Inject constructor(
         )
         val future = MediaController.Builder(context, token).buildAsync()
         future.addListener({
-            runCatching { controller = future.get() }
-                .onFailure { /* controller stays null; UI handles gracefully */ }
+            runCatching {
+                controller = future.get()
+                controller?.addListener(object : Player.Listener {
+                    override fun onIsPlayingChanged(playing: Boolean) {
+                        _isPlaying.value = playing
+                    }
+                })
+            }.onFailure { /* controller stays null; UI handles gracefully */ }
         }, context.mainExecutor)
     }
 
@@ -66,6 +79,13 @@ class PlayerViewModel @Inject constructor(
         controller?.setMediaItem(item)
         controller?.prepare()
         controller?.play()
+    }
+
+    fun loadAndPlay(audioUrl: String) {
+        viewModelScope.launch {
+            val entity = episodeDao.getByAudioUrl(audioUrl) ?: return@launch
+            playEpisode(entity.toDomain())
+        }
     }
 
     fun updateCurrentChapterIndex() {

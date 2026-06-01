@@ -32,9 +32,13 @@ fun PlayerScreen(
     val context = LocalContext.current
     val chapters by vm.chapters.collectAsStateWithLifecycle()
     val currentIdx by vm.currentChapterIndex.collectAsStateWithLifecycle()
+    val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
     val currentChapter = chapters.getOrNull(currentIdx)
 
-    LaunchedEffect(Unit) { vm.connect() }
+    LaunchedEffect(audioUrl) {
+        vm.connect()
+        vm.loadAndPlay(audioUrl)
+    }
 
     val voiceLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -112,7 +116,11 @@ fun PlayerScreen(
                     },
                     modifier = Modifier.size(64.dp)
                 ) {
-                    Icon(Icons.Filled.PlayCircle, "Play/Pause", Modifier.size(56.dp))
+                    Icon(
+                        if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayCircle,
+                        if (isPlaying) "Pause" else "Play",
+                        Modifier.size(56.dp)
+                    )
                 }
                 IconButton(onClick = { vm.seekForward30s() }) {
                     Icon(Icons.Filled.FastForward, "+30s", Modifier.size(36.dp))
@@ -153,7 +161,7 @@ fun PlayerScreen(
             )
 
             // Chapter list
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 itemsIndexed(chapters) { idx, chapter ->
                     Row(
                         modifier = Modifier

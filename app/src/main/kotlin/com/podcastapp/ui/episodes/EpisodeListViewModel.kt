@@ -14,7 +14,9 @@ class EpisodeListViewModel @Inject constructor(
     savedState: SavedStateHandle
 ) : ViewModel() {
 
-    private val feedUrl: String = checkNotNull(savedState["feedUrl"])
+    private val feedUrl: String = java.net.URLDecoder.decode(
+        checkNotNull(savedState["feedUrl"]), "UTF-8"
+    )
     val episodes = repo.episodesForPodcast(feedUrl)
 
     fun refresh() {

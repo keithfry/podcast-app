@@ -64,8 +64,10 @@ private fun EpisodeRow(episode: Episode, onClick: () -> Unit) {
     }
 }
 
-private val dateFmt = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-private fun formatDate(millis: Long) = if (millis > 0) dateFmt.format(Date(millis)) else ""
+private fun formatDate(millis: Long): String {
+    if (millis <= 0) return ""
+    return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(millis))
+}
 private fun formatDuration(seconds: Int): String {
     val h = seconds / 3600
     val m = (seconds % 3600) / 60
