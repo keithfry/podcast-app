@@ -11,20 +11,18 @@ import java.util.Locale
 data class ParsedFeed(val podcast: Podcast, val episodes: List<Episode>)
 
 class RssParser {
+    companion object {
+        private const val NS_ITUNES = "http://www.itunes.com/dtds/podcast-1.0.dtd"
+        private const val NS_PODCAST = "https://podcastindex.org/namespace/1.0"
+    }
+
     private val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH)
 
     fun parse(xml: String): ParsedFeed {
-        val parser: XmlPullParser = try {
-            val factory = XmlPullParserFactory.newInstance().apply {
-                isNamespaceAware = true
-            }
-            factory.newPullParser()
-        } catch (_: Exception) {
-            // Fallback for JVM unit tests where Android stubs return null
-            val kxml = Class.forName("org.kxml2.io.KXmlParser").getDeclaredConstructor().newInstance() as XmlPullParser
-            kxml.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
-            kxml
+        val factory = XmlPullParserFactory.newInstance().apply {
+            isNamespaceAware = true
         }
+        val parser = factory.newPullParser()
         parser.setInput(StringReader(xml))
 
         var podcastTitle = ""
@@ -48,18 +46,18 @@ class RssParser {
             when (event) {
                 XmlPullParser.START_TAG -> {
                     currentText = ""
-                    when (parser.name) {
-                        "channel" -> inChannel = true
-                        "item" -> {
+                    when {
+                        parser.name == "channel" -> inChannel = true
+                        parser.name == "item" -> {
                             inItem = true
                             epTitle = ""; epAudioUrl = ""; epPubDate = 0L
                             epDurationSeconds = 0; epChaptersUrl = null
                         }
-                        "enclosure" -> if (inItem) epAudioUrl = parser.getAttributeValue(null, "url") ?: ""
-                        "chapters" -> if (inItem) epChaptersUrl = parser.getAttributeValue(null, "url")
+                        parser.name == "enclosure" -> if (inItem) epAudioUrl = parser.getAttributeValue(null, "url") ?: ""
+                        parser.namespace == NS_PODCAST && parser.name == "chapters" -> if (inItem) epChaptersUrl = parser.getAttributeValue(null, "url")
                     }
                 }
-                XmlPullParser.TEXT -> currentText = parser.text?.trim() ?: ""
+                XmlPullParser.TEXT -> currentText += (parser.text ?: "")
                 XmlPullParser.END_TAG -> when {
                     parser.name == "item" -> {
                         episodes.add(
@@ -74,14 +72,14 @@ class RssParser {
                         )
                         inItem = false
                     }
-                    inItem && parser.name == "title" -> epTitle = currentText
+                    inItem && parser.name == "title" -> epTitle = currentText.trim()
                     inItem && parser.name == "pubDate" -> epPubDate =
-                        runCatching { dateFormat.parse(currentText)?.time ?: 0L }.getOrDefault(0L)
-                    inItem && parser.name == "duration" -> epDurationSeconds = parseDuration(currentText)
-                    inChannel && !inItem && parser.name == "title" -> podcastTitle = currentText
-                    inChannel && !inItem && parser.name == "link" -> podcastLink = currentText
-                    inChannel && !inItem && parser.name == "description" -> podcastDescription = currentText
-                    inChannel && !inItem && parser.name == "author" -> podcastAuthor = currentText
+                        runCatching { dateFormat.parse(currentText.trim())?.time ?: 0L }.getOrDefault(0L)
+                    inItem && parser.namespace == NS_ITUNES && parser.name == "duration" -> epDurationSeconds = parseDuration(currentText.trim())
+                    inChannel && !inItem && parser.name == "title" -> podcastTitle = currentText.trim()
+                    inChannel && !inItem && parser.name == "link" -> podcastLink = currentText.trim()
+                    inChannel && !inItem && parser.name == "description" -> podcastDescription = currentText.trim()
+                    inChannel && !inItem && parser.namespace == NS_ITUNES && parser.name == "author" -> podcastAuthor = currentText.trim()
                 }
             }
             event = parser.next()
