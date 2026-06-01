@@ -1,0 +1,14 @@
+package com.podcastapp.data.db.entities
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "chapters")
+data class ChapterEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val episodeAudioUrl: String,
+    val startTimeMs: Long,
+    val endTimeMs: Long,
+    val title: String,
+    val url: String?
+)
