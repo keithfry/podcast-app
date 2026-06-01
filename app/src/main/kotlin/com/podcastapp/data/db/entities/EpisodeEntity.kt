@@ -1,9 +1,10 @@
 package com.podcastapp.data.db.entities
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "episodes")
+@Entity(tableName = "episodes", indices = [Index(value = ["podcastFeedUrl"])])
 data class EpisodeEntity(
     @PrimaryKey val audioUrl: String,
     val podcastFeedUrl: String,

@@ -12,6 +12,15 @@ interface ChapterDao {
     @Query("SELECT COUNT(*) FROM chapters WHERE episodeAudioUrl = :audioUrl")
     suspend fun countForEpisode(audioUrl: String): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Query("DELETE FROM chapters WHERE episodeAudioUrl = :audioUrl")
+    suspend fun deleteForEpisode(audioUrl: String)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(chapters: List<ChapterEntity>)
+
+    @Transaction
+    suspend fun replaceChaptersForEpisode(audioUrl: String, chapters: List<ChapterEntity>) {
+        deleteForEpisode(audioUrl)
+        insertAll(chapters)
+    }
 }
