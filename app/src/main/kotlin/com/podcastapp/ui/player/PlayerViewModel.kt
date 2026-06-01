@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.MoreExecutors
 import com.podcastapp.data.repository.ChapterRepository
 import com.podcastapp.domain.model.Chapter
 import com.podcastapp.domain.model.Episode
@@ -17,6 +16,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,6 +32,8 @@ class PlayerViewModel @Inject constructor(
     private val _currentChapterIndex = MutableStateFlow(0)
     val currentChapterIndex: StateFlow<Int> = _currentChapterIndex.asStateFlow()
 
+    private var chaptersJob: Job? = null
+
     var controller: MediaController? = null
         private set
 
@@ -43,17 +45,18 @@ class PlayerViewModel @Inject constructor(
         val future = MediaController.Builder(context, token).buildAsync()
         future.addListener({
             runCatching { controller = future.get() }
-        }, MoreExecutors.directExecutor())
+                .onFailure { /* controller stays null; UI handles gracefully */ }
+        }, context.mainExecutor)
     }
 
     fun playEpisode(episode: Episode) {
-        viewModelScope.launch {
+        chaptersJob?.cancel()
+        chaptersJob = viewModelScope.launch {
             episode.chaptersUrl?.let { url ->
                 chapterRepo.fetchAndCacheChapters(episode.audioUrl, url)
             }
             chapterRepo.chaptersForEpisode(episode.audioUrl).collect { list ->
                 _chapters.value = list
-                updateCurrentChapterIndex()
             }
         }
         val item = androidx.media3.common.MediaItem.Builder()
