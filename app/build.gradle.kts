@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.work.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.browser)
+    implementation(libs.appcompat)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)

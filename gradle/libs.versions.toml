@@ -52,6 +52,7 @@ turbine = { group = "app.cash.turbine", name = "turbine", version = "1.1.0" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version = "1.2.1" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
 browser = { group = "androidx.browser", name = "browser", version = "1.8.0" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version = "1.7.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
