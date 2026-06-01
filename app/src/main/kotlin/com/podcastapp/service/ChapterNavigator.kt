@@ -18,12 +18,10 @@ object ChapterNavigator {
         val current = currentChapter(chapters, positionMs) ?: return null
         val idx = chapters.indexOf(current)
         val withinThreshold = (positionMs - current.startTimeMs) < PREV_THRESHOLD_MS
-        return if (withinThreshold || idx == 0) {
-            // Within threshold of current chapter start → go to previous chapter
-            // At first chapter → no previous chapter exists
-            chapters.getOrNull(idx - 1)?.startTimeMs
-        } else {
-            current.startTimeMs
+        return when {
+            withinThreshold && idx == 0 -> null              // already at start of first chapter
+            withinThreshold -> chapters[idx - 1].startTimeMs  // go to previous chapter
+            else -> current.startTimeMs                        // rewind to start of current chapter
         }
     }
 }

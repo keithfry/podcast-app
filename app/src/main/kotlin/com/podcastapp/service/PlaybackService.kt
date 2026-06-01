@@ -26,6 +26,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var mediaLibrarySession: MediaLibrarySession
 
     // Updated by PlayerViewModel when episode chapters are loaded
+    @Volatile
     var chapters: List<Chapter> = emptyList()
 
     private val callback = object : MediaLibrarySession.Callback {
@@ -88,7 +89,7 @@ class PlaybackService : MediaLibraryService() {
         val sessionActivity = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback)
             .setSessionActivity(sessionActivity)

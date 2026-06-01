@@ -40,8 +40,12 @@ class ChapterNavigatorTest {
         assertEquals(0L, ChapterNavigator.prevChapterStart(chapters, 21_000L))
     }
 
-    @Test fun `prev chapter from Intro returns null`() {
-        assertNull(ChapterNavigator.prevChapterStart(chapters, 5_000L))
+    @Test fun `prev chapter from well into Intro rewinds to Intro start`() {
+        assertEquals(0L, ChapterNavigator.prevChapterStart(chapters, 5_000L))
+    }
+
+    @Test fun `prev chapter within threshold at first chapter returns null`() {
+        assertNull(ChapterNavigator.prevChapterStart(chapters, 1_000L))
     }
 
     @Test fun `empty chapter list returns null for all`() {
