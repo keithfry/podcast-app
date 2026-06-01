@@ -6,6 +6,7 @@ import com.podcastapp.data.db.entities.EpisodeEntity
 import com.podcastapp.data.db.entities.PodcastEntity
 import com.podcastapp.data.network.FeedApi
 import com.podcastapp.data.network.RssParser
+import androidx.work.WorkManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.mockk.coEvery
@@ -26,12 +27,13 @@ class PodcastRepositoryTest {
     private lateinit var repo: PodcastRepository
     private val podcastDao = mockk<PodcastDao>(relaxed = true)
     private val episodeDao = mockk<EpisodeDao>(relaxed = true)
+    private val workManager = mockk<WorkManager>(relaxed = true)
 
     @Before fun setUp() {
         server.start()
         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
         val feedApi = FeedApi(OkHttpClient(), moshi)
-        repo = PodcastRepository(feedApi, RssParser(), podcastDao, episodeDao)
+        repo = PodcastRepository(feedApi, RssParser(), podcastDao, episodeDao, workManager)
     }
 
     @After fun tearDown() { server.shutdown() }

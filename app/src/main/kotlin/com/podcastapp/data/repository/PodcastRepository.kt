@@ -1,9 +1,12 @@
 package com.podcastapp.data.repository
 
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
 import com.podcastapp.data.db.dao.EpisodeDao
 import com.podcastapp.data.db.dao.PodcastDao
 import com.podcastapp.data.db.entities.EpisodeEntity
 import com.podcastapp.data.db.entities.PodcastEntity
+import com.podcastapp.data.download.DownloadWorker
 import com.podcastapp.data.network.FeedApi
 import com.podcastapp.data.network.RssParser
 import com.podcastapp.domain.model.DownloadStatus
@@ -19,7 +22,8 @@ class PodcastRepository @Inject constructor(
     private val feedApi: FeedApi,
     private val rssParser: RssParser,
     private val podcastDao: PodcastDao,
-    private val episodeDao: EpisodeDao
+    private val episodeDao: EpisodeDao,
+    private val workManager: WorkManager
 ) {
     val podcasts: Flow<List<Podcast>> = podcastDao.getAll().map { list ->
         list.map { it.toDomain() }
@@ -40,6 +44,14 @@ class PodcastRepository @Inject constructor(
 
     suspend fun removePodcast(feedUrl: String) {
         podcastDao.getByUrl(feedUrl)?.let { podcastDao.delete(it) }
+    }
+
+    fun downloadEpisode(audioUrl: String) {
+        workManager.enqueueUniqueWork(
+            "download_$audioUrl",
+            ExistingWorkPolicy.KEEP,
+            DownloadWorker.buildRequest(audioUrl)
+        )
     }
 }
 

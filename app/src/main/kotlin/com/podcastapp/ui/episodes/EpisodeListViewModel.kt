@@ -22,4 +22,8 @@ class EpisodeListViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch { runCatching { repo.refreshPodcast(feedUrl) } }
     }
+
+    fun downloadEpisode(audioUrl: String) {
+        repo.downloadEpisode(audioUrl)
+    }
 }
