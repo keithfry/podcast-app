@@ -36,6 +36,6 @@ echo "Installing..."
 adb -s "$DEVICE_SERIAL" install -r "$APK"
 
 echo "Launching..."
-adb -s "$DEVICE_SERIAL" shell am start -n "com.podcastapp/.MainActivity"
+adb -s "$DEVICE_SERIAL" shell am start -n "com.frybynite.podcastapp/.MainActivity"
 
 echo "Done."

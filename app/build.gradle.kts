@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.podcastapp"
+    namespace = "com.frybynite.podcastapp"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.podcastapp"
+        applicationId = "com.frybynite.podcastapp"
         minSdk = 29
         targetSdk = 34
         versionCode = 1
