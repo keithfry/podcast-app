@@ -49,6 +49,8 @@ fun PlayerScreen(
     val sleepTimerSeconds by vm.sleepTimerSeconds.collectAsStateWithLifecycle()
     val currentPositionMs by vm.currentPositionMs.collectAsStateWithLifecycle()
     val durationMs by vm.durationMs.collectAsStateWithLifecycle()
+    val deepDiveState by vm.deepDiveState.collectAsStateWithLifecycle()
+    val modelDownloadState by vm.modelDownloadState.collectAsStateWithLifecycle()
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
@@ -72,6 +74,20 @@ fun PlayerScreen(
             currentSpeed = playbackSpeed,
             onSpeedChange = { vm.setSpeed(it) },
             onDismiss = { showSpeedSheet = false }
+        )
+    }
+
+    if (deepDiveState is DeepDiveState.ModelRequired) {
+        AlertDialog(
+            onDismissRequest = { vm.dismissDeepDiveError() },
+            title = { Text("Download AI Model") },
+            text = { Text("\"More about this\" requires a ~1.3 GB on-device AI model. Download over Wi-Fi?") },
+            confirmButton = {
+                TextButton(onClick = { vm.downloadModel(); vm.dismissDeepDiveError() }) { Text("Download") }
+            },
+            dismissButton = {
+                TextButton(onClick = { vm.dismissDeepDiveError() }) { Text("Cancel") }
+            }
         )
     }
 
@@ -103,7 +119,7 @@ fun PlayerScreen(
                     }, "Share link"
                 ))
             }
-            VoiceCommand.MORE_ABOUT_THIS -> { /* TODO: implement deep-dive/search */ }
+            VoiceCommand.MORE_ABOUT_THIS -> vm.moreAboutThis()
             null -> {}
         }
     }
@@ -335,6 +351,44 @@ fun PlayerScreen(
                 artworkAndControls(160)
                 Spacer(Modifier.height(12.dp))
                 chapterList()
+            }
+        }
+
+        if (deepDiveState is DeepDiveState.Loading) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CircularProgressIndicator()
+                    Text("Generating deep dive…")
+                }
+            }
+        }
+
+        if (deepDiveState is DeepDiveState.Error) {
+            LaunchedEffect(deepDiveState) {
+                delay(3000)
+                vm.dismissDeepDiveError()
+            }
+            Box(Modifier.fillMaxSize().padding(padding).padding(bottom = 80.dp), contentAlignment = Alignment.BottomCenter) {
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.errorContainer) {
+                    Text(
+                        text = (deepDiveState as DeepDiveState.Error).message,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+
+        if (modelDownloadState is com.frybynite.podcastapp.deepdive.ModelDownloadState.Downloading) {
+            val progress = (modelDownloadState as com.frybynite.podcastapp.deepdive.ModelDownloadState.Downloading).progress
+            Box(Modifier.fillMaxSize().padding(padding).padding(bottom = 80.dp), contentAlignment = Alignment.BottomCenter) {
+                Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 4.dp) {
+                    Column(Modifier.padding(16.dp).fillMaxWidth(0.8f)) {
+                        Text("Downloading model: ${(progress * 100).toInt()}%")
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    }
+                }
             }
         }
     }
