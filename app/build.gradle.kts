@@ -69,6 +69,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.browser)
     implementation(libs.appcompat)
+    implementation(libs.mediapipe.tasks.genai)
+    implementation(libs.jsoup)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.kxml2)
     testImplementation(libs.junit)
