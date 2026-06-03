@@ -27,7 +27,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.content.res.Configuration
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,15 +145,24 @@ fun PlayerScreen(
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(Modifier.height(8.dp))
+        val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val chapterListState = rememberLazyListState()
 
+        LaunchedEffect(currentIdx) {
+            if (chapters.isNotEmpty() && snapHoverIdx == null)
+                chapterListState.animateScrollToItem(currentIdx)
+        }
+        LaunchedEffect(snapHoverIdx) {
+            val idx = snapHoverIdx ?: return@LaunchedEffect
+            if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
+        }
+
+        // Reusable content blocks
+        val artworkAndControls: @Composable ColumnScope.(artworkSize: Int) -> Unit = { artworkSize ->
+            Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
-                    .size(160.dp)
+                    .size(artworkSize.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
@@ -166,14 +177,10 @@ fun PlayerScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-
             Spacer(Modifier.height(12.dp))
-
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = formatMs(draggingPositionMs ?: currentPositionMs),
@@ -196,10 +203,7 @@ fun PlayerScreen(
                     textAlign = TextAlign.End
                 )
             }
-
             Spacer(Modifier.height(4.dp))
-
-            // Playback controls
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
@@ -238,11 +242,8 @@ fun PlayerScreen(
                     )
                 }
             }
-
-            Spacer(Modifier.height(12.dp))
-
-            // Chapter link actions
             currentChapter?.url?.let { url ->
+                Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -259,26 +260,16 @@ fun PlayerScreen(
                         ))
                     }) { Text("Share") }
                 }
-                Spacer(Modifier.height(12.dp))
             }
+        }
 
+        val chapterList: @Composable ColumnScope.() -> Unit = {
             HorizontalDivider()
             Text(
                 "Chapters",
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(8.dp).align(Alignment.Start)
             )
-
-            // Chapter list
-            val chapterListState = rememberLazyListState()
-            LaunchedEffect(currentIdx) {
-                if (chapters.isNotEmpty() && snapHoverIdx == null)
-                    chapterListState.animateScrollToItem(currentIdx)
-            }
-            LaunchedEffect(snapHoverIdx) {
-                val idx = snapHoverIdx ?: return@LaunchedEffect
-                if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
-            }
             LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = chapterListState) {
                 itemsIndexed(chapters) { idx, chapter ->
                     val isSnapHovered = snapHoverIdx == idx
@@ -315,15 +306,34 @@ fun PlayerScreen(
                             modifier = Modifier.weight(1f)
                         )
                         if (chapter.url != null) {
-                            Icon(
-                                Icons.Filled.Link,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     }
                     HorizontalDivider()
                 }
+            }
+        }
+
+        if (isLandscape) {
+            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) { artworkAndControls(100) }
+                VerticalDivider()
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) { chapterList() }
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                artworkAndControls(160)
+                Spacer(Modifier.height(12.dp))
+                chapterList()
             }
         }
     }
