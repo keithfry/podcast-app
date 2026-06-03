@@ -32,6 +32,7 @@ android {
     buildFeatures { compose = true }
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.all { it.jvmArgs("-Dnet.bytebuddy.experimental=true") }
     }
 }
 
