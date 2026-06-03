@@ -41,6 +41,8 @@ fun PlayerScreen(
     val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
     val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
     val sleepTimerSeconds by vm.sleepTimerSeconds.collectAsStateWithLifecycle()
+    val currentPositionMs by vm.currentPositionMs.collectAsStateWithLifecycle()
+    val durationMs by vm.durationMs.collectAsStateWithLifecycle()
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
@@ -165,7 +167,35 @@ fun PlayerScreen(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(
+                    text = formatMs(currentPositionMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.width(48.dp)
+                )
+                ChapterProgressBar(
+                    positionMs = currentPositionMs,
+                    durationMs = durationMs,
+                    chapters = chapters,
+                    onSeek = { ms -> vm.controller?.seekTo(ms) },
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = formatMs(durationMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.width(48.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
 
             // Playback controls
             Row(
