@@ -14,6 +14,9 @@ import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.preferences.SpeedPreferences
 import com.frybynite.podcastapp.data.repository.ChapterRepository
 import com.frybynite.podcastapp.data.repository.toDomain
+import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
+import com.frybynite.podcastapp.deepdive.ModelDownloadManager
+import com.frybynite.podcastapp.deepdive.TextSummarizer
 import com.frybynite.podcastapp.domain.model.Chapter
 import com.frybynite.podcastapp.domain.model.Episode
 import com.frybynite.podcastapp.service.PlaybackService
@@ -33,7 +36,10 @@ class PlayerViewModel @Inject constructor(
     private val chapterRepo: ChapterRepository,
     private val episodeDao: EpisodeDao,
     private val podcastDao: PodcastDao,
-    private val speedPrefs: SpeedPreferences
+    private val speedPrefs: SpeedPreferences,
+    private val deepDiveOrchestrator: DeepDiveOrchestrator,
+    private val summarizer: TextSummarizer,
+    private val modelDownloadManager: ModelDownloadManager
 ) : ViewModel() {
 
     private val _chapters = MutableStateFlow<List<Chapter>>(emptyList())
@@ -67,6 +73,11 @@ class PlayerViewModel @Inject constructor(
 
     private var chaptersJob: Job? = null
 
+    private val _deepDiveState = MutableStateFlow<DeepDiveState>(DeepDiveState.Idle)
+    val deepDiveState: StateFlow<DeepDiveState> = _deepDiveState.asStateFlow()
+    val modelDownloadState = modelDownloadManager.state
+    private var pendingTtsFile: java.io.File? = null
+
     var controller: MediaController? = null
         private set
 
@@ -89,6 +100,15 @@ class PlayerViewModel @Inject constructor(
                         newPosition: Player.PositionInfo,
                         reason: Int
                     ) {
+                        updateCurrentChapterIndex()
+                    }
+                    override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                        val incomingId = mediaItem?.mediaId ?: return
+                        if (!incomingId.startsWith("tts://") && _deepDiveState.value == DeepDiveState.Playing) {
+                            pendingTtsFile?.delete()
+                            pendingTtsFile = null
+                            _deepDiveState.value = DeepDiveState.Idle
+                        }
                         updateCurrentChapterIndex()
                     }
                 })
@@ -186,8 +206,67 @@ class PlayerViewModel @Inject constructor(
         controller?.let { it.seekTo((it.currentPosition - 30_000L).coerceAtLeast(0L)) }
     }
 
+    fun moreAboutThis() {
+        val chapter = _chapters.value.getOrNull(_currentChapterIndex.value) ?: return
+        val url = chapter.url ?: run {
+            _deepDiveState.value = DeepDiveState.Error("No link for this segment")
+            return
+        }
+        if (!summarizer.isModelAvailable()) {
+            _deepDiveState.value = DeepDiveState.ModelRequired
+            return
+        }
+        val savedPositionMs = controller?.currentPosition ?: return
+        val episodeUri = controller?.currentMediaItem?.mediaId ?: return
+
+        _deepDiveState.value = DeepDiveState.Loading
+        controller?.pause()
+
+        viewModelScope.launch {
+            runCatching {
+                val ttsFile = deepDiveOrchestrator.process(url)
+                pendingTtsFile = ttsFile
+
+                val ttsItem = androidx.media3.common.MediaItem.Builder()
+                    .setMediaId("tts://${ttsFile.name}")
+                    .setUri(android.net.Uri.fromFile(ttsFile))
+                    .build()
+                val resumeItem = androidx.media3.common.MediaItem.Builder()
+                    .setMediaId(episodeUri)
+                    .setUri(episodeUri)
+                    .setClippingConfiguration(
+                        androidx.media3.common.MediaItem.ClippingConfiguration.Builder()
+                            .setStartPositionMs(savedPositionMs)
+                            .build()
+                    )
+                    .build()
+
+                controller?.setMediaItems(listOf(ttsItem, resumeItem))
+                controller?.prepare()
+                controller?.play()
+                _deepDiveState.value = DeepDiveState.Playing
+            }.onFailure { e ->
+                _deepDiveState.value = DeepDiveState.Error(e.message ?: "Deep dive failed")
+                controller?.play()
+            }
+        }
+    }
+
+    fun downloadModel() { viewModelScope.launch { modelDownloadManager.downloadModel() } }
+
+    fun dismissDeepDiveError() { _deepDiveState.value = DeepDiveState.Idle }
+
     override fun onCleared() {
+        pendingTtsFile?.delete()
         controller?.release()
         super.onCleared()
     }
+}
+
+sealed class DeepDiveState {
+    data object Idle : DeepDiveState()
+    data object ModelRequired : DeepDiveState()
+    data object Loading : DeepDiveState()
+    data object Playing : DeepDiveState()
+    data class Error(val message: String) : DeepDiveState()
 }
