@@ -45,6 +45,12 @@ class PlayerViewModel @Inject constructor(
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
+    private val _currentPositionMs = MutableStateFlow(0L)
+    val currentPositionMs: StateFlow<Long> = _currentPositionMs.asStateFlow()
+
+    private val _durationMs = MutableStateFlow(0L)
+    val durationMs: StateFlow<Long> = _durationMs.asStateFlow()
+
     private val _playbackSpeed = MutableStateFlow(speedPrefs.speed)
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
 
@@ -117,6 +123,9 @@ class PlayerViewModel @Inject constructor(
 
     fun updateCurrentChapterIndex() {
         val pos = controller?.currentPosition ?: return
+        val dur = controller?.duration?.takeIf { it > 0 } ?: 0L
+        _currentPositionMs.value = pos
+        _durationMs.value = dur
         val idx = _chapters.value.indexOfLast { it.startTimeMs <= pos }
         if (idx >= 0) _currentChapterIndex.value = idx
     }
