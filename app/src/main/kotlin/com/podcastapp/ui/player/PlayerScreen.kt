@@ -40,11 +40,21 @@ fun PlayerScreen(
     val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
     val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
     val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
+    val sleepTimerSeconds by vm.sleepTimerSeconds.collectAsStateWithLifecycle()
+    var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(audioUrl) {
         vm.connect(audioUrl)
+    }
+
+    if (showSleepSheet) {
+        SleepTimerBottomSheet(
+            activeSeconds = sleepTimerSeconds,
+            onSelect = { minutes -> vm.setSleepTimer(minutes); showSleepSheet = false },
+            onDismiss = { showSleepSheet = false }
+        )
     }
 
     if (showSpeedSheet) {
@@ -94,6 +104,18 @@ fun PlayerScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showSleepSheet = true }) {
+                        if (sleepTimerSeconds != null) {
+                            Text(
+                                formatSleepTimer(sleepTimerSeconds!!),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        } else {
+                            Icon(Icons.Filled.Bedtime, "Sleep timer")
+                        }
                     }
                 }
             )
@@ -256,6 +278,47 @@ fun PlayerScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun SleepTimerBottomSheet(
+    activeSeconds: Int?,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val options = listOf(15, 30, 45, 60)
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Text(
+                "Sleep Timer",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            options.forEach { mins ->
+                TextButton(
+                    onClick = { onSelect(mins) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("$mins minutes")
+                }
+            }
+            if (activeSeconds != null) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                TextButton(
+                    onClick = { onSelect(0) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel timer (${formatSleepTimer(activeSeconds)} left)")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun SpeedBottomSheet(
     currentSpeed: Float,
     onSpeedChange: (Float) -> Unit,
@@ -296,6 +359,12 @@ private fun SpeedBottomSheet(
             }
         }
     }
+}
+
+private fun formatSleepTimer(seconds: Int): String {
+    val m = seconds / 60
+    val s = seconds % 60
+    return if (m > 0) "%d:%02d".format(m, s) else "${s}s"
 }
 
 private fun formatMs(ms: Long): String {

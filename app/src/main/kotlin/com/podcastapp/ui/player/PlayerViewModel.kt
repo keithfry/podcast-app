@@ -19,6 +19,7 @@ import com.podcastapp.domain.model.Episode
 import com.podcastapp.service.PlaybackService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,6 +49,11 @@ class PlayerViewModel @Inject constructor(
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
 
     private val _podcastImageUrl = MutableStateFlow<String?>(null)
+
+    // Sleep timer: remaining seconds, null = not active
+    private val _sleepTimerSeconds = MutableStateFlow<Int?>(null)
+    val sleepTimerSeconds: StateFlow<Int?> = _sleepTimerSeconds.asStateFlow()
+    private var sleepTimerJob: Job? = null
     val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
 
     private var chaptersJob: Job? = null
@@ -127,6 +133,25 @@ class PlayerViewModel @Inject constructor(
             SessionCommand(PlaybackService.CMD_PREV_CHAPTER, android.os.Bundle.EMPTY),
             android.os.Bundle.EMPTY
         )
+    }
+
+    fun setSleepTimer(minutes: Int) {
+        sleepTimerJob?.cancel()
+        if (minutes == 0) {
+            _sleepTimerSeconds.value = null
+            return
+        }
+        var remaining = minutes * 60
+        _sleepTimerSeconds.value = remaining
+        sleepTimerJob = viewModelScope.launch {
+            while (remaining > 0) {
+                delay(1_000L)
+                remaining--
+                _sleepTimerSeconds.value = remaining
+            }
+            controller?.pause()
+            _sleepTimerSeconds.value = null
+        }
     }
 
     fun setSpeed(speed: Float) {
