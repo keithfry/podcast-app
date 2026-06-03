@@ -4,6 +4,9 @@ import com.frybynite.podcastapp.data.db.dao.EpisodeDao
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.preferences.SpeedPreferences
 import com.frybynite.podcastapp.data.repository.ChapterRepository
+import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
+import com.frybynite.podcastapp.deepdive.ModelDownloadManager
+import com.frybynite.podcastapp.deepdive.TextSummarizer
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +31,10 @@ class PlayerViewModelPositionTest {
             chapterRepo = mockk(relaxed = true),
             episodeDao = mockk(relaxed = true),
             podcastDao = mockk(relaxed = true),
-            speedPrefs = mockk(relaxed = true) { io.mockk.every { speed } returns 1f }
+            speedPrefs = mockk(relaxed = true) { io.mockk.every { speed } returns 1f },
+            deepDiveOrchestrator = mockk(relaxed = true),
+            summarizer = mockk(relaxed = true),
+            modelDownloadManager = mockk(relaxed = true)
         )
         assertEquals(0L, vm.currentPositionMs.value)
     }
@@ -39,7 +45,10 @@ class PlayerViewModelPositionTest {
             chapterRepo = mockk(relaxed = true),
             episodeDao = mockk(relaxed = true),
             podcastDao = mockk(relaxed = true),
-            speedPrefs = mockk(relaxed = true) { io.mockk.every { speed } returns 1f }
+            speedPrefs = mockk(relaxed = true) { io.mockk.every { speed } returns 1f },
+            deepDiveOrchestrator = mockk(relaxed = true),
+            summarizer = mockk(relaxed = true),
+            modelDownloadManager = mockk(relaxed = true)
         )
         assertEquals(0L, vm.durationMs.value)
     }

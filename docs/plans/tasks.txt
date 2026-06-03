@@ -1,0 +1,24 @@
+    
+    ## Completed
+    - [x] Task 1: Dependencies (MediaPipe, Jsoup, mockk)
+    - [x] Task 2: VoiceCommand.MORE_ABOUT_THIS + phrase matching
+    - [x] Task 3: UrlContentFetcher (OkHttp + Jsoup, response.use fix applied)
+    - [x] Task 4: TextSummarizer interface + GemmaTextSummarizer + ModelDownloadManager
+    - [x] Task 5: TtsSynthesizer (Android TTS → temp WAV file)
+    - [x] Task 6: DeepDiveOrchestrator (fetch → summarize → TTS pipeline)
+
+    - [x] Task 7: Hilt module (bind TextSummarizer → GemmaTextSummarizer)
+    - [x] Task 8: Fix PlaybackService.onAddMediaItems (preserve URI for local file items)
+    - [x] Task 9: PlayerViewModel — DeepDiveState + moreAboutThis() + audio injection
+
+    ## Remaining
+    - [ ] Task 7: Hilt module (bind TextSummarizer → GemmaTextSummarizer)
+    - [ ] Task 8: Fix PlaybackService.onAddMediaItems (preserve URI for local file items)
+    - [ ] Task 9: PlayerViewModel — DeepDiveState + moreAboutThis() + audio injection
+    - [ ] Task 10: PlayerScreen — voice command wire-up + UI overlays
+    - [ ] Task 11: Full test suite + assembleDebug
+    
+    ## Notes
+    - Task 4 was interrupted before starting — begin there
+    - Use superpowers:executing-plans in new session pointing to the plan file
+    - All work is in worktrees/feat-more-about-this
