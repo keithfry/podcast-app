@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.work.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.browser)
     implementation(libs.appcompat)
     debugImplementation(libs.compose.ui.tooling)

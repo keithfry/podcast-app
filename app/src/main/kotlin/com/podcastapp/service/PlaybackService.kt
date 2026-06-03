@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.*
@@ -12,13 +13,18 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.podcastapp.MainActivity
 import com.podcastapp.data.repository.ChapterRepository
+import com.podcastapp.data.repository.PodcastRepository
 import com.podcastapp.domain.model.Chapter
+import com.podcastapp.domain.model.Episode
+import com.podcastapp.domain.model.Podcast
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,9 +34,13 @@ class PlaybackService : MediaLibraryService() {
     companion object {
         const val CMD_NEXT_CHAPTER = "com.podcastapp.NEXT_CHAPTER"
         const val CMD_PREV_CHAPTER = "com.podcastapp.PREV_CHAPTER"
+        const val BROWSE_ROOT = "root"
+        const val PODCAST_PREFIX = "podcast:"
+        const val EPISODE_PREFIX = "episode:"
     }
 
     @Inject lateinit var chapterRepo: ChapterRepository
+    @Inject lateinit var podcastRepo: PodcastRepository
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var chaptersJob: Job? = null
@@ -50,8 +60,19 @@ class PlaybackService : MediaLibraryService() {
                 .add(SessionCommand(CMD_NEXT_CHAPTER, Bundle.EMPTY))
                 .add(SessionCommand(CMD_PREV_CHAPTER, Bundle.EMPTY))
                 .build()
+            val commandButtons = listOf(
+                CommandButton.Builder()
+                    .setDisplayName("Prev Chapter")
+                    .setSessionCommand(SessionCommand(CMD_PREV_CHAPTER, Bundle.EMPTY))
+                    .build(),
+                CommandButton.Builder()
+                    .setDisplayName("Next Chapter")
+                    .setSessionCommand(SessionCommand(CMD_NEXT_CHAPTER, Bundle.EMPTY))
+                    .build()
+            )
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(sessionCommands)
+                .setCustomLayout(commandButtons)
                 .build()
         }
 
@@ -79,7 +100,16 @@ class PlaybackService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<MediaItem>> =
             Futures.immediateFuture(
                 LibraryResult.ofItem(
-                    MediaItem.Builder().setMediaId("root").build(), params
+                    MediaItem.Builder()
+                        .setMediaId(BROWSE_ROOT)
+                        .setMediaMetadata(
+                            MediaMetadata.Builder()
+                                .setIsBrowsable(true)
+                                .setIsPlayable(false)
+                                .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                                .setTitle("Podcasts")
+                                .build()
+                        ).build(), params
                 )
             )
 
@@ -91,7 +121,29 @@ class PlaybackService : MediaLibraryService() {
             pageSize: Int,
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
-            Futures.immediateFuture(LibraryResult.ofItemList(emptyList(), params))
+            serviceScope.future {
+                when {
+                    parentId == BROWSE_ROOT -> {
+                        val podcasts = podcastRepo.podcasts.first()
+                        LibraryResult.ofItemList(podcasts.map { it.toMediaItem() }, params)
+                    }
+                    parentId.startsWith(PODCAST_PREFIX) -> {
+                        val feedUrl = parentId.removePrefix(PODCAST_PREFIX)
+                        val episodes = podcastRepo.episodesForPodcast(feedUrl).first()
+                        LibraryResult.ofItemList(episodes.map { it.toMediaItem() }, params)
+                    }
+                    else -> LibraryResult.ofItemList(emptyList(), params)
+                }
+            }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>
+        ): ListenableFuture<List<MediaItem>> =
+            Futures.immediateFuture(mediaItems.map { item ->
+                item.buildUpon().setUri(item.mediaId).build()
+            })
     }
 
     override fun onCreate() {
@@ -127,3 +179,27 @@ class PlaybackService : MediaLibraryService() {
         super.onDestroy()
     }
 }
+
+private fun Podcast.toMediaItem() = MediaItem.Builder()
+    .setMediaId("${PlaybackService.PODCAST_PREFIX}$feedUrl")
+    .setMediaMetadata(
+        MediaMetadata.Builder()
+            .setTitle(title)
+            .setArtist(author)
+            .setIsBrowsable(true)
+            .setIsPlayable(false)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST)
+            .build()
+    ).build()
+
+private fun Episode.toMediaItem() = MediaItem.Builder()
+    .setMediaId(audioUrl)
+    .setUri(audioUrl)
+    .setMediaMetadata(
+        MediaMetadata.Builder()
+            .setTitle(title)
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE)
+            .build()
+    ).build()
