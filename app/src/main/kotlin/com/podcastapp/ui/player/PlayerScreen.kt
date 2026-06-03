@@ -47,6 +47,7 @@ fun PlayerScreen(
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
+    var draggingPositionMs by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(audioUrl) {
         vm.connect(audioUrl)
@@ -177,7 +178,7 @@ fun PlayerScreen(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Text(
-                    text = formatMs(currentPositionMs),
+                    text = formatMs(draggingPositionMs ?: currentPositionMs),
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.width(48.dp)
                 )
@@ -186,6 +187,7 @@ fun PlayerScreen(
                     durationMs = durationMs,
                     chapters = chapters,
                     onSeek = { ms -> vm.controller?.seekTo(ms) },
+                    onDragging = { draggingPositionMs = it },
                     modifier = Modifier.weight(1f)
                 )
                 Text(

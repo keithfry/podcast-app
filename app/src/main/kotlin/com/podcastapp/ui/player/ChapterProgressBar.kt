@@ -38,6 +38,7 @@ fun ChapterProgressBar(
     durationMs: Long,
     chapters: List<Chapter>,
     onSeek: (Long) -> Unit,
+    onDragging: (Long?) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -102,14 +103,18 @@ fun ChapterProgressBar(
                             newFraction
                         }
 
+                        val displayMs = (dragFraction * durationMs).toLong()
+                        onDragging(displayMs)
+
                         change.consume()
                     } while (event.changes.any { it.pressed })
 
                     snapTimerJob?.cancel()
+                    onDragging(null)
 
                     val seekMs = (dragFraction * durationMs).toLong()
-                    dragMode = DragMode.NONE
                     onSeek(seekMs)
+                    dragMode = DragMode.NONE
                 }
             }
     ) {

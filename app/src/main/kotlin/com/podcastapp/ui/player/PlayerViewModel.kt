@@ -171,7 +171,10 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun seekForward30s() {
-        controller?.let { it.seekTo((it.currentPosition + 30_000L).coerceAtMost(it.duration)) }
+        controller?.let {
+            val duration = it.duration.takeIf { d -> d > 0 } ?: it.currentPosition
+            it.seekTo((it.currentPosition + 30_000L).coerceAtMost(duration))
+        }
     }
 
     fun seekBack30s() {
