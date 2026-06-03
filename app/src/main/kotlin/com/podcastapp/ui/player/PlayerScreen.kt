@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -191,7 +192,7 @@ fun PlayerScreen(
                     text = formatMs(durationMs),
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.width(48.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                    textAlign = TextAlign.End
                 )
             }
 
