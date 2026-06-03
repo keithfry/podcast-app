@@ -7,7 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -32,7 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PlayerScreen(
     audioUrl: String,
@@ -291,39 +292,81 @@ fun PlayerScreen(
                 itemsIndexed(chapters) { idx, chapter ->
                     val isSnapHovered = snapHoverIdx == idx
                     val isActive = idx == currentIdx
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                when {
-                                    isSnapHovered -> MaterialTheme.colorScheme.tertiaryContainer
-                                    isActive -> MaterialTheme.colorScheme.primaryContainer
-                                    else -> MaterialTheme.colorScheme.surface
+                    var showMenu by remember { mutableStateOf(false) }
+                    Box {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    when {
+                                        isSnapHovered -> MaterialTheme.colorScheme.tertiaryContainer
+                                        isActive -> MaterialTheme.colorScheme.primaryContainer
+                                        else -> MaterialTheme.colorScheme.surface
+                                    }
+                                )
+                                .then(
+                                    if (isSnapHovered) Modifier.border(
+                                        2.dp,
+                                        MaterialTheme.colorScheme.tertiary,
+                                        androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                    ) else Modifier
+                                )
+                                .combinedClickable(
+                                    onClick = { vm.controller?.seekTo(chapter.startTimeMs) },
+                                    onLongClick = { showMenu = true }
+                                )
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                formatMs(chapter.startTimeMs),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.width(52.dp)
+                            )
+                            Text(
+                                chapter.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (chapter.url != null) {
+                                Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Open link") },
+                                enabled = chapter.url != null,
+                                onClick = {
+                                    showMenu = false
+                                    chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
                                 }
                             )
-                            .then(
-                                if (isSnapHovered) Modifier.border(
-                                    2.dp,
-                                    MaterialTheme.colorScheme.tertiary,
-                                    androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-                                ) else Modifier
+                            DropdownMenuItem(
+                                text = { Text("Share link") },
+                                enabled = chapter.url != null,
+                                onClick = {
+                                    showMenu = false
+                                    chapter.url?.let { url ->
+                                        context.startActivity(Intent.createChooser(
+                                            Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_TEXT, url)
+                                            }, "Share link"
+                                        ))
+                                    }
+                                }
                             )
-                            .clickable { vm.controller?.seekTo(chapter.startTimeMs) }
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            formatMs(chapter.startTimeMs),
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.width(52.dp)
-                        )
-                        Text(
-                            chapter.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (chapter.url != null) {
-                            Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                            DropdownMenuItem(
+                                text = { Text("More about this") },
+                                enabled = chapter.url != null,
+                                onClick = {
+                                    showMenu = false
+                                    vm.moreAboutThis()
+                                }
+                            )
                         }
                     }
                     HorizontalDivider()
