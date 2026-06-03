@@ -4,14 +4,22 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.*
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.podcastapp.MainActivity
+import com.podcastapp.data.repository.ChapterRepository
 import com.podcastapp.domain.model.Chapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -22,12 +30,15 @@ class PlaybackService : MediaLibraryService() {
         const val CMD_PREV_CHAPTER = "com.podcastapp.PREV_CHAPTER"
     }
 
+    @Inject lateinit var chapterRepo: ChapterRepository
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var chaptersJob: Job? = null
+
     private lateinit var player: ExoPlayer
     private lateinit var mediaLibrarySession: MediaLibrarySession
 
-    // Updated by PlayerViewModel when episode chapters are loaded
-    @Volatile
-    var chapters: List<Chapter> = emptyList()
+    private var chapters: List<Chapter> = emptyList()
 
     private val callback = object : MediaLibrarySession.Callback {
         override fun onConnect(
@@ -86,6 +97,17 @@ class PlaybackService : MediaLibraryService() {
     override fun onCreate() {
         super.onCreate()
         player = ExoPlayer.Builder(this).build()
+        player.addListener(object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                val audioUrl = mediaItem?.mediaId ?: return
+                chaptersJob?.cancel()
+                chaptersJob = serviceScope.launch {
+                    chapterRepo.chaptersForEpisode(audioUrl).collect { list ->
+                        chapters = list
+                    }
+                }
+            }
+        })
         val sessionActivity = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
@@ -99,6 +121,7 @@ class PlaybackService : MediaLibraryService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaLibrarySession
 
     override fun onDestroy() {
+        serviceScope.cancel()
         mediaLibrarySession.release()
         player.release()
         super.onDestroy()

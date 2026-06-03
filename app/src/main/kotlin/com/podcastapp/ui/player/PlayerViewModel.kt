@@ -8,7 +8,9 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
+import androidx.media3.common.PlaybackParameters
 import com.podcastapp.data.db.dao.EpisodeDao
+import com.podcastapp.data.preferences.SpeedPreferences
 import com.podcastapp.data.repository.ChapterRepository
 import com.podcastapp.data.repository.toDomain
 import com.podcastapp.domain.model.Chapter
@@ -27,7 +29,8 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val chapterRepo: ChapterRepository,
-    private val episodeDao: EpisodeDao
+    private val episodeDao: EpisodeDao,
+    private val speedPrefs: SpeedPreferences
 ) : ViewModel() {
 
     private val _chapters = MutableStateFlow<List<Chapter>>(emptyList())
@@ -39,12 +42,15 @@ class PlayerViewModel @Inject constructor(
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
+    private val _playbackSpeed = MutableStateFlow(speedPrefs.speed)
+    val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
+
     private var chaptersJob: Job? = null
 
     var controller: MediaController? = null
         private set
 
-    fun connect() {
+    fun connect(audioUrl: String) {
         val token = SessionToken(
             context,
             ComponentName(context, PlaybackService::class.java)
@@ -53,11 +59,20 @@ class PlayerViewModel @Inject constructor(
         future.addListener({
             runCatching {
                 controller = future.get()
+                controller?.setPlaybackParameters(PlaybackParameters(speedPrefs.speed))
                 controller?.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(playing: Boolean) {
                         _isPlaying.value = playing
                     }
+                    override fun onPositionDiscontinuity(
+                        oldPosition: Player.PositionInfo,
+                        newPosition: Player.PositionInfo,
+                        reason: Int
+                    ) {
+                        updateCurrentChapterIndex()
+                    }
                 })
+                loadAndPlay(audioUrl)
             }.onFailure { /* controller stays null; UI handles gracefully */ }
         }, context.mainExecutor)
     }
@@ -106,6 +121,13 @@ class PlayerViewModel @Inject constructor(
             SessionCommand(PlaybackService.CMD_PREV_CHAPTER, android.os.Bundle.EMPTY),
             android.os.Bundle.EMPTY
         )
+    }
+
+    fun setSpeed(speed: Float) {
+        val rounded = (speed * 10).toInt() / 10f
+        speedPrefs.speed = rounded
+        _playbackSpeed.value = rounded
+        controller?.setPlaybackParameters(PlaybackParameters(rounded))
     }
 
     fun seekForward30s() {

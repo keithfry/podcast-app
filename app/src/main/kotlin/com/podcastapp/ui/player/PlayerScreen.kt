@@ -15,6 +15,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,11 +35,27 @@ fun PlayerScreen(
     val chapters by vm.chapters.collectAsStateWithLifecycle()
     val currentIdx by vm.currentChapterIndex.collectAsStateWithLifecycle()
     val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
+    val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
     val currentChapter = chapters.getOrNull(currentIdx)
+    var showSpeedSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(audioUrl) {
-        vm.connect()
-        vm.loadAndPlay(audioUrl)
+        vm.connect(audioUrl)
+    }
+
+    if (showSpeedSheet) {
+        SpeedBottomSheet(
+            currentSpeed = playbackSpeed,
+            onSpeedChange = { vm.setSpeed(it) },
+            onDismiss = { showSpeedSheet = false }
+        )
+    }
+
+    LaunchedEffect(isPlaying) {
+        while (isPlaying) {
+            vm.updateCurrentChapterIndex()
+            delay(1_000L)
+        }
     }
 
     val voiceLauncher = rememberLauncherForActivityResult(
@@ -128,6 +146,13 @@ fun PlayerScreen(
                 IconButton(onClick = { vm.nextChapter() }) {
                     Icon(Icons.Filled.SkipNext, "Next chapter", Modifier.size(40.dp))
                 }
+                TextButton(onClick = { showSpeedSheet = true }) {
+                    Text(
+                        "${"%.1f".format(playbackSpeed)}×",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             Spacer(Modifier.height(12.dp))
@@ -194,6 +219,50 @@ fun PlayerScreen(
                     }
                     HorizontalDivider()
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SpeedBottomSheet(
+    currentSpeed: Float,
+    onSpeedChange: (Float) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "Playback Speed",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                "${"%.1f".format(currentSpeed)}×",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold
+            )
+            Slider(
+                value = currentSpeed,
+                onValueChange = onSpeedChange,
+                valueRange = 0.5f..2.0f,
+                steps = 14, // 16 positions - 2 endpoints - 1 = 14 internal steps → 0.1 increments
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("0.5×", style = MaterialTheme.typography.bodySmall)
+                Text("2.0×", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
