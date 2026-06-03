@@ -46,4 +46,13 @@ class VoiceCommandHandlerTest {
 
     @Test fun `case insensitive matching`() =
         assertEquals(VoiceCommand.NEXT_CHAPTER, VoiceCommandHandler.parse("NEXT SECTION"))
+
+    @Test fun `parse more about this`() = assertEquals(VoiceCommand.MORE_ABOUT_THIS, VoiceCommandHandler.parse("more about this"))
+    @Test fun `parse tell me more`() = assertEquals(VoiceCommand.MORE_ABOUT_THIS, VoiceCommandHandler.parse("tell me more"))
+    @Test fun `parse more detail`() = assertEquals(VoiceCommand.MORE_ABOUT_THIS, VoiceCommandHandler.parse("more detail"))
+    @Test fun `parse explain this`() = assertEquals(VoiceCommand.MORE_ABOUT_THIS, VoiceCommandHandler.parse("explain this"))
+    @Test fun `parse learn more`() = assertEquals(VoiceCommand.MORE_ABOUT_THIS, VoiceCommandHandler.parse("learn more"))
+    @Test fun `parse deep dive`() = assertEquals(VoiceCommand.MORE_ABOUT_THIS, VoiceCommandHandler.parse("deep dive"))
+    @Test fun `parse unknown returns null`() = assertNull(VoiceCommandHandler.parse("hello there"))
+    @Test fun `parse is case insensitive`() = assertEquals(VoiceCommand.MORE_ABOUT_THIS, VoiceCommandHandler.parse("More About This"))
 }
