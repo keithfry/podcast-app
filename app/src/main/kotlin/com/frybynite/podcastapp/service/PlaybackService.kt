@@ -146,7 +146,8 @@ class PlaybackService : MediaLibraryService() {
             mediaItems: List<MediaItem>
         ): ListenableFuture<List<MediaItem>> =
             Futures.immediateFuture(mediaItems.map { item ->
-                item.buildUpon().setUri(item.mediaId).build()
+                if (item.localConfiguration?.uri != null) item
+                else item.buildUpon().setUri(item.mediaId).build()
             })
     }
 
