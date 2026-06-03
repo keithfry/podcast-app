@@ -69,14 +69,17 @@ fun ChapterProgressBar(
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     if (durationMs <= 0) return@awaitEachGesture
+                    if (size.width == 0) return@awaitEachGesture   // add this line
 
                     dragMode = DragMode.NONE
                     dragFraction = (down.position.x / size.width).coerceIn(0f, 1f)
 
                     snapTimerJob = coroutineScope.launch {
                         delay(500L)
-                        dragMode = DragMode.SNAP
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        if (dragMode == DragMode.NONE) {  // only snap if gesture hasn't already gone to FREE
+                            dragMode = DragMode.SNAP
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        }
                     }
 
                     var moved = false
