@@ -10,6 +10,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
 import androidx.media3.common.PlaybackParameters
 import com.podcastapp.data.db.dao.EpisodeDao
+import com.podcastapp.data.db.dao.PodcastDao
 import com.podcastapp.data.preferences.SpeedPreferences
 import com.podcastapp.data.repository.ChapterRepository
 import com.podcastapp.data.repository.toDomain
@@ -30,6 +31,7 @@ class PlayerViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val chapterRepo: ChapterRepository,
     private val episodeDao: EpisodeDao,
+    private val podcastDao: PodcastDao,
     private val speedPrefs: SpeedPreferences
 ) : ViewModel() {
 
@@ -44,6 +46,9 @@ class PlayerViewModel @Inject constructor(
 
     private val _playbackSpeed = MutableStateFlow(speedPrefs.speed)
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
+
+    private val _podcastImageUrl = MutableStateFlow<String?>(null)
+    val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
 
     private var chaptersJob: Job? = null
 
@@ -99,6 +104,7 @@ class PlayerViewModel @Inject constructor(
     fun loadAndPlay(audioUrl: String) {
         viewModelScope.launch {
             val entity = episodeDao.getByAudioUrl(audioUrl) ?: return@launch
+            _podcastImageUrl.value = podcastDao.getByUrl(entity.podcastFeedUrl)?.imageUrl
             playEpisode(entity.toDomain())
         }
     }

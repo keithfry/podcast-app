@@ -34,6 +34,7 @@ class RssParser {
 
         var inChannel = false
         var inItem = false
+        var inChannelImage = false
         var epTitle = ""
         var epAudioUrl = ""
         var epPubDate = 0L
@@ -55,6 +56,9 @@ class RssParser {
                         }
                         parser.name == "enclosure" -> if (inItem) epAudioUrl = parser.getAttributeValue(null, "url") ?: ""
                         parser.namespace == NS_PODCAST && parser.name == "chapters" -> if (inItem) epChaptersUrl = parser.getAttributeValue(null, "url")
+                        inChannel && !inItem && parser.namespace == NS_ITUNES && parser.name == "image" ->
+                            podcastImage = parser.getAttributeValue(null, "href")
+                        inChannel && !inItem && parser.name == "image" -> inChannelImage = true
                     }
                 }
                 XmlPullParser.TEXT -> currentText += (parser.text ?: "")
@@ -80,6 +84,8 @@ class RssParser {
                     inChannel && !inItem && parser.name == "link" -> podcastLink = currentText.trim()
                     inChannel && !inItem && parser.name == "description" -> podcastDescription = currentText.trim()
                     inChannel && !inItem && parser.namespace == NS_ITUNES && parser.name == "author" -> podcastAuthor = currentText.trim()
+                    inChannelImage && parser.name == "url" -> { podcastImage = currentText.trim(); }
+                    parser.name == "image" && inChannelImage -> inChannelImage = false
                 }
             }
             event = parser.next()

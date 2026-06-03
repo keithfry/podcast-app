@@ -19,8 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -36,6 +39,7 @@ fun PlayerScreen(
     val currentIdx by vm.currentChapterIndex.collectAsStateWithLifecycle()
     val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
     val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
+    val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
 
@@ -113,7 +117,33 @@ fun PlayerScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(160.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (podcastImageUrl != null) {
+                    AsyncImage(
+                        model = podcastImageUrl,
+                        contentDescription = "Podcast artwork",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        Icons.Filled.Mic,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
 
             // Playback controls
             Row(

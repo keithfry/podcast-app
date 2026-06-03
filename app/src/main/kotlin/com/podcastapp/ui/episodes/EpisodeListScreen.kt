@@ -9,6 +9,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +32,17 @@ fun EpisodeListScreen(
     vm: EpisodeListViewModel = hiltViewModel()
 ) {
     val episodes by vm.episodes.collectAsStateWithLifecycle(emptyList())
+    val isRefreshing by vm.isRefreshing.collectAsStateWithLifecycle()
+    val pullState = rememberPullToRefreshState()
+
+    if (pullState.isRefreshing) {
+        LaunchedEffect(Unit) {
+            vm.refresh()
+        }
+    }
+    LaunchedEffect(isRefreshing) {
+        if (!isRefreshing) pullState.endRefresh()
+    }
 
     Scaffold(
         topBar = {
@@ -42,15 +56,25 @@ fun EpisodeListScreen(
             )
         }
     ) { padding ->
-        LazyColumn(contentPadding = padding) {
-            items(episodes, key = { it.audioUrl }) { episode ->
-                EpisodeRow(
-                    episode = episode,
-                    onClick = { onEpisodeClick(episode.audioUrl) },
-                    onDownload = { vm.downloadEpisode(episode.audioUrl) }
-                )
-                HorizontalDivider()
+        Box(
+            Modifier
+                .padding(padding)
+                .nestedScroll(pullState.nestedScrollConnection)
+        ) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(episodes, key = { it.audioUrl }) { episode ->
+                    EpisodeRow(
+                        episode = episode,
+                        onClick = { onEpisodeClick(episode.audioUrl) },
+                        onDownload = { vm.downloadEpisode(episode.audioUrl) }
+                    )
+                    HorizontalDivider()
+                }
             }
+            PullToRefreshContainer(
+                state = pullState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
     }
 }
