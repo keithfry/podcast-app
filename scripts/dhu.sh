@@ -3,9 +3,14 @@ set -euo pipefail
 
 DHU="$HOME/Library/Android/sdk/extras/google/auto/desktop-head-unit"
 
+ADB_DEFAULT="${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb"
 if ! command -v adb &>/dev/null; then
-    echo "ERROR: adb not found. Add Android SDK platform-tools to PATH." >&2
-    exit 1
+    if [[ -x "$ADB_DEFAULT" ]]; then
+        export PATH="$(dirname "$ADB_DEFAULT"):$PATH"
+    else
+        echo "ERROR: adb not found. Add Android SDK platform-tools to PATH." >&2
+        exit 1
+    fi
 fi
 
 if [[ ! -x "$DHU" ]]; then

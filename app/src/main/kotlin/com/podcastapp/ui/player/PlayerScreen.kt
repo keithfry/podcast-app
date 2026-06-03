@@ -43,6 +43,7 @@ fun PlayerScreen(
     val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
     val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
     val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
+    val podcastTitle by vm.podcastTitle.collectAsStateWithLifecycle()
     val sleepTimerSeconds by vm.sleepTimerSeconds.collectAsStateWithLifecycle()
     val currentPositionMs by vm.currentPositionMs.collectAsStateWithLifecycle()
     val durationMs by vm.durationMs.collectAsStateWithLifecycle()
@@ -107,7 +108,7 @@ fun PlayerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentChapter?.title ?: "Playing") },
+                title = { Text(podcastTitle ?: "Playing") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -155,21 +156,15 @@ fun PlayerScreen(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                if (podcastImageUrl != null) {
-                    AsyncImage(
-                        model = podcastImageUrl,
-                        contentDescription = "Podcast artwork",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        Icons.Filled.Mic,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                AsyncImage(
+                    model = podcastImageUrl,
+                    contentDescription = "Podcast artwork",
+                    contentScale = ContentScale.Crop,
+                    placeholder = androidx.compose.ui.res.painterResource(com.podcastapp.R.drawable.ic_podcast_placeholder),
+                    error = androidx.compose.ui.res.painterResource(com.podcastapp.R.drawable.ic_podcast_placeholder),
+                    fallback = androidx.compose.ui.res.painterResource(com.podcastapp.R.drawable.ic_podcast_placeholder),
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Spacer(Modifier.height(12.dp))

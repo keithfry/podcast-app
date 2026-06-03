@@ -79,6 +79,9 @@ private fun PodcastRow(podcast: Podcast, onClick: () -> Unit) {
         AsyncImage(
             model = podcast.imageUrl,
             contentDescription = null,
+            placeholder = androidx.compose.ui.res.painterResource(com.podcastapp.R.drawable.ic_podcast_placeholder),
+            error = androidx.compose.ui.res.painterResource(com.podcastapp.R.drawable.ic_podcast_placeholder),
+            fallback = androidx.compose.ui.res.painterResource(com.podcastapp.R.drawable.ic_podcast_placeholder),
             modifier = Modifier.size(56.dp)
         )
         Spacer(Modifier.width(12.dp))

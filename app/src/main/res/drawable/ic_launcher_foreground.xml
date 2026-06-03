@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Podcast icon: microphone body + stand + base, centred in the 108×108dp adaptive
+  icon canvas. Content sits within the 72dp safe zone (18dp inset each side).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Mic body (rounded rect, 14w × 22h, centred at 54,44) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M47,30
+          a7,7 0 0 1 14,0
+          L61,52
+          a7,7 0 0 1 -14,0
+          Z" />
+
+    <!-- Mic stand arc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:pathData="M40,50 Q40,66 54,66 Q68,66 68,50" />
+
+    <!-- Stem -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:pathData="M54,66 L54,74" />
+
+    <!-- Base bar -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M44,74 L64,74" />
+
+    <!-- Sound wave left (small) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D4BBFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M36,42 Q33,51 36,60" />
+
+    <!-- Sound wave left (large) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D4BBFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M30,37 Q25,51 30,65" />
+
+    <!-- Sound wave right (small) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D4BBFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M72,42 Q75,51 72,60" />
+
+    <!-- Sound wave right (large) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D4BBFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M78,37 Q83,51 78,65" />
+
+</vector>

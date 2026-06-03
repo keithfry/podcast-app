@@ -65,10 +65,12 @@ class PlaybackService : MediaLibraryService() {
             val commandButtons = listOf(
                 CommandButton.Builder()
                     .setDisplayName("Prev Chapter")
+                    .setIconResId(android.R.drawable.ic_media_previous)
                     .setSessionCommand(SessionCommand(CMD_PREV_CHAPTER, Bundle.EMPTY))
                     .build(),
                 CommandButton.Builder()
                     .setDisplayName("Next Chapter")
+                    .setIconResId(android.R.drawable.ic_media_next)
                     .setSessionCommand(SessionCommand(CMD_NEXT_CHAPTER, Bundle.EMPTY))
                     .build()
             )

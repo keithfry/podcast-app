@@ -55,12 +55,15 @@ class PlayerViewModel @Inject constructor(
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
 
     private val _podcastImageUrl = MutableStateFlow<String?>(null)
+    val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
+
+    private val _podcastTitle = MutableStateFlow<String?>(null)
+    val podcastTitle: StateFlow<String?> = _podcastTitle.asStateFlow()
 
     // Sleep timer: remaining seconds, null = not active
     private val _sleepTimerSeconds = MutableStateFlow<Int?>(null)
     val sleepTimerSeconds: StateFlow<Int?> = _sleepTimerSeconds.asStateFlow()
     private var sleepTimerJob: Job? = null
-    val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
 
     private var chaptersJob: Job? = null
 
@@ -116,7 +119,9 @@ class PlayerViewModel @Inject constructor(
     fun loadAndPlay(audioUrl: String) {
         viewModelScope.launch {
             val entity = episodeDao.getByAudioUrl(audioUrl) ?: return@launch
-            _podcastImageUrl.value = podcastDao.getByUrl(entity.podcastFeedUrl)?.imageUrl
+            val podcast = podcastDao.getByUrl(entity.podcastFeedUrl)
+            _podcastImageUrl.value = podcast?.imageUrl
+            _podcastTitle.value = podcast?.title
             playEpisode(entity.toDomain())
         }
     }
