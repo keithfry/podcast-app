@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,6 +50,7 @@ fun PlayerScreen(
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
     var draggingPositionMs by remember { mutableStateOf<Long?>(null) }
+    var snapHoverIdx by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(audioUrl) {
         vm.connect(audioUrl)
@@ -188,6 +190,7 @@ fun PlayerScreen(
                     durationMs = durationMs,
                     chapters = chapters,
                     onSeek = { ms -> vm.controller?.seekTo(ms) },
+                    onSnapHoverIndex = { snapHoverIdx = it },
                     onDragging = { draggingPositionMs = it },
                     modifier = Modifier.weight(1f)
                 )
@@ -274,16 +277,33 @@ fun PlayerScreen(
             // Chapter list
             val chapterListState = rememberLazyListState()
             LaunchedEffect(currentIdx) {
-                if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(currentIdx)
+                if (chapters.isNotEmpty() && snapHoverIdx == null)
+                    chapterListState.animateScrollToItem(currentIdx)
+            }
+            LaunchedEffect(snapHoverIdx) {
+                val idx = snapHoverIdx ?: return@LaunchedEffect
+                if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
             }
             LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = chapterListState) {
                 itemsIndexed(chapters) { idx, chapter ->
+                    val isSnapHovered = snapHoverIdx == idx
+                    val isActive = idx == currentIdx
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                if (idx == currentIdx) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surface
+                                when {
+                                    isSnapHovered -> MaterialTheme.colorScheme.tertiaryContainer
+                                    isActive -> MaterialTheme.colorScheme.primaryContainer
+                                    else -> MaterialTheme.colorScheme.surface
+                                }
+                            )
+                            .then(
+                                if (isSnapHovered) Modifier.border(
+                                    2.dp,
+                                    MaterialTheme.colorScheme.tertiary,
+                                    androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                ) else Modifier
                             )
                             .clickable { vm.controller?.seekTo(chapter.startTimeMs) }
                             .padding(12.dp),

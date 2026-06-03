@@ -39,6 +39,7 @@ fun ChapterProgressBar(
     chapters: List<Chapter>,
     onSeek: (Long) -> Unit,
     onDragging: (Long?) -> Unit = {},
+    onSnapHoverIndex: (Int?) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -70,20 +71,21 @@ fun ChapterProgressBar(
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     if (durationMs <= 0) return@awaitEachGesture
-                    if (size.width == 0) return@awaitEachGesture   // add this line
+                    if (size.width == 0) return@awaitEachGesture
 
                     dragMode = DragMode.NONE
                     dragFraction = (down.position.x / size.width).coerceIn(0f, 1f)
 
                     snapTimerJob = coroutineScope.launch {
                         delay(500L)
-                        if (dragMode == DragMode.NONE) {  // only snap if gesture hasn't already gone to FREE
+                        if (dragMode == DragMode.NONE) {
                             dragMode = DragMode.SNAP
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         }
                     }
 
                     var moved = false
+                    var lastSnapIdx = -1
                     do {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull() ?: break
@@ -95,22 +97,30 @@ fun ChapterProgressBar(
                             if (dragMode == DragMode.NONE) dragMode = DragMode.FREE
                         }
 
-                        dragFraction = if (dragMode == DragMode.SNAP) {
+                        if (dragMode == DragMode.SNAP) {
                             val rawMs = (newFraction * durationMs).toLong()
-                            val snappedMs = snapToChapter(rawMs, chapters)
-                            (snappedMs.toFloat() / durationMs).coerceIn(0f, 1f)
+                            val nearestIdx = chapters.indices
+                                .minByOrNull { abs(chapters[it].startTimeMs - rawMs) } ?: 0
+                            if (nearestIdx != lastSnapIdx) {
+                                if (lastSnapIdx != -1) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                lastSnapIdx = nearestIdx
+                                onSnapHoverIndex(nearestIdx)
+                            }
+                            dragFraction = (chapters[nearestIdx].startTimeMs.toFloat() / durationMs)
+                                .coerceIn(0f, 1f)
                         } else {
-                            newFraction
+                            dragFraction = newFraction
                         }
 
-                        val displayMs = (dragFraction * durationMs).toLong()
-                        onDragging(displayMs)
-
+                        onDragging((dragFraction * durationMs).toLong())
                         change.consume()
                     } while (event.changes.any { it.pressed })
 
                     snapTimerJob?.cancel()
                     onDragging(null)
+                    onSnapHoverIndex(null)
 
                     val seekMs = (dragFraction * durationMs).toLong()
                     onSeek(seekMs)
