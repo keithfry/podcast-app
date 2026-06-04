@@ -21,7 +21,10 @@ object DeepDiveModule {
     ): TextSummarizer = if (OpenClDetector.isSupported()) gemma else groq
 
     @Provides @Singleton
-    fun provideTtsSynthesizer(android: AndroidTtsSynthesizer): TtsSynthesizer = android
+    fun provideTtsSynthesizer(
+        android: AndroidTtsSynthesizer,
+        groq: GroqTtsSynthesizer
+    ): TtsSynthesizer = if (OpenClDetector.isSupported()) android else groq
 
     @Provides @Named("groq_api_key")
     fun provideGroqApiKey(): String = BuildConfig.GROQ_API_KEY
