@@ -26,4 +26,10 @@ object DatabaseModule {
 
     @Provides
     fun provideChapterDao(db: PodcastDatabase) = db.chapterDao()
+
+    @Provides
+    @Singleton
+    @javax.inject.Named("podcasts_dir")
+    fun providePodcastsDir(@ApplicationContext ctx: Context): java.io.File =
+        java.io.File(ctx.filesDir, "podcasts")
 }

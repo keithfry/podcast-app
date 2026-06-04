@@ -33,7 +33,7 @@ class KokoroTtsSynthesizerTest {
         context = mockk()
         client = mockk()
         every { context.cacheDir } returns tempFolder.root
-        synthesizer = KokoroTtsSynthesizer(context, client, hfToken = "test-hf-token")
+        synthesizer = KokoroTtsSynthesizer(context, client, endpointUrl = "https://test.modal.run/tts")
     }
 
     private fun mockCall(response: Response): Call {
