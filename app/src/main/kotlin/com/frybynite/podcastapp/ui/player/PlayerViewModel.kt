@@ -85,6 +85,7 @@ class PlayerViewModel @Inject constructor(
 
     private val toneGen by lazy { ToneGenerator(AudioManager.STREAM_MUSIC, 60) }
     private var tickingJob: Job? = null
+    private var exitToneJob: Job? = null
 
     var controller: MediaController? = null
         private set
@@ -122,13 +123,14 @@ class PlayerViewModel @Inject constructor(
                         val incomingId = mediaItem?.mediaId ?: return
                         if (!incomingId.startsWith("tts://") && _deepDiveState.value == DeepDiveState.Playing) {
                             controller?.pause()
-                            viewModelScope.launch {
+                            exitToneJob = viewModelScope.launch {
                                 toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 300)
                                 delay(400)
                                 pendingTtsFile?.delete()
                                 pendingTtsFile = null
                                 _deepDiveState.value = DeepDiveState.Idle
                                 controller?.play()
+                                exitToneJob = null
                             }
                         }
                         updateCurrentChapterIndex()
@@ -248,6 +250,8 @@ class PlayerViewModel @Inject constructor(
         android.util.Log.i("DeepDive", "moreAboutThis: savedPos=${savedPositionMs}ms episodeUri=$episodeUri")
 
         _deepDiveState.value = DeepDiveState.Loading(DeepDiveStep.FETCHING)
+        exitToneJob?.cancel()
+        exitToneJob = null
         controller?.pause()
         tickingJob?.cancel()
         tickingJob = viewModelScope.launch {
@@ -310,6 +314,7 @@ class PlayerViewModel @Inject constructor(
 
     override fun onCleared() {
         tickingJob?.cancel()
+        exitToneJob?.cancel()
         toneGen.release()
         pendingTtsFile?.delete()
         controller?.release()
