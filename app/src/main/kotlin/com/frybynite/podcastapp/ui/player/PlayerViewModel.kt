@@ -236,12 +236,15 @@ class PlayerViewModel @Inject constructor(
         val episodeUri = controller?.currentMediaItem?.mediaId ?: return
         android.util.Log.i("DeepDive", "moreAboutThis: savedPos=${savedPositionMs}ms episodeUri=$episodeUri")
 
-        _deepDiveState.value = DeepDiveState.Loading
+        _deepDiveState.value = DeepDiveState.Loading(DeepDiveStep.FETCHING)
         controller?.pause()
 
         viewModelScope.launch {
             runCatching {
-                val ttsFile = deepDiveOrchestrator.process(resolvedUrl, episodeUri)
+                val ttsFile = deepDiveOrchestrator.process(resolvedUrl, episodeUri) { step ->
+                    _deepDiveState.value = DeepDiveState.Loading(step)
+                    android.util.Log.i("DeepDive", "moreAboutThis: step=$step")
+                }
                 pendingTtsFile = ttsFile
 
                 val ttsItem = androidx.media3.common.MediaItem.Builder()
@@ -287,10 +290,12 @@ class PlayerViewModel @Inject constructor(
     }
 }
 
+enum class DeepDiveStep { FETCHING, SUMMARIZING, SYNTHESIZING }
+
 sealed class DeepDiveState {
     data object Idle : DeepDiveState()
     data object ModelRequired : DeepDiveState()
-    data object Loading : DeepDiveState()
+    data class Loading(val step: DeepDiveStep = DeepDiveStep.FETCHING) : DeepDiveState()
     data object Playing : DeepDiveState()
     data class Error(val message: String) : DeepDiveState()
 }

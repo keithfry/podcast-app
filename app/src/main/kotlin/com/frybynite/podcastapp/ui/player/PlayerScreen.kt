@@ -432,10 +432,47 @@ fun PlayerScreen(
         }
 
         if (deepDiveState is DeepDiveState.Loading) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CircularProgressIndicator()
-                    Text("Generating deep dive…")
+            val step = (deepDiveState as DeepDiveState.Loading).step
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.width(280.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text(
+                            text = "More About This",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            DeepDiveStepRow(
+                                label = "Getting link details",
+                                active = step == DeepDiveStep.FETCHING,
+                                done = step > DeepDiveStep.FETCHING
+                            )
+                            DeepDiveStepRow(
+                                label = "Generating summary text",
+                                active = step == DeepDiveStep.SUMMARIZING,
+                                done = step > DeepDiveStep.SUMMARIZING
+                            )
+                            DeepDiveStepRow(
+                                label = "Converting to audio",
+                                active = step == DeepDiveStep.SYNTHESIZING,
+                                done = false
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -555,6 +592,44 @@ private fun SpeedBottomSheet(
         }
     }
 }
+
+@Composable
+private fun DeepDiveStepRow(label: String, active: Boolean, done: Boolean) {
+    val tint = when {
+        done -> MaterialTheme.colorScheme.primary
+        active -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (done) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.Default.Check,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(18.dp)
+            )
+        } else {
+            Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+                if (active) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                else Box(
+                    Modifier
+                        .size(8.dp)
+                        .background(tint, shape = MaterialTheme.shapes.small)
+                )
+            }
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = tint
+        )
+    }
+}
+
+private operator fun DeepDiveStep.compareTo(other: DeepDiveStep): Int = ordinal.compareTo(other.ordinal)
 
 private fun formatSleepTimer(seconds: Int): String {
     val m = seconds / 60
