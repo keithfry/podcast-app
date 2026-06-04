@@ -1,6 +1,7 @@
 package com.frybynite.podcastapp.deepdive
 
 import android.content.Context
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +26,10 @@ class ModelDownloadManager @Inject constructor(
     private val client: OkHttpClient
 ) {
     companion object {
-        const val MODEL_URL = "https://frybynite-podcast-app-storage.s3.amazonaws.com/models/gemma-2b-it-gpu-int4.bin"
+        const val GPU_MODEL_URL = "https://frybynite-podcast-app-storage.s3.amazonaws.com/models/gemma-gpu-int4.bin"
+        const val CPU_MODEL_URL = "https://frybynite-podcast-app-storage.s3.amazonaws.com/models/gemma-cpu-int4.bin"
+        const val GPU_MODEL_FILE = "models/gemma-gpu-int4.bin"
+        const val CPU_MODEL_FILE = "models/gemma-cpu-int4.bin"
     }
 
     init {
@@ -36,11 +40,25 @@ class ModelDownloadManager @Inject constructor(
     val state: StateFlow<ModelDownloadState> = _state
 
     suspend fun downloadModel(pendingUrl: String) = withContext(Dispatchers.IO) {
-        val dest = context.filesDir.resolve("models/gemma-2b-it-int4.bin")
+        // Try GPU first, fall back to CPU
+        val success = downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl, isGpu = true)
+        if (!success) {
+            Log.i("DeepDive", "GPU model failed, falling back to CPU model")
+            downloadFile(CPU_MODEL_URL, CPU_MODEL_FILE, pendingUrl, isGpu = false)
+        }
+    }
+
+    private suspend fun downloadFile(
+        url: String,
+        relativePath: String,
+        pendingUrl: String,
+        isGpu: Boolean
+    ): Boolean = withContext(Dispatchers.IO) {
+        val dest = context.filesDir.resolve(relativePath)
         dest.parentFile?.mkdirs()
-        _state.value = ModelDownloadState.Downloading(0f)
+        if (!isGpu) _state.value = ModelDownloadState.Downloading(0f)
         runCatching {
-            val response = client.newCall(Request.Builder().url(MODEL_URL).build()).execute()
+            val response = client.newCall(Request.Builder().url(url).build()).execute()
             if (!response.isSuccessful) error("HTTP ${response.code}: ${response.message}")
             val body = response.body ?: error("Empty response body")
             val total = body.contentLength()
@@ -61,9 +79,9 @@ class ModelDownloadManager @Inject constructor(
             _state.value = ModelDownloadState.Complete
             NotificationHelper.postReady(context, pendingUrl)
         }.onFailure { e ->
-            android.util.Log.e("DeepDive", "Model download failed", e)
+            Log.e("DeepDive", "Model download failed (${if (isGpu) "GPU" else "CPU"})", e)
             File("${dest.absolutePath}.tmp").delete()
-            _state.value = ModelDownloadState.Failed(e.message ?: "Download failed")
-        }
+            if (!isGpu) _state.value = ModelDownloadState.Failed(e.message ?: "Download failed")
+        }.isSuccess
     }
 }

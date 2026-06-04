@@ -1,7 +1,9 @@
 package com.frybynite.podcastapp.deepdive
 
 import android.content.Context
+import android.util.Log
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
+import java.io.File
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,19 +17,47 @@ class GemmaTextSummarizer @Inject constructor(
 
     private var inference: LlmInference? = null
 
-    val modelFile get() = context.filesDir.resolve("models/gemma-2b-it-int4.bin")
+    private val gpuModelFile get() = context.filesDir.resolve(ModelDownloadManager.GPU_MODEL_FILE)
+    private val cpuModelFile get() = context.filesDir.resolve(ModelDownloadManager.CPU_MODEL_FILE)
 
-    // Gemma model is ~1.3 GB; a file smaller than 100 MB is a failed/corrupt download
-    override fun isModelAvailable(): Boolean = modelFile.exists() && modelFile.length() > 100_000_000L
+    // Model is ~1.3 GB; anything under 100 MB is a corrupt/failed download
+    private fun File.isValid() = exists() && length() > 100_000_000L
+
+    override fun isModelAvailable(): Boolean = gpuModelFile.isValid() || cpuModelFile.isValid()
 
     private fun ensureLoaded() {
         if (inference != null) return
-        val options = LlmInference.LlmInferenceOptions.builder()
-            .setModelPath(modelFile.absolutePath)
-            .setMaxTokens(512)
-            .setPreferredBackend(LlmInference.Backend.CPU)
-            .build()
-        inference = LlmInference.createFromOptions(context, options)
+        // Try GPU model first, fall back to CPU
+        if (gpuModelFile.isValid()) {
+            runCatching {
+                Log.i("DeepDive", "Loading GPU model")
+                inference = LlmInference.createFromOptions(
+                    context,
+                    LlmInference.LlmInferenceOptions.builder()
+                        .setModelPath(gpuModelFile.absolutePath)
+                        .setMaxTokens(512)
+                        .setPreferredBackend(LlmInference.Backend.GPU)
+                        .build()
+                )
+                Log.i("DeepDive", "GPU model loaded successfully")
+            }.onFailure { e ->
+                Log.w("DeepDive", "GPU model failed to load, falling back to CPU", e)
+                inference = null
+            }
+        }
+        if (inference == null && cpuModelFile.isValid()) {
+            Log.i("DeepDive", "Loading CPU model")
+            inference = LlmInference.createFromOptions(
+                context,
+                LlmInference.LlmInferenceOptions.builder()
+                    .setModelPath(cpuModelFile.absolutePath)
+                    .setMaxTokens(512)
+                    .setPreferredBackend(LlmInference.Backend.CPU)
+                    .build()
+            )
+            Log.i("DeepDive", "CPU model loaded successfully")
+        }
+        checkNotNull(inference) { "No valid model available" }
     }
 
     override suspend fun summarize(text: String): String = withContext(Dispatchers.Default) {
