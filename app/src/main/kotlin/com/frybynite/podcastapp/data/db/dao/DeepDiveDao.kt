@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.frybynite.podcastapp.data.db.entities.DeepDiveEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DeepDiveDao {
@@ -13,6 +14,9 @@ interface DeepDiveDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: DeepDiveEntity)
+
+    @Query("SELECT * FROM deep_dives WHERE episodeAudioUrl = :episodeAudioUrl")
+    fun flowForEpisode(episodeAudioUrl: String): Flow<List<DeepDiveEntity>>
 
     @Query("DELETE FROM deep_dives WHERE episodeAudioUrl = :episodeAudioUrl")
     suspend fun deleteForEpisode(episodeAudioUrl: String)

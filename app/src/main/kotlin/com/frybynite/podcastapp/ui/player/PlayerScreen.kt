@@ -72,6 +72,7 @@ fun PlayerScreen(
     val durationMs by vm.durationMs.collectAsStateWithLifecycle()
     val deepDiveState by vm.deepDiveState.collectAsStateWithLifecycle()
     val deepDiveChapterIndex by vm.deepDiveChapterIndex.collectAsStateWithLifecycle()
+    val cachedDeepDiveUrls by vm.cachedDeepDiveUrls.collectAsStateWithLifecycle()
     val modelDownloadState by vm.modelDownloadState.collectAsStateWithLifecycle()
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
@@ -477,7 +478,12 @@ fun PlayerScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             if (chapter.url != null) {
-                                Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    if (chapter.url in cachedDeepDiveUrls) {
+                                        Icon(Icons.Filled.PlayCircle, contentDescription = "Deep dive ready", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
                             }
                         }
                     }

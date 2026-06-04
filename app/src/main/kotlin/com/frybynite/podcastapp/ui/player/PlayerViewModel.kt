@@ -43,6 +43,7 @@ class PlayerViewModel @Inject constructor(
     private val chapterRepo: ChapterRepository,
     private val episodeDao: EpisodeDao,
     private val podcastDao: PodcastDao,
+    private val deepDiveDao: com.frybynite.podcastapp.data.db.dao.DeepDiveDao,
     private val speedPrefs: SpeedPreferences,
     private val deepDiveOrchestrator: DeepDiveOrchestrator,
     private val summarizer: TextSummarizer,
@@ -90,6 +91,11 @@ class PlayerViewModel @Inject constructor(
     // Chapter the deep dive was launched from; the "More About This…" row is inserted after it.
     private val _deepDiveChapterIndex = MutableStateFlow<Int?>(null)
     val deepDiveChapterIndex: StateFlow<Int?> = _deepDiveChapterIndex.asStateFlow()
+
+    // Set of chapter URLs that have a cached deep dive file for the current episode.
+    private val _cachedDeepDiveUrls = MutableStateFlow<Set<String>>(emptySet())
+    val cachedDeepDiveUrls: StateFlow<Set<String>> = _cachedDeepDiveUrls.asStateFlow()
+    private var cachedDeepDiveJob: kotlinx.coroutines.Job? = null
 
     private var pendingTtsFile: java.io.File? = null
     private var pendingDeepDiveUrl: String? = null
@@ -205,6 +211,13 @@ class PlayerViewModel @Inject constructor(
             _podcastImageUrl.value = podcast?.imageUrl
             _podcastTitle.value = podcast?.title
             _episodeTitle.value = entity.title
+            cachedDeepDiveJob?.cancel()
+            cachedDeepDiveJob = viewModelScope.launch {
+                deepDiveDao.flowForEpisode(entity.audioUrl).collect { rows ->
+                    _cachedDeepDiveUrls.value = rows.filter { java.io.File(it.filePath).exists() }
+                        .map { it.chapterUrl }.toSet()
+                }
+            }
             playEpisode(entity.toDomain())
         }
     }
