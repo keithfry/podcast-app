@@ -29,12 +29,12 @@ class KokoroTtsSynthesizer @Inject constructor(
         }.toString()
 
         val request = Request.Builder()
-            .url("https://router.huggingface.co/fal-ai/hexgrad/Kokoro-82M")
+            .url("https://router.huggingface.co/deepinfra/hexgrad/Kokoro-82M")
             .addHeader("Authorization", "Bearer $hfToken")
             .post(body.toRequestBody("application/json".toMediaType()))
             .build()
 
-        Log.i("DeepDive", "Kokoro: POST request to fal-ai router (text ${text.length} chars)")
+        Log.i("DeepDive", "Kokoro: POST request to deepinfra router (text ${text.length} chars)")
         try {
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
