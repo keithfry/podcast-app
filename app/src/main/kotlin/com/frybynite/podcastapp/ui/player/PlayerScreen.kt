@@ -1,7 +1,13 @@
 package com.frybynite.podcastapp.ui.player
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
@@ -58,6 +64,20 @@ fun PlayerScreen(
     var draggingPositionMs by remember { mutableStateOf<Long?>(null) }
     var snapHoverIdx by remember { mutableStateOf<Int?>(null) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val hasNotificationPermission = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+        } else true
+    }
+    var notificationPermissionGranted by remember { mutableStateOf(hasNotificationPermission) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> notificationPermissionGranted = granted }
+
     LaunchedEffect(audioUrl) {
         vm.connect(audioUrl)
     }
@@ -84,7 +104,13 @@ fun PlayerScreen(
             title = { Text("Download AI Model") },
             text = { Text("\"More about this\" requires a ~1.3 GB on-device AI model. Download over Wi-Fi?") },
             confirmButton = {
-                TextButton(onClick = { vm.downloadModel(); vm.dismissDeepDiveError() }) { Text("Download") }
+                TextButton(onClick = {
+                    vm.downloadModel()
+                    vm.dismissDeepDiveError()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionGranted) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }) { Text("Download") }
             },
             dismissButton = {
                 TextButton(onClick = { vm.dismissDeepDiveError() }) { Text("Cancel") }
@@ -96,6 +122,13 @@ fun PlayerScreen(
         while (isPlaying) {
             vm.updateCurrentChapterIndex()
             delay(1_000L)
+        }
+    }
+
+    LaunchedEffect(modelDownloadState) {
+        if (modelDownloadState is com.frybynite.podcastapp.deepdive.ModelDownloadState.Complete
+            && !notificationPermissionGranted) {
+            snackbarHostState.showSnackbar("AI model ready — try \"More about this\" again")
         }
     }
 
@@ -126,6 +159,7 @@ fun PlayerScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(podcastTitle ?: "Playing") },
