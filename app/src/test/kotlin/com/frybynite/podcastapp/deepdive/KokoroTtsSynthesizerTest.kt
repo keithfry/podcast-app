@@ -43,20 +43,11 @@ class KokoroTtsSynthesizerTest {
         return call
     }
 
-    private fun mockCallSequence(first: Response, second: Response): Call {
-        val call = mockk<Call>()
-        every { client.newCall(any()) } returns call
-        var callCount = 0
-        every { call.execute() } answers {
-            if (callCount++ == 0) first else second
-        }
-        return call
-    }
-
     private fun makeResponse(code: Int, bodyBytes: ByteArray? = null): Response {
         val response = mockk<Response>()
         every { response.code } returns code
         every { response.isSuccessful } returns (code in 200..299)
+        every { response.message } returns ""
         every { response.close() } returns Unit
         if (bodyBytes != null) {
             val buffer = Buffer().write(bodyBytes)
@@ -83,18 +74,12 @@ class KokoroTtsSynthesizerTest {
         assertEquals(audioBytes.toList(), file.readBytes().toList())
     }
 
-    @Test
-    fun `503 triggers retry and second call succeeds`() = runTest {
-        val audioBytes = byteArrayOf(0x01, 0x02, 0x03)
-        val firstResponse = makeResponse(503)
-        val secondResponse = makeResponse(200, audioBytes)
-        mockCallSequence(firstResponse, secondResponse)
+    @Test(expected = IllegalStateException::class)
+    fun `503 response throws exception`() = runTest {
+        val response = makeResponse(503)
+        mockCall(response)
 
-        val file = synthesizer.synthesizeToFile("Retry test")
-
-        verify(exactly = 2) { client.newCall(any()) }
-        assertTrue(file.exists())
-        assertEquals(audioBytes.toList(), file.readBytes().toList())
+        synthesizer.synthesizeToFile("Error test")
     }
 
     @Test(expected = IllegalStateException::class)
