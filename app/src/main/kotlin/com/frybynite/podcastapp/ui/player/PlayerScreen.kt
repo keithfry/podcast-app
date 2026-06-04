@@ -27,6 +27,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -337,11 +347,92 @@ fun PlayerScreen(
                 itemsIndexed(chapters) { idx, chapter ->
                     val isSnapHovered = snapHoverIdx == idx
                     val isActive = idx == currentIdx
-                    var showMenu by remember { mutableStateOf(false) }
+                    val hasUrl = chapter.url != null
+                    val revealScope = rememberCoroutineScope()
+                    val revealWidth = 192.dp
+                    val revealWidthPx = with(LocalDensity.current) { revealWidth.toPx() }
+                    val offsetX = remember(chapter.episodeAudioUrl, chapter.startTimeMs) { Animatable(0f) }
+
+                    fun snapTo(target: Float) = revealScope.launch {
+                        offsetX.animateTo(target, spring(stiffness = Spring.StiffnessMedium))
+                    }
+                    fun collapse() = snapTo(0f)
+
                     Box {
+                        // Reveal panel (behind the row)
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .width(revealWidth)
+                                .matchParentSize()
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val enabledAlpha = if (hasUrl) 1f else 0.35f
+                            // Open
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable {
+                                        if (hasUrl) {
+                                            chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
+                                        }
+                                        collapse()
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha))
+                                Text("Open", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha))
+                            }
+                            // Share
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable {
+                                        if (hasUrl) {
+                                            chapter.url?.let { url ->
+                                                context.startActivity(Intent.createChooser(
+                                                    Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, url)
+                                                    }, "Share link"
+                                                ))
+                                            }
+                                        }
+                                        collapse()
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha))
+                                Text("Share", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha))
+                            }
+                            // More
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable {
+                                        if (hasUrl) vm.moreAboutThis(chapter.url, idx)
+                                        collapse()
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha))
+                                Text("More", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha))
+                            }
+                        }
+
+                        // Chapter row (draggable, on top)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .offset { IntOffset(offsetX.value.toInt(), 0) }
                                 .background(
                                     when {
                                         isSnapHovered -> MaterialTheme.colorScheme.tertiaryContainer
@@ -356,9 +447,21 @@ fun PlayerScreen(
                                         androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
                                     ) else Modifier
                                 )
+                                .draggable(
+                                    orientation = Orientation.Horizontal,
+                                    state = rememberDraggableState { delta ->
+                                        revealScope.launch {
+                                            offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidthPx, 0f))
+                                        }
+                                    },
+                                    onDragStopped = { velocity ->
+                                        val target = if (offsetX.value < -revealWidthPx * 0.35f || velocity < -600f) -revealWidthPx else 0f
+                                        snapTo(target)
+                                    }
+                                )
                                 .combinedClickable(
-                                    onClick = { vm.jumpToChapter(chapter.startTimeMs) },
-                                    onLongClick = { showMenu = true }
+                                    onClick = { vm.jumpToChapter(chapter.startTimeMs); collapse() },
+                                    onLongClick = { collapse() }
                                 )
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -376,42 +479,6 @@ fun PlayerScreen(
                             if (chapter.url != null) {
                                 Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
                             }
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Open link") },
-                                enabled = chapter.url != null,
-                                onClick = {
-                                    showMenu = false
-                                    chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Share link") },
-                                enabled = chapter.url != null,
-                                onClick = {
-                                    showMenu = false
-                                    chapter.url?.let { url ->
-                                        context.startActivity(Intent.createChooser(
-                                            Intent(Intent.ACTION_SEND).apply {
-                                                type = "text/plain"
-                                                putExtra(Intent.EXTRA_TEXT, url)
-                                            }, "Share link"
-                                        ))
-                                    }
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("More about this") },
-                                enabled = chapter.url != null,
-                                onClick = {
-                                    showMenu = false
-                                    vm.moreAboutThis(chapter.url, idx)
-                                }
-                            )
                         }
                     }
                     HorizontalDivider()
