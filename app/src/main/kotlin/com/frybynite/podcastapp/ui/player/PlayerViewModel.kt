@@ -221,16 +221,20 @@ class PlayerViewModel @Inject constructor(
         val resolvedUrl = url
             ?: _chapters.value.getOrNull(_currentChapterIndex.value)?.url
             ?: run {
+                android.util.Log.w("DeepDive", "moreAboutThis: no URL for current chapter")
                 _deepDiveState.value = DeepDiveState.Error("No link for this segment")
                 return
             }
+        android.util.Log.i("DeepDive", "moreAboutThis: url=$resolvedUrl")
         pendingDeepDiveUrl = resolvedUrl
         if (!summarizer.isModelAvailable()) {
+            android.util.Log.i("DeepDive", "moreAboutThis: model not available — requesting download")
             _deepDiveState.value = DeepDiveState.ModelRequired
             return
         }
         val savedPositionMs = controller?.currentPosition ?: return
         val episodeUri = controller?.currentMediaItem?.mediaId ?: return
+        android.util.Log.i("DeepDive", "moreAboutThis: savedPos=${savedPositionMs}ms episodeUri=$episodeUri")
 
         _deepDiveState.value = DeepDiveState.Loading
         controller?.pause()
@@ -254,10 +258,12 @@ class PlayerViewModel @Inject constructor(
                     )
                     .build()
 
+                android.util.Log.i("DeepDive", "moreAboutThis: injecting TTS item, resuming at ${savedPositionMs}ms")
                 controller?.setMediaItems(listOf(ttsItem, resumeItem))
                 controller?.prepare()
                 controller?.play()
                 _deepDiveState.value = DeepDiveState.Playing
+                android.util.Log.i("DeepDive", "moreAboutThis: playing")
             }.onFailure { e ->
                 android.util.Log.e("DeepDive", "moreAboutThis failed", e)
                 _deepDiveState.value = DeepDiveState.Error(e.message ?: "Deep dive failed")

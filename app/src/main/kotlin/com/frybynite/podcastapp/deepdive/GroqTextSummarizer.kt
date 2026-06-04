@@ -4,6 +4,7 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -76,15 +77,20 @@ Summary:"""
             .post(requestBody.toRequestBody("application/json".toMediaType()))
             .build()
 
+        Log.i("DeepDive", "Groq: POST request (text ${text.length} chars, existingSummary=${existingSummary != null})")
         val response = client.newCall(request).execute()
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
-            throw IllegalStateException("Groq API error ${response.code}: $errorBody")
+            val msg = "Groq API error ${response.code}: $errorBody"
+            Log.e("DeepDive", msg)
+            throw IllegalStateException(msg)
         }
 
         val responseJson = responseAdapter.fromJson(response.body!!.string())
             ?: throw IllegalStateException("Failed to parse Groq API response")
 
-        responseJson.choices.first().message.content.trim()
+        val result = responseJson.choices.first().message.content.trim()
+        Log.i("DeepDive", "Groq: response ${result.length} chars")
+        result
     }
 }

@@ -16,10 +16,16 @@ class DeepDiveOrchestrator @Inject constructor(
     private val client: OkHttpClient
 ) {
     suspend fun process(chapterUrl: String, episodeAudioUrl: String? = null): File = withContext(Dispatchers.IO) {
+        Log.i("DeepDive", "process: start url=$chapterUrl")
         val existingSummary = episodeAudioUrl?.let { fetchExistingSummary(it, chapterUrl) }
+        Log.i("DeepDive", "process: existingSummary=${if (existingSummary != null) "${existingSummary.length} chars" else "none"}")
         val text = fetcher.fetch(chapterUrl)
+        Log.i("DeepDive", "process: fetched ${text.length} chars")
         val summary = summarizer.summarize(text, existingSummary)
-        tts.synthesizeToFile(summary)
+        Log.i("DeepDive", "process: summary=${summary.length} chars — starting TTS")
+        val file = tts.synthesizeToFile(summary)
+        Log.i("DeepDive", "process: TTS done file=${file.name} size=${file.length()} bytes")
+        file
     }
 
     private fun fetchExistingSummary(episodeAudioUrl: String, chapterUrl: String): String? {

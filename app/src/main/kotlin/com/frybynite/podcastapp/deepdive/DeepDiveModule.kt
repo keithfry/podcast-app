@@ -5,6 +5,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -29,4 +31,10 @@ object DeepDiveModule {
 
     @Provides @Named("hf_token")
     fun provideHfToken(): String = BuildConfig.HF_TOKEN
+
+    @Provides @Singleton @Named("kokoro_client")
+    fun provideKokoroClient(): OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .build()
 }

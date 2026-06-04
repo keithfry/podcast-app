@@ -1,6 +1,7 @@
 package com.frybynite.podcastapp.deepdive
 
 import android.content.Context
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -18,7 +19,7 @@ import javax.inject.Singleton
 @Singleton
 class KokoroTtsSynthesizer @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val client: OkHttpClient,
+    @Named("kokoro_client") private val client: OkHttpClient,
     @Named("hf_token") private val hfToken: String
 ) : TtsSynthesizer {
 
@@ -36,13 +37,20 @@ class KokoroTtsSynthesizer @Inject constructor(
             .post(body.toRequestBody("application/json".toMediaType()))
             .build()
 
+        Log.i("DeepDive", "Kokoro: POST request (text ${text.length} chars)")
         var response = client.newCall(request).execute()
         if (response.code == 503) {
+            Log.i("DeepDive", "Kokoro: 503 cold start — retrying in 25s")
             response.close()
-            delay(5000)
+            delay(25_000)
             response = client.newCall(request).execute()
         }
-        if (!response.isSuccessful) error("Kokoro API error ${response.code}")
+        if (!response.isSuccessful) {
+            val msg = "Kokoro API error ${response.code}: ${response.message}"
+            Log.e("DeepDive", msg)
+            error(msg)
+        }
+        Log.i("DeepDive", "Kokoro: response OK (${response.body?.contentLength()} bytes)")
 
         val file = File(context.cacheDir, "kokoro_${System.currentTimeMillis()}.wav")
         response.body!!.byteStream().use { input ->
