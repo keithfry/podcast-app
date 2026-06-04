@@ -38,25 +38,31 @@ class KokoroTtsSynthesizer @Inject constructor(
             .build()
 
         Log.i("DeepDive", "Kokoro: POST request (text ${text.length} chars)")
-        var response = client.newCall(request).execute()
-        if (response.code == 503) {
-            Log.i("DeepDive", "Kokoro: 503 cold start — retrying in 25s")
-            response.close()
-            delay(25_000)
-            response = client.newCall(request).execute()
-        }
-        if (!response.isSuccessful) {
-            val msg = "Kokoro API error ${response.code}: ${response.message}"
-            Log.e("DeepDive", msg)
-            error(msg)
-        }
-        Log.i("DeepDive", "Kokoro: response OK (${response.body?.contentLength()} bytes)")
+        try {
+            var response = client.newCall(request).execute()
+            if (response.code == 503) {
+                Log.i("DeepDive", "Kokoro: 503 cold start — retrying in 25s")
+                response.close()
+                delay(25_000)
+                response = client.newCall(request).execute()
+            }
+            if (!response.isSuccessful) {
+                val errBody = response.body?.string()?.take(200) ?: ""
+                val msg = "Kokoro API error ${response.code}: ${response.message} — $errBody"
+                Log.e("DeepDive", msg)
+                error(msg)
+            }
+            Log.i("DeepDive", "Kokoro: response OK (${response.body?.contentLength()} bytes)")
 
-        val file = File(context.cacheDir, "kokoro_${System.currentTimeMillis()}.wav")
-        response.body!!.byteStream().use { input ->
-            file.outputStream().use { output -> input.copyTo(output) }
+            val file = File(context.cacheDir, "kokoro_${System.currentTimeMillis()}.wav")
+            response.body!!.byteStream().use { input ->
+                file.outputStream().use { output -> input.copyTo(output) }
+            }
+            file
+        } catch (e: Exception) {
+            Log.e("DeepDive", "Kokoro: exception ${e::class.simpleName}: ${e.message}", e)
+            throw e
         }
-        file
     }
 
     override fun release() {
