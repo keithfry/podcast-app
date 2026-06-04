@@ -206,13 +206,15 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun updateCurrentChapterIndex() {
-        // Freeze position/duration/chapter display for the whole deep dive (Loading + Playing).
         val s = _deepDiveState.value
-        if (s is DeepDiveState.Loading || s == DeepDiveState.Playing) return
+        // Loading: episode paused — freeze everything so bar stays at the saved position.
+        if (s is DeepDiveState.Loading) return
         val pos = controller?.currentPosition ?: return
         val dur = controller?.duration?.takeIf { it > 0 } ?: 0L
         _currentPositionMs.value = pos
         _durationMs.value = dur
+        // Playing: update bar for TTS progress but don't move the chapter highlight.
+        if (s == DeepDiveState.Playing) return
         val idx = _chapters.value.indexOfLast { it.startTimeMs <= pos }
         if (idx >= 0 && idx != _currentChapterIndex.value) {
             Log.d(TAG, "updateCurrentChapterIndex: chapter changed ${_currentChapterIndex.value} -> $idx at pos=${pos}ms")
