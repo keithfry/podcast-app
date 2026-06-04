@@ -25,13 +25,9 @@ class GemmaTextSummarizer @Inject constructor(
 
     override fun isModelAvailable(): Boolean = gpuModelFile.isValid() || cpuModelFile.isValid()
 
-    private fun isOpenClSupported(): Boolean = try {
-        System.loadLibrary("OpenCL"); true
-    } catch (e: UnsatisfiedLinkError) { false }
-
     private fun ensureLoaded() {
         if (inference != null) return
-        val (modelFile, backend, label) = if (isOpenClSupported() && gpuModelFile.isValid()) {
+        val (modelFile, backend, label) = if (OpenClDetector.isSupported() && gpuModelFile.isValid()) {
             Triple(gpuModelFile, LlmInference.Backend.GPU, "GPU")
         } else if (cpuModelFile.isValid()) {
             Triple(cpuModelFile, LlmInference.Backend.CPU, "CPU")

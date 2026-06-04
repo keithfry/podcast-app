@@ -40,20 +40,13 @@ class ModelDownloadManager @Inject constructor(
     val state: StateFlow<ModelDownloadState> = _state
 
     suspend fun downloadModel(pendingUrl: String) = withContext(Dispatchers.IO) {
-        if (isOpenClSupported()) {
+        if (OpenClDetector.isSupported()) {
             Log.i("DeepDive", "OpenCL supported — downloading GPU model")
             downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl, isGpu = true)
         } else {
             Log.i("DeepDive", "OpenCL not supported — downloading CPU model")
             downloadFile(CPU_MODEL_URL, CPU_MODEL_FILE, pendingUrl, isGpu = false)
         }
-    }
-
-    private fun isOpenClSupported(): Boolean = try {
-        System.loadLibrary("OpenCL")
-        true
-    } catch (e: UnsatisfiedLinkError) {
-        false
     }
 
     private suspend fun downloadFile(
