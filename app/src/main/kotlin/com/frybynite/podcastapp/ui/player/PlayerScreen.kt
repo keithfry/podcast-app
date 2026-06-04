@@ -38,6 +38,8 @@ import android.content.res.Configuration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -141,7 +143,7 @@ fun PlayerScreen(
             VoiceCommand.NEXT_CHAPTER -> vm.nextChapter()
             VoiceCommand.PREV_CHAPTER -> vm.prevChapter()
             VoiceCommand.SEEK_FORWARD -> vm.seekForward30s()
-            VoiceCommand.SEEK_BACK -> vm.seekBack30s()
+            VoiceCommand.SEEK_BACK -> vm.seekBack10s()
             VoiceCommand.OPEN_LINK -> currentChapter?.url?.let {
                 CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it))
             }
@@ -242,7 +244,7 @@ fun PlayerScreen(
                 ChapterProgressBar(
                     positionMs = currentPositionMs,
                     durationMs = durationMs,
-                    chapters = chapters,
+                    chapters = if (deepDiveState is DeepDiveState.Playing) emptyList() else chapters,
                     onSeek = { ms -> vm.controller?.seekTo(ms) },
                     onSnapHoverIndex = { snapHoverIdx = it },
                     onDragging = { draggingPositionMs = it },
@@ -261,11 +263,14 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
-                IconButton(onClick = { vm.prevChapter() }) {
+                IconButton(onClick = {
+                    if (deepDiveState is DeepDiveState.Playing) vm.controller?.seekTo(0)
+                    else vm.prevChapter()
+                }) {
                     Icon(Icons.Filled.SkipPrevious, "Previous chapter", Modifier.size(40.dp))
                 }
-                IconButton(onClick = { vm.seekBack30s() }) {
-                    Icon(Icons.Filled.Replay, "-30s", Modifier.size(36.dp))
+                IconButton(onClick = { vm.seekBack10s() }) {
+                    SeekIcon(seconds = 10, isForward = false)
                 }
                 IconButton(
                     onClick = {
@@ -281,9 +286,12 @@ fun PlayerScreen(
                     )
                 }
                 IconButton(onClick = { vm.seekForward30s() }) {
-                    Icon(Icons.Filled.FastForward, "+30s", Modifier.size(36.dp))
+                    SeekIcon(seconds = 30, isForward = true)
                 }
-                IconButton(onClick = { vm.nextChapter() }) {
+                IconButton(onClick = {
+                    if (deepDiveState is DeepDiveState.Playing) vm.skipDeepDive()
+                    else vm.nextChapter()
+                }) {
                     Icon(Icons.Filled.SkipNext, "Next chapter", Modifier.size(40.dp))
                 }
                 TextButton(onClick = { showSpeedSheet = true }) {
@@ -346,7 +354,7 @@ fun PlayerScreen(
                                     ) else Modifier
                                 )
                                 .combinedClickable(
-                                    onClick = { vm.controller?.seekTo(chapter.startTimeMs) },
+                                    onClick = { vm.jumpToChapter(chapter.startTimeMs) },
                                     onLongClick = { showMenu = true }
                                 )
                                 .padding(12.dp),
@@ -625,6 +633,26 @@ private fun DeepDiveStepRow(label: String, active: Boolean, done: Boolean) {
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = tint
+        )
+    }
+}
+
+@Composable
+private fun SeekIcon(seconds: Int, isForward: Boolean) {
+    Box(contentAlignment = Alignment.Center) {
+        Icon(
+            Icons.Filled.Replay,
+            contentDescription = if (isForward) "+${seconds}s" else "-${seconds}s",
+            modifier = Modifier
+                .size(36.dp)
+                .graphicsLayer { scaleX = if (isForward) -1f else 1f }
+        )
+        Text(
+            text = "$seconds",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 10.sp,
+            modifier = Modifier.padding(top = 2.dp)
         )
     }
 }
