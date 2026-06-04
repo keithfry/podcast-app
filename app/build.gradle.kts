@@ -91,5 +91,6 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation("org.json:json:20231013")
     androidTestImplementation(libs.androidx.test.ext.junit)
 }
