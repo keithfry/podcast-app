@@ -24,9 +24,9 @@ class GroqTtsSynthesizer @Inject constructor(
 
     override suspend fun synthesizeToFile(text: String): File = withContext(Dispatchers.IO) {
         val body = JSONObject().apply {
-            put("model", "playai-tts")
+            put("model", "canopylabs/orpheus-v1-english")
             put("input", text)
-            put("voice", "Aaliyah-PlayAI")
+            put("voice", "autumn")
             put("response_format", "wav")
         }.toString()
 
