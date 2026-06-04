@@ -25,7 +25,7 @@ class ModelDownloadManager @Inject constructor(
     private val client: OkHttpClient
 ) {
     companion object {
-        const val MODEL_URL = "https://storage.googleapis.com/mediapipe-models/llm_inference/gemma-2b-it-gpu-int4/float16/latest/model.task"
+        const val MODEL_URL = "https://frybynite-podcast-app-storage.s3.amazonaws.com/models/gemma-2b-it-gpu-int4.bin"
     }
 
     init {
