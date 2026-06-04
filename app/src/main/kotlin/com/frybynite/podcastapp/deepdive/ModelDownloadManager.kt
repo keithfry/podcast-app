@@ -61,6 +61,7 @@ class ModelDownloadManager @Inject constructor(
             _state.value = ModelDownloadState.Complete
             NotificationHelper.postReady(context, pendingUrl)
         }.onFailure { e ->
+            android.util.Log.e("DeepDive", "Model download failed", e)
             File("${dest.absolutePath}.tmp").delete()
             _state.value = ModelDownloadState.Failed(e.message ?: "Download failed")
         }

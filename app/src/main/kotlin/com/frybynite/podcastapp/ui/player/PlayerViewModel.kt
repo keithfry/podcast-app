@@ -259,6 +259,7 @@ class PlayerViewModel @Inject constructor(
                 controller?.play()
                 _deepDiveState.value = DeepDiveState.Playing
             }.onFailure { e ->
+                android.util.Log.e("DeepDive", "moreAboutThis failed", e)
                 _deepDiveState.value = DeepDiveState.Error(e.message ?: "Deep dive failed")
                 controller?.play()
             }
