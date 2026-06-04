@@ -364,7 +364,7 @@ fun PlayerScreen(
                                 enabled = chapter.url != null,
                                 onClick = {
                                     showMenu = false
-                                    vm.moreAboutThis()
+                                    vm.moreAboutThis(chapter.url)
                                 }
                             )
                         }

@@ -206,12 +206,13 @@ class PlayerViewModel @Inject constructor(
         controller?.let { it.seekTo((it.currentPosition - 30_000L).coerceAtLeast(0L)) }
     }
 
-    fun moreAboutThis() {
-        val chapter = _chapters.value.getOrNull(_currentChapterIndex.value) ?: return
-        val url = chapter.url ?: run {
-            _deepDiveState.value = DeepDiveState.Error("No link for this segment")
-            return
-        }
+    fun moreAboutThis(url: String? = null) {
+        val resolvedUrl = url
+            ?: _chapters.value.getOrNull(_currentChapterIndex.value)?.url
+            ?: run {
+                _deepDiveState.value = DeepDiveState.Error("No link for this segment")
+                return
+            }
         if (!summarizer.isModelAvailable()) {
             _deepDiveState.value = DeepDiveState.ModelRequired
             return
@@ -224,7 +225,7 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             runCatching {
-                val ttsFile = deepDiveOrchestrator.process(url)
+                val ttsFile = deepDiveOrchestrator.process(resolvedUrl)
                 pendingTtsFile = ttsFile
 
                 val ttsItem = androidx.media3.common.MediaItem.Builder()
