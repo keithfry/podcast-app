@@ -11,4 +11,7 @@ import javax.inject.Singleton
 abstract class DeepDiveModule {
     @Binds @Singleton
     abstract fun bindTextSummarizer(impl: GemmaTextSummarizer): TextSummarizer
+
+    @Binds @Singleton
+    abstract fun bindTtsSynthesizer(impl: AndroidTtsSynthesizer): TtsSynthesizer
 }
