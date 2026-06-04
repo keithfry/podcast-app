@@ -23,14 +23,17 @@ object DeepDiveModule {
     @Provides @Singleton
     fun provideTtsSynthesizer(
         android: AndroidTtsSynthesizer,
-        groq: GroqTtsSynthesizer
-    ): TtsSynthesizer = if (OpenClDetector.isSupported()) android else groq
+        kokoro: KokoroTtsSynthesizer
+    ): TtsSynthesizer = if (OpenClDetector.isSupported()) android else kokoro
 
     @Provides @Named("groq_api_key")
     fun provideGroqApiKey(): String = BuildConfig.GROQ_API_KEY
 
     @Provides @Named("hf_token")
     fun provideHfToken(): String = BuildConfig.HF_TOKEN
+
+    @Provides @Named("modal_tts_url")
+    fun provideModalTtsUrl(): String = BuildConfig.MODAL_TTS_URL
 
     @Provides @Singleton @Named("kokoro_client")
     fun provideKokoroClient(): OkHttpClient = OkHttpClient.Builder()

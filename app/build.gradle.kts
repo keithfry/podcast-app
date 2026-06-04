@@ -25,6 +25,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "GROQ_API_KEY", "\"${localProperties["GROQ_API_KEY"] ?: ""}\"")
         buildConfigField("String", "HF_TOKEN", "\"${localProperties["HF_TOKEN"] ?: ""}\"")
+        buildConfigField("String", "MODAL_TTS_URL", "\"${localProperties["MODAL_TTS_URL"] ?: ""}\"")
     }
 
     buildTypes {

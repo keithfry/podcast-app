@@ -19,7 +19,7 @@ import javax.inject.Singleton
 class KokoroTtsSynthesizer @Inject constructor(
     @ApplicationContext private val context: Context,
     @Named("kokoro_client") private val client: OkHttpClient,
-    @Named("hf_token") private val hfToken: String
+    @Named("modal_tts_url") private val endpointUrl: String
 ) : TtsSynthesizer {
 
     override suspend fun synthesizeToFile(text: String): File = withContext(Dispatchers.IO) {
@@ -29,29 +29,21 @@ class KokoroTtsSynthesizer @Inject constructor(
         }.toString()
 
         val request = Request.Builder()
-            .url("https://router.huggingface.co/deepinfra/hexgrad/Kokoro-82M")
-            .addHeader("Authorization", "Bearer $hfToken")
+            .url(endpointUrl)
             .post(body.toRequestBody("application/json".toMediaType()))
             .build()
 
-        Log.i("DeepDive", "Kokoro: POST request to deepinfra router (text ${text.length} chars)")
+        Log.i("DeepDive", "Kokoro: POST to Modal endpoint (text ${text.length} chars)")
         try {
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
                 val errBody = response.body?.string()?.take(200) ?: ""
-                val msg = "Kokoro API error ${response.code}: ${response.message} — $errBody"
+                val msg = "Kokoro error ${response.code}: ${response.message} — $errBody"
                 Log.e("DeepDive", msg)
                 error(msg)
             }
-            val json = JSONObject(response.body!!.string())
-            val audioUrl = json.getJSONObject("audio").getString("url")
-            Log.i("DeepDive", "Kokoro: audio URL received, fetching bytes")
-
-            val audioResponse = client.newCall(Request.Builder().url(audioUrl).build()).execute()
-            if (!audioResponse.isSuccessful) error("Kokoro audio fetch error ${audioResponse.code}")
-
             val file = File(context.cacheDir, "kokoro_${System.currentTimeMillis()}.wav")
-            audioResponse.body!!.byteStream().use { input ->
+            response.body!!.byteStream().use { input ->
                 file.outputStream().use { output -> input.copyTo(output) }
             }
             Log.i("DeepDive", "Kokoro: done — ${file.length()} bytes written")
@@ -62,7 +54,5 @@ class KokoroTtsSynthesizer @Inject constructor(
         }
     }
 
-    override fun release() {
-        // no-op, stateless
-    }
+    override fun release() {}
 }
