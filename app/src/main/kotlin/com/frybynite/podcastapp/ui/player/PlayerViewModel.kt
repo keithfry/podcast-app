@@ -26,7 +26,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.frybynite.podcastapp.deepdive.DeepDiveRouter
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -77,9 +79,18 @@ class PlayerViewModel @Inject constructor(
     val deepDiveState: StateFlow<DeepDiveState> = _deepDiveState.asStateFlow()
     val modelDownloadState = modelDownloadManager.state
     private var pendingTtsFile: java.io.File? = null
+    private var pendingDeepDiveUrl: String? = null
 
     var controller: MediaController? = null
         private set
+
+    init {
+        viewModelScope.launch {
+            DeepDiveRouter.pendingUrl.collectLatest { url ->
+                if (url.isNotEmpty()) moreAboutThis(url)
+            }
+        }
+    }
 
     fun connect(audioUrl: String) {
         val token = SessionToken(
@@ -213,6 +224,7 @@ class PlayerViewModel @Inject constructor(
                 _deepDiveState.value = DeepDiveState.Error("No link for this segment")
                 return
             }
+        pendingDeepDiveUrl = resolvedUrl
         if (!summarizer.isModelAvailable()) {
             _deepDiveState.value = DeepDiveState.ModelRequired
             return
@@ -253,7 +265,11 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    fun downloadModel() { viewModelScope.launch { modelDownloadManager.downloadModel() } }
+    fun downloadModel() {
+        viewModelScope.launch {
+            modelDownloadManager.downloadModel(pendingDeepDiveUrl ?: "")
+        }
+    }
 
     fun dismissDeepDiveError() { _deepDiveState.value = DeepDiveState.Idle }
 
