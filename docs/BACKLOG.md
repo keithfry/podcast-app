@@ -18,6 +18,10 @@
 
 - **Gemini / assistant audio-triggered media controls** — allow Google Assistant / Gemini voice commands ("next", "skip", "back", "pause", etc.) issued outside the app to control playback. Requires registering a `MediaSessionCompat` or `MediaBrowserServiceCompat` that the Android media button framework can route assistant commands to, so Gemini's audio-triggered intents reach the existing `PlaybackService` without the app being foregrounded.
 
+## Chapter list UX
+
+- **"▶ More about this" play indicator on cached chapters** — when a deep dive file is already cached for a chapter, show a small "(▶) More about this" line beneath the chapter title in the list, so the user can see at a glance that the deep dive is ready to play instantly (no loading overlay). Needs design discussion: exact phrasing/icon, whether it appears always or only when the deep dive is the most recent, and interaction (tap the sub-line to trigger, or just visual hint). Relates to `CacheStorage` + `DeepDiveDao` added in caching work.
+
 ## TTS
 
 - **Review Miso TTS as alternative** — evaluate Miso TTS for the "More about this" deep-dive audio generation, vs current Modal/Kokoro + Android TextToSpeech fallback. Compare voice quality, latency, cost, and on-device vs cloud tradeoffs.
