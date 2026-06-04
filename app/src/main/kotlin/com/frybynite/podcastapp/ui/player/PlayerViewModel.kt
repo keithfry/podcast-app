@@ -319,21 +319,27 @@ class PlayerViewModel @Inject constructor(
         _deepDiveChapterIndex.value = sourceChapterIndex ?: _currentChapterIndex.value
         android.util.Log.i("DeepDive", "moreAboutThis: savedPos=${deepDiveResumePositionMs}ms episodeUri=$deepDiveResumeEpisodeUri sourceChapter=${_deepDiveChapterIndex.value}")
 
-        _deepDiveState.value = DeepDiveState.Loading(DeepDiveStep.FETCHING)
         exitToneJob?.cancel()
         exitToneJob = null
-        controller?.pause()
-        tickingJob?.cancel()
-        tickingJob = viewModelScope.launch {
-            while (true) {
-                toneGen.startTone(ToneGenerator.TONE_PROP_BEEP, 35)
-                delay(1200)
-            }
-        }
 
         viewModelScope.launch {
             runCatching {
                 val chapterTitle = _chapters.value.getOrNull(_deepDiveChapterIndex.value ?: -1)?.title
+                val cached = deepDiveOrchestrator.isCached(resolvedUrl, deepDiveResumeEpisodeUri)
+
+                if (!cached) {
+                    // Show loading overlay + tick + pause only when generation is needed.
+                    _deepDiveState.value = DeepDiveState.Loading(DeepDiveStep.FETCHING)
+                    controller?.pause()
+                    tickingJob?.cancel()
+                    tickingJob = viewModelScope.launch {
+                        while (true) {
+                            toneGen.startTone(ToneGenerator.TONE_PROP_BEEP, 35)
+                            delay(1200)
+                        }
+                    }
+                }
+
                 val ttsFile = deepDiveOrchestrator.process(resolvedUrl, deepDiveResumeEpisodeUri, chapterTitle) { step ->
                     _deepDiveState.value = DeepDiveState.Loading(step)
                     android.util.Log.i("DeepDive", "moreAboutThis: step=$step")
@@ -342,6 +348,8 @@ class PlayerViewModel @Inject constructor(
 
                 tickingJob?.cancel()
                 tickingJob = null
+                // On cache hit path the episode is still playing; pause now before injecting TTS.
+                if (cached) controller?.pause()
                 toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 400)
                 delay(500)
 
