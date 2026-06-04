@@ -40,13 +40,20 @@ class ModelDownloadManager @Inject constructor(
     val state: StateFlow<ModelDownloadState> = _state
 
     suspend fun downloadModel(pendingUrl: String) = withContext(Dispatchers.IO) {
-        // Download CPU model as reliable baseline
-        val cpuSuccess = downloadFile(CPU_MODEL_URL, CPU_MODEL_FILE, pendingUrl, isGpu = false)
-        // Also attempt GPU model in background — used if device supports OpenCL
-        if (cpuSuccess) {
-            Log.i("DeepDive", "CPU model ready, attempting GPU model download")
-            downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl = "", isGpu = true)
+        if (isOpenClSupported()) {
+            Log.i("DeepDive", "OpenCL supported — downloading GPU model")
+            downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl, isGpu = true)
+        } else {
+            Log.i("DeepDive", "OpenCL not supported — downloading CPU model")
+            downloadFile(CPU_MODEL_URL, CPU_MODEL_FILE, pendingUrl, isGpu = false)
         }
+    }
+
+    private fun isOpenClSupported(): Boolean = try {
+        System.loadLibrary("OpenCL")
+        true
+    } catch (e: UnsatisfiedLinkError) {
+        false
     }
 
     private suspend fun downloadFile(
@@ -57,7 +64,7 @@ class ModelDownloadManager @Inject constructor(
     ): Boolean = withContext(Dispatchers.IO) {
         val dest = context.filesDir.resolve(relativePath)
         dest.parentFile?.mkdirs()
-        if (!isGpu || _state.value == ModelDownloadState.Idle) _state.value = ModelDownloadState.Downloading(0f)
+        _state.value = ModelDownloadState.Downloading(0f)
         runCatching {
             val response = client.newCall(Request.Builder().url(url).build()).execute()
             if (!response.isSuccessful) error("HTTP ${response.code}: ${response.message}")
@@ -77,14 +84,12 @@ class ModelDownloadManager @Inject constructor(
                 }
             }
             tmp.renameTo(dest)
-            if (!isGpu) {
-                _state.value = ModelDownloadState.Complete
-                if (pendingUrl.isNotEmpty()) NotificationHelper.postReady(context, pendingUrl)
-            }
+            _state.value = ModelDownloadState.Complete
+            if (pendingUrl.isNotEmpty()) NotificationHelper.postReady(context, pendingUrl)
         }.onFailure { e ->
             Log.e("DeepDive", "Model download failed (${if (isGpu) "GPU" else "CPU"})", e)
             File("${dest.absolutePath}.tmp").delete()
-            if (!isGpu) _state.value = ModelDownloadState.Failed(e.message ?: "Download failed")
+            _state.value = ModelDownloadState.Failed(e.message ?: "Download failed")
         }.isSuccess
     }
 }
