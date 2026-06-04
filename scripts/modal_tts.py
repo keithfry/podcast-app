@@ -40,7 +40,7 @@ class KokoroTTS:
         from kokoro import KPipeline
         self.pipeline = KPipeline(lang_code="a")  # 'a' = American English
 
-    @modal.web_endpoint(method="POST")
+    @modal.fastapi_endpoint(method="POST")
     def synthesize(self, body: dict) -> "fastapi.responses.Response":
         import soundfile as sf
         from fastapi.responses import Response
