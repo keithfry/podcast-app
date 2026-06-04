@@ -21,17 +21,20 @@ class GroqTextSummarizer @Inject constructor(
 ) : TextSummarizer {
 
     @JsonClass(generateAdapter = false)
-    private data class GroqMessage(val role: String, val content: String)
+    private data class GroqRequestMessage(val role: String, val content: String)
 
     @JsonClass(generateAdapter = false)
     private data class GroqRequest(
         val model: String,
-        val messages: List<GroqMessage>,
+        val messages: List<GroqRequestMessage>,
         @Json(name = "max_tokens") val maxTokens: Int
     )
 
     @JsonClass(generateAdapter = false)
-    private data class GroqChoice(val message: GroqMessage)
+    private data class GroqResponseMessage(val role: String? = null, val content: String)
+
+    @JsonClass(generateAdapter = false)
+    private data class GroqChoice(val message: GroqResponseMessage)
 
     @JsonClass(generateAdapter = false)
     private data class GroqResponse(val choices: List<GroqChoice>)
@@ -62,7 +65,7 @@ Summary:"""
         val requestBody = requestAdapter.toJson(
             GroqRequest(
                 model = "llama-3.1-8b-instant",
-                messages = listOf(GroqMessage(role = "user", content = prompt)),
+                messages = listOf(GroqRequestMessage(role = "user", content = prompt)),
                 maxTokens = 512
             )
         )
