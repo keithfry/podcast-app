@@ -32,7 +32,10 @@ import com.frybynite.podcastapp.deepdive.DeepDiveRouter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.util.Log
 import javax.inject.Inject
+
+private const val TAG = "PlayerVM"
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
@@ -80,6 +83,11 @@ class PlayerViewModel @Inject constructor(
     private val _deepDiveState = MutableStateFlow<DeepDiveState>(DeepDiveState.Idle)
     val deepDiveState: StateFlow<DeepDiveState> = _deepDiveState.asStateFlow()
     val modelDownloadState = modelDownloadManager.state
+
+    // Chapter the deep dive was launched from; the "More About This…" row is inserted after it.
+    private val _deepDiveChapterIndex = MutableStateFlow<Int?>(null)
+    val deepDiveChapterIndex: StateFlow<Int?> = _deepDiveChapterIndex.asStateFlow()
+
     private var pendingTtsFile: java.io.File? = null
     private var pendingDeepDiveUrl: String? = null
 
@@ -101,6 +109,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun connect(audioUrl: String) {
+        Log.i(TAG, "connect: audioUrl=$audioUrl")
         val token = SessionToken(
             context,
             ComponentName(context, PlaybackService::class.java)
@@ -109,9 +118,11 @@ class PlayerViewModel @Inject constructor(
         future.addListener({
             runCatching {
                 controller = future.get()
+                Log.i(TAG, "connect: MediaController connected, setting speed=${speedPrefs.speed}")
                 controller?.setPlaybackParameters(PlaybackParameters(speedPrefs.speed))
                 controller?.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(playing: Boolean) {
+                        Log.d(TAG, "onIsPlayingChanged: playing=$playing")
                         _isPlaying.value = playing
                     }
                     override fun onPositionDiscontinuity(
@@ -119,11 +130,14 @@ class PlayerViewModel @Inject constructor(
                         newPosition: Player.PositionInfo,
                         reason: Int
                     ) {
+                        Log.d(TAG, "onPositionDiscontinuity: ${oldPosition.positionMs}ms -> ${newPosition.positionMs}ms reason=$reason")
                         updateCurrentChapterIndex()
                     }
                     override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                         val incomingId = mediaItem?.mediaId ?: return
+                        Log.i(TAG, "onMediaItemTransition: mediaId=$incomingId reason=$reason deepDiveState=${_deepDiveState.value}")
                         if (!incomingId.startsWith("tts://") && _deepDiveState.value == DeepDiveState.Playing) {
+                            Log.i(TAG, "onMediaItemTransition: deep dive ended by media transition, playing exit tone")
                             controller?.pause()
                             exitToneJob = viewModelScope.launch {
                                 toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 300)
@@ -131,6 +145,8 @@ class PlayerViewModel @Inject constructor(
                                 pendingTtsFile?.delete()
                                 pendingTtsFile = null
                                 _deepDiveState.value = DeepDiveState.Idle
+                                _deepDiveChapterIndex.value = null
+                                controller?.seekTo(deepDiveResumePositionMs)
                                 controller?.play()
                                 exitToneJob = null
                             }
@@ -139,33 +155,51 @@ class PlayerViewModel @Inject constructor(
                     }
                 })
                 loadAndPlay(audioUrl)
-            }.onFailure { /* controller stays null; UI handles gracefully */ }
+            }.onFailure { e ->
+                Log.e(TAG, "connect: MediaController failed", e)
+            }
         }, context.mainExecutor)
     }
 
     fun playEpisode(episode: Episode) {
+        Log.i(TAG, "playEpisode: title=${episode.title} audioUrl=${episode.audioUrl} chaptersUrl=${episode.chaptersUrl}")
         chaptersJob?.cancel()
         chaptersJob = viewModelScope.launch {
             episode.chaptersUrl?.let { url ->
+                Log.d(TAG, "playEpisode: fetching chapters from $url")
                 chapterRepo.fetchAndCacheChapters(episode.audioUrl, url)
             }
             chapterRepo.chaptersForEpisode(episode.audioUrl).collect { list ->
+                Log.d(TAG, "playEpisode: chapters updated count=${list.size}")
                 _chapters.value = list
             }
         }
+        val metadata = androidx.media3.common.MediaMetadata.Builder()
+            .setTitle(episode.title)
+            .setArtist(_podcastTitle.value)
+            .apply { _podcastImageUrl.value?.let { setArtworkUri(android.net.Uri.parse(it)) } }
+            .build()
         val item = androidx.media3.common.MediaItem.Builder()
             .setMediaId(episode.audioUrl)
             .setUri(episode.audioUrl)
+            .setMediaMetadata(metadata)
             .build()
+        Log.d(TAG, "playEpisode: setting media item and calling prepare/play")
         controller?.setMediaItem(item)
         controller?.prepare()
         controller?.play()
     }
 
     fun loadAndPlay(audioUrl: String) {
+        Log.i(TAG, "loadAndPlay: audioUrl=$audioUrl")
         viewModelScope.launch {
-            val entity = episodeDao.getByAudioUrl(audioUrl) ?: return@launch
+            val entity = episodeDao.getByAudioUrl(audioUrl)
+            if (entity == null) {
+                Log.w(TAG, "loadAndPlay: no episode found for audioUrl=$audioUrl")
+                return@launch
+            }
             val podcast = podcastDao.getByUrl(entity.podcastFeedUrl)
+            Log.d(TAG, "loadAndPlay: podcast=${podcast?.title} imageUrl=${podcast?.imageUrl}")
             _podcastImageUrl.value = podcast?.imageUrl
             _podcastTitle.value = podcast?.title
             playEpisode(entity.toDomain())
@@ -173,16 +207,24 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun updateCurrentChapterIndex() {
+        // Freeze position/duration/chapter display for the whole deep dive (Loading + Playing).
+        val s = _deepDiveState.value
+        if (s is DeepDiveState.Loading || s == DeepDiveState.Playing) return
         val pos = controller?.currentPosition ?: return
         val dur = controller?.duration?.takeIf { it > 0 } ?: 0L
         _currentPositionMs.value = pos
         _durationMs.value = dur
-        if (_deepDiveState.value == DeepDiveState.Playing) return
         val idx = _chapters.value.indexOfLast { it.startTimeMs <= pos }
-        if (idx >= 0) _currentChapterIndex.value = idx
+        if (idx >= 0 && idx != _currentChapterIndex.value) {
+            Log.d(TAG, "updateCurrentChapterIndex: chapter changed ${_currentChapterIndex.value} -> $idx at pos=${pos}ms")
+            _currentChapterIndex.value = idx
+        } else if (idx >= 0) {
+            _currentChapterIndex.value = idx
+        }
     }
 
     fun nextChapter() {
+        Log.i(TAG, "nextChapter: pos=${controller?.currentPosition}ms currentIdx=${_currentChapterIndex.value}")
         controller?.sendCustomCommand(
             SessionCommand(PlaybackService.CMD_NEXT_CHAPTER, android.os.Bundle.EMPTY),
             android.os.Bundle.EMPTY
@@ -190,6 +232,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun prevChapter() {
+        Log.i(TAG, "prevChapter: pos=${controller?.currentPosition}ms currentIdx=${_currentChapterIndex.value}")
         controller?.sendCustomCommand(
             SessionCommand(PlaybackService.CMD_PREV_CHAPTER, android.os.Bundle.EMPTY),
             android.os.Bundle.EMPTY
@@ -197,11 +240,14 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun setSleepTimer(minutes: Int) {
-        sleepTimerJob?.cancel()
         if (minutes == 0) {
+            Log.i(TAG, "setSleepTimer: cancelled")
+            sleepTimerJob?.cancel()
             _sleepTimerSeconds.value = null
             return
         }
+        Log.i(TAG, "setSleepTimer: ${minutes}min")
+        sleepTimerJob?.cancel()
         var remaining = minutes * 60
         _sleepTimerSeconds.value = remaining
         sleepTimerJob = viewModelScope.launch {
@@ -210,6 +256,7 @@ class PlayerViewModel @Inject constructor(
                 remaining--
                 _sleepTimerSeconds.value = remaining
             }
+            Log.i(TAG, "setSleepTimer: fired, pausing playback")
             controller?.pause()
             _sleepTimerSeconds.value = null
         }
@@ -217,6 +264,7 @@ class PlayerViewModel @Inject constructor(
 
     fun setSpeed(speed: Float) {
         val rounded = (speed * 10).toInt() / 10f
+        Log.i(TAG, "setSpeed: ${_playbackSpeed.value} -> $rounded")
         speedPrefs.speed = rounded
         _playbackSpeed.value = rounded
         controller?.setPlaybackParameters(PlaybackParameters(rounded))
@@ -224,20 +272,33 @@ class PlayerViewModel @Inject constructor(
 
     fun seekForward30s() {
         controller?.let {
-            val duration = it.duration.takeIf { d -> d > 0 } ?: it.currentPosition
-            it.seekTo((it.currentPosition + 30_000L).coerceAtMost(duration))
+            val pos = it.currentPosition
+            val duration = it.duration.takeIf { d -> d > 0 } ?: pos
+            val target = (pos + 30_000L).coerceAtMost(duration)
+            Log.i(TAG, "seekForward30s: ${pos}ms -> ${target}ms (duration=${duration}ms)")
+            it.seekTo(target)
         }
     }
 
     fun seekBack10s() {
-        controller?.let { it.seekTo((it.currentPosition - 10_000L).coerceAtLeast(0L)) }
+        controller?.let {
+            val pos = it.currentPosition
+            val target = (pos - 10_000L).coerceAtLeast(0L)
+            Log.i(TAG, "seekBack10s: ${pos}ms -> ${target}ms")
+            it.seekTo(target)
+        }
     }
 
     fun seekBack30s() {
-        controller?.let { it.seekTo((it.currentPosition - 30_000L).coerceAtLeast(0L)) }
+        controller?.let {
+            val pos = it.currentPosition
+            val target = (pos - 30_000L).coerceAtLeast(0L)
+            Log.i(TAG, "seekBack30s: ${pos}ms -> ${target}ms")
+            it.seekTo(target)
+        }
     }
 
-    fun moreAboutThis(url: String? = null) {
+    fun moreAboutThis(url: String? = null, sourceChapterIndex: Int? = null) {
         val resolvedUrl = url
             ?: _chapters.value.getOrNull(_currentChapterIndex.value)?.url
             ?: run {
@@ -254,7 +315,8 @@ class PlayerViewModel @Inject constructor(
         }
         deepDiveResumePositionMs = controller?.currentPosition ?: return
         deepDiveResumeEpisodeUri = controller?.currentMediaItem?.mediaId ?: return
-        android.util.Log.i("DeepDive", "moreAboutThis: savedPos=${deepDiveResumePositionMs}ms episodeUri=$deepDiveResumeEpisodeUri")
+        _deepDiveChapterIndex.value = sourceChapterIndex ?: _currentChapterIndex.value
+        android.util.Log.i("DeepDive", "moreAboutThis: savedPos=${deepDiveResumePositionMs}ms episodeUri=$deepDiveResumeEpisodeUri sourceChapter=${_deepDiveChapterIndex.value}")
 
         _deepDiveState.value = DeepDiveState.Loading(DeepDiveStep.FETCHING)
         exitToneJob?.cancel()
@@ -288,11 +350,6 @@ class PlayerViewModel @Inject constructor(
                 val resumeItem = androidx.media3.common.MediaItem.Builder()
                     .setMediaId(deepDiveResumeEpisodeUri!!)
                     .setUri(deepDiveResumeEpisodeUri!!)
-                    .setClippingConfiguration(
-                        androidx.media3.common.MediaItem.ClippingConfiguration.Builder()
-                            .setStartPositionMs(deepDiveResumePositionMs)
-                            .build()
-                    )
                     .build()
 
                 android.util.Log.i("DeepDive", "moreAboutThis: injecting TTS item, resuming at ${deepDiveResumePositionMs}ms")
@@ -306,6 +363,7 @@ class PlayerViewModel @Inject constructor(
                 tickingJob = null
                 android.util.Log.e("DeepDive", "moreAboutThis failed", e)
                 _deepDiveState.value = DeepDiveState.Error(e.message ?: "Deep dive failed")
+                _deepDiveChapterIndex.value = null
                 controller?.play()
             }
         }
@@ -320,6 +378,7 @@ class PlayerViewModel @Inject constructor(
     fun skipDeepDive() {
         if (_deepDiveState.value != DeepDiveState.Playing) return
         val episodeUri = deepDiveResumeEpisodeUri ?: return
+        Log.i(TAG, "skipDeepDive: resuming episode at ${deepDiveResumePositionMs}ms uri=$episodeUri")
         exitToneJob?.cancel()
         controller?.pause()
         exitToneJob = viewModelScope.launch {
@@ -328,50 +387,50 @@ class PlayerViewModel @Inject constructor(
             val resumeItem = androidx.media3.common.MediaItem.Builder()
                 .setMediaId(episodeUri)
                 .setUri(episodeUri)
-                .setClippingConfiguration(
-                    androidx.media3.common.MediaItem.ClippingConfiguration.Builder()
-                        .setStartPositionMs(deepDiveResumePositionMs)
-                        .build()
-                )
                 .build()
             controller?.setMediaItem(resumeItem)
             controller?.prepare()
+            controller?.seekTo(deepDiveResumePositionMs)
             controller?.play()
             pendingTtsFile?.delete()
             pendingTtsFile = null
             _deepDiveState.value = DeepDiveState.Idle
+            _deepDiveChapterIndex.value = null
             exitToneJob = null
         }
     }
 
     fun jumpToChapter(startTimeMs: Long) {
         if (_deepDiveState.value != DeepDiveState.Playing) {
+            Log.i(TAG, "jumpToChapter: seeking to ${startTimeMs}ms")
             controller?.seekTo(startTimeMs)
             return
         }
+        Log.i(TAG, "jumpToChapter: interrupting deep dive, jumping to ${startTimeMs}ms")
         exitToneJob?.cancel()
         exitToneJob = null
         val episodeUri = deepDiveResumeEpisodeUri ?: return
         val resumeItem = androidx.media3.common.MediaItem.Builder()
             .setMediaId(episodeUri)
             .setUri(episodeUri)
-            .setClippingConfiguration(
-                androidx.media3.common.MediaItem.ClippingConfiguration.Builder()
-                    .setStartPositionMs(startTimeMs)
-                    .build()
-            )
             .build()
         controller?.setMediaItem(resumeItem)
         controller?.prepare()
+        controller?.seekTo(startTimeMs)
         controller?.play()
         pendingTtsFile?.delete()
         pendingTtsFile = null
         _deepDiveState.value = DeepDiveState.Idle
+        _deepDiveChapterIndex.value = null
     }
 
-    fun dismissDeepDiveError() { _deepDiveState.value = DeepDiveState.Idle }
+    fun dismissDeepDiveError() {
+        _deepDiveState.value = DeepDiveState.Idle
+        _deepDiveChapterIndex.value = null
+    }
 
     override fun onCleared() {
+        Log.i(TAG, "onCleared: releasing controller and resources")
         tickingJob?.cancel()
         exitToneJob?.cancel()
         toneGen.release()

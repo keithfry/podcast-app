@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +60,7 @@ fun PlayerScreen(
     val currentPositionMs by vm.currentPositionMs.collectAsStateWithLifecycle()
     val durationMs by vm.durationMs.collectAsStateWithLifecycle()
     val deepDiveState by vm.deepDiveState.collectAsStateWithLifecycle()
+    val deepDiveChapterIndex by vm.deepDiveChapterIndex.collectAsStateWithLifecycle()
     val modelDownloadState by vm.modelDownloadState.collectAsStateWithLifecycle()
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
@@ -406,12 +408,32 @@ fun PlayerScreen(
                                 enabled = chapter.url != null,
                                 onClick = {
                                     showMenu = false
-                                    vm.moreAboutThis(chapter.url)
+                                    vm.moreAboutThis(chapter.url, idx)
                                 }
                             )
                         }
                     }
                     HorizontalDivider()
+                    if (deepDiveState is DeepDiveState.Playing && deepDiveChapterIndex == idx) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Spacer(Modifier.width(52.dp))
+                            Text(
+                                "More About This…",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                fontStyle = FontStyle.Italic,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        HorizontalDivider()
+                    }
                 }
             }
         }

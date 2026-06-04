@@ -27,8 +27,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.future
+import android.util.Log
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "PlaybackSvc"
 
 @AndroidEntryPoint
 class PlaybackService : MediaLibraryService() {
@@ -86,13 +89,18 @@ class PlaybackService : MediaLibraryService() {
             customCommand: SessionCommand,
             args: Bundle
         ): ListenableFuture<SessionResult> {
+            val pos = player.currentPosition
             when (customCommand.customAction) {
-                CMD_NEXT_CHAPTER ->
-                    ChapterNavigator.nextChapterStart(chapters, player.currentPosition)
-                        ?.let { player.seekTo(it) }
-                CMD_PREV_CHAPTER ->
-                    ChapterNavigator.prevChapterStart(chapters, player.currentPosition)
-                        ?.let { player.seekTo(it) }
+                CMD_NEXT_CHAPTER -> {
+                    val target = ChapterNavigator.nextChapterStart(chapters, pos)
+                    Log.i(TAG, "CMD_NEXT_CHAPTER: pos=${pos}ms chapters=${chapters.size} target=${target}ms")
+                    target?.let { player.seekTo(it) }
+                }
+                CMD_PREV_CHAPTER -> {
+                    val target = ChapterNavigator.prevChapterStart(chapters, pos)
+                    Log.i(TAG, "CMD_PREV_CHAPTER: pos=${pos}ms chapters=${chapters.size} target=${target}ms")
+                    target?.let { player.seekTo(it) }
+                }
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
@@ -153,6 +161,7 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
+        Log.i(TAG, "onCreate: starting PlaybackService")
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -165,9 +174,11 @@ class PlaybackService : MediaLibraryService() {
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 val audioUrl = mediaItem?.mediaId ?: return
+                Log.i(TAG, "onMediaItemTransition: audioUrl=$audioUrl reason=$reason")
                 chaptersJob?.cancel()
                 chaptersJob = serviceScope.launch {
                     chapterRepo.chaptersForEpisode(audioUrl).collect { list ->
+                        Log.d(TAG, "chapters updated: count=${list.size} for $audioUrl")
                         chapters = list
                     }
                 }
@@ -186,6 +197,7 @@ class PlaybackService : MediaLibraryService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaLibrarySession
 
     override fun onDestroy() {
+        Log.i(TAG, "onDestroy: releasing session and player")
         serviceScope.cancel()
         mediaLibrarySession.release()
         player.release()

@@ -28,6 +28,7 @@ class DeepDiveOrchestrator @Inject constructor(
         val text = fetcher.fetch(chapterUrl)
         Log.i("DeepDive", "process: fetched ${text.length} chars")
         onStep(DeepDiveStep.SUMMARIZING)
+        Log.i("DeepDive", "process: summarizing url=$chapterUrl existingSummary=${existingSummary != null}")
         val summary = summarizer.summarize(text, existingSummary)
         Log.i("DeepDive", "process: summary=${summary.length} chars — starting TTS")
         onStep(DeepDiveStep.SYNTHESIZING)

@@ -5,10 +5,13 @@ import com.frybynite.podcastapp.data.db.entities.ChapterEntity
 import com.frybynite.podcastapp.data.network.FeedApi
 import com.frybynite.podcastapp.data.network.toDomainChapters
 import com.frybynite.podcastapp.domain.model.Chapter
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG = "ChapterRepo"
 
 @Singleton
 class ChapterRepository @Inject constructor(
@@ -21,9 +24,15 @@ class ChapterRepository @Inject constructor(
         }
 
     suspend fun fetchAndCacheChapters(audioUrl: String, chaptersUrl: String) {
-        if (chapterDao.countForEpisode(audioUrl) > 0) return
+        val cached = chapterDao.countForEpisode(audioUrl)
+        if (cached > 0) {
+            Log.d(TAG, "fetchAndCacheChapters: cache hit count=$cached for $audioUrl")
+            return
+        }
+        Log.i(TAG, "fetchAndCacheChapters: fetching from $chaptersUrl")
         val response = feedApi.fetchChapters(chaptersUrl)
         val chapters = response.toDomainChapters(audioUrl).map { it.toEntity() }
+        Log.i(TAG, "fetchAndCacheChapters: saving count=${chapters.size} chapters for $audioUrl")
         chapterDao.replaceChaptersForEpisode(audioUrl, chapters)
     }
 }
