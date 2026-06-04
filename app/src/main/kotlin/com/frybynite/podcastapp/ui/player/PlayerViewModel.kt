@@ -2,6 +2,8 @@ package com.frybynite.podcastapp.ui.player
 
 import android.content.ComponentName
 import android.content.Context
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
@@ -81,6 +83,9 @@ class PlayerViewModel @Inject constructor(
     private var pendingTtsFile: java.io.File? = null
     private var pendingDeepDiveUrl: String? = null
 
+    private val toneGen by lazy { ToneGenerator(AudioManager.STREAM_MUSIC, 60) }
+    private var tickingJob: Job? = null
+
     var controller: MediaController? = null
         private set
 
@@ -116,9 +121,15 @@ class PlayerViewModel @Inject constructor(
                     override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                         val incomingId = mediaItem?.mediaId ?: return
                         if (!incomingId.startsWith("tts://") && _deepDiveState.value == DeepDiveState.Playing) {
-                            pendingTtsFile?.delete()
-                            pendingTtsFile = null
-                            _deepDiveState.value = DeepDiveState.Idle
+                            controller?.pause()
+                            viewModelScope.launch {
+                                toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 300)
+                                delay(400)
+                                pendingTtsFile?.delete()
+                                pendingTtsFile = null
+                                _deepDiveState.value = DeepDiveState.Idle
+                                controller?.play()
+                            }
                         }
                         updateCurrentChapterIndex()
                     }
@@ -238,6 +249,13 @@ class PlayerViewModel @Inject constructor(
 
         _deepDiveState.value = DeepDiveState.Loading(DeepDiveStep.FETCHING)
         controller?.pause()
+        tickingJob?.cancel()
+        tickingJob = viewModelScope.launch {
+            while (true) {
+                toneGen.startTone(ToneGenerator.TONE_PROP_BEEP, 35)
+                delay(1200)
+            }
+        }
 
         viewModelScope.launch {
             runCatching {
@@ -246,6 +264,11 @@ class PlayerViewModel @Inject constructor(
                     android.util.Log.i("DeepDive", "moreAboutThis: step=$step")
                 }
                 pendingTtsFile = ttsFile
+
+                tickingJob?.cancel()
+                tickingJob = null
+                toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 400)
+                delay(500)
 
                 val ttsItem = androidx.media3.common.MediaItem.Builder()
                     .setMediaId("tts://${ttsFile.name}")
@@ -268,6 +291,8 @@ class PlayerViewModel @Inject constructor(
                 _deepDiveState.value = DeepDiveState.Playing
                 android.util.Log.i("DeepDive", "moreAboutThis: playing")
             }.onFailure { e ->
+                tickingJob?.cancel()
+                tickingJob = null
                 android.util.Log.e("DeepDive", "moreAboutThis failed", e)
                 _deepDiveState.value = DeepDiveState.Error(e.message ?: "Deep dive failed")
                 controller?.play()
@@ -284,6 +309,8 @@ class PlayerViewModel @Inject constructor(
     fun dismissDeepDiveError() { _deepDiveState.value = DeepDiveState.Idle }
 
     override fun onCleared() {
+        tickingJob?.cancel()
+        toneGen.release()
         pendingTtsFile?.delete()
         controller?.release()
         super.onCleared()
