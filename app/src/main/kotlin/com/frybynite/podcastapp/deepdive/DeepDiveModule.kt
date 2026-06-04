@@ -1,7 +1,6 @@
 package com.frybynite.podcastapp.deepdive
 
 import com.frybynite.podcastapp.BuildConfig
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,18 +10,23 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class DeepDiveModule {
-    @Binds @Singleton
-    abstract fun bindTextSummarizer(impl: GroqTextSummarizer): TextSummarizer
+object DeepDiveModule {
 
-    @Binds @Singleton
-    abstract fun bindTtsSynthesizer(impl: AndroidTtsSynthesizer): TtsSynthesizer
+    @Provides @Singleton
+    fun provideTextSummarizer(
+        gemma: GemmaTextSummarizer,
+        groq: GroqTextSummarizer
+    ): TextSummarizer = if (OpenClDetector.isSupported()) gemma else groq
 
-    companion object {
-        @Provides @Named("groq_api_key")
-        fun provideGroqApiKey(): String = BuildConfig.GROQ_API_KEY
+    @Provides @Singleton
+    fun provideTtsSynthesizer(
+        android: AndroidTtsSynthesizer,
+        kokoro: KokoroTtsSynthesizer
+    ): TtsSynthesizer = if (OpenClDetector.isSupported()) android else kokoro
 
-        @Provides @Named("hf_token")
-        fun provideHfToken(): String = BuildConfig.HF_TOKEN
-    }
+    @Provides @Named("groq_api_key")
+    fun provideGroqApiKey(): String = BuildConfig.GROQ_API_KEY
+
+    @Provides @Named("hf_token")
+    fun provideHfToken(): String = BuildConfig.HF_TOKEN
 }

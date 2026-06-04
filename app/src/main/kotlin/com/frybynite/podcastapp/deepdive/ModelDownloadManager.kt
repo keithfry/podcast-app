@@ -40,13 +40,15 @@ class ModelDownloadManager @Inject constructor(
     val state: StateFlow<ModelDownloadState> = _state
 
     suspend fun downloadModel(pendingUrl: String) = withContext(Dispatchers.IO) {
-        if (OpenClDetector.isSupported()) {
-            Log.i("DeepDive", "OpenCL supported — downloading GPU model")
-            downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl, isGpu = true)
-        } else {
-            Log.i("DeepDive", "OpenCL not supported — downloading CPU model")
-            downloadFile(CPU_MODEL_URL, CPU_MODEL_FILE, pendingUrl, isGpu = false)
+        if (!OpenClDetector.isSupported()) {
+            // Cloud path — no local model needed
+            Log.i("DeepDive", "Cloud path active — skipping model download")
+            _state.value = ModelDownloadState.Complete
+            if (pendingUrl.isNotEmpty()) NotificationHelper.postReady(context, pendingUrl)
+            return@withContext
         }
+        Log.i("DeepDive", "OpenCL supported — downloading GPU model")
+        downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl, isGpu = true)
     }
 
     private suspend fun downloadFile(
