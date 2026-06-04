@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.frybynite.podcastapp.data.db.dao.EpisodeDao
+import com.frybynite.podcastapp.data.db.dao.PodcastDao
+import com.frybynite.podcastapp.data.storage.CacheStorage
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +19,8 @@ class DownloadWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
     private val episodeDao: EpisodeDao,
+    private val podcastDao: PodcastDao,
+    private val cacheStorage: CacheStorage,
     private val okHttp: OkHttpClient
 ) : CoroutineWorker(appContext, params) {
 
@@ -34,10 +38,16 @@ class DownloadWorker @AssistedInject constructor(
     }
 
     private suspend fun downloadToFile(audioUrl: String): File = withContext(Dispatchers.IO) {
+        val episode = episodeDao.getByAudioUrl(audioUrl) ?: throw Exception("Unknown episode")
+        val podcastTitle = podcastDao.getByUrl(episode.podcastFeedUrl)?.title ?: "untitled"
+        val file = cacheStorage.mainAudioFile(
+            episode.podcastFeedUrl, podcastTitle, audioUrl, episode.title
+        )
+        file.parentFile?.mkdirs()
+
         val request = Request.Builder().url(audioUrl).build()
         val response = okHttp.newCall(request).execute()
         if (!response.isSuccessful) throw Exception("HTTP ${response.code}")
-        val file = File(applicationContext.filesDir, "${audioUrl.hashCode()}.mp3")
         response.body?.byteStream()?.use { input ->
             file.outputStream().use { output -> input.copyTo(output) }
         } ?: throw Exception("Empty body")
