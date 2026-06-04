@@ -94,7 +94,7 @@ private fun PodcastRow(podcast: Podcast, onClick: () -> Unit) {
 
 @Composable
 private fun AddPodcastDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
-    var url by remember { mutableStateOf("") }
+    var url by remember { mutableStateOf("https://keithfry.github.io/web-pages/techradar/AI/podcast.xml") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Podcast") },
