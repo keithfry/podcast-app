@@ -237,7 +237,7 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             runCatching {
-                val ttsFile = deepDiveOrchestrator.process(resolvedUrl)
+                val ttsFile = deepDiveOrchestrator.process(resolvedUrl, episodeUri)
                 pendingTtsFile = ttsFile
 
                 val ttsItem = androidx.media3.common.MediaItem.Builder()

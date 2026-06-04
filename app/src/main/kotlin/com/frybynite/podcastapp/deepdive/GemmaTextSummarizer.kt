@@ -50,13 +50,23 @@ class GemmaTextSummarizer @Inject constructor(
         Log.i("DeepDive", "$label model loaded successfully")
     }
 
-    override suspend fun summarize(text: String): String = withContext(Dispatchers.Default) {
+    override suspend fun summarize(text: String, existingSummary: String?): String = withContext(Dispatchers.Default) {
         ensureLoaded()
-        val prompt = """Summarize this article in 3-4 sentences for a podcast listener:
+        val prompt = if (existingSummary != null) {
+            """You are helping a podcast listener go deeper on a story they just heard.
+
+What they already know: $existingSummary
+
+Full article: $text
+
+Go beyond the summary. Focus on technical details, how it works, implications, and anything surprising or non-obvious. Be concise — 4-5 sentences."""
+        } else {
+            """Summarize this article in 3-4 sentences for a podcast listener:
 
 $text
 
 Summary:"""
+        }
         inference!!.generateResponse(prompt).trim()
     }
 }
