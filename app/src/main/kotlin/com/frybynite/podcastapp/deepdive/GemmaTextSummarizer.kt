@@ -17,7 +17,8 @@ class GemmaTextSummarizer @Inject constructor(
 
     val modelFile get() = context.filesDir.resolve("models/gemma-2b-it-int4.bin")
 
-    override fun isModelAvailable(): Boolean = modelFile.exists()
+    // Gemma model is ~1.3 GB; a file smaller than 100 MB is a failed/corrupt download
+    override fun isModelAvailable(): Boolean = modelFile.exists() && modelFile.length() > 100_000_000L
 
     private fun ensureLoaded() {
         if (inference != null) return

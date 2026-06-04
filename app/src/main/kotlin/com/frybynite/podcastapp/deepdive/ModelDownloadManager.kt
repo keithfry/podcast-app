@@ -41,6 +41,7 @@ class ModelDownloadManager @Inject constructor(
         _state.value = ModelDownloadState.Downloading(0f)
         runCatching {
             val response = client.newCall(Request.Builder().url(MODEL_URL).build()).execute()
+            if (!response.isSuccessful) error("HTTP ${response.code}: ${response.message}")
             val body = response.body ?: error("Empty response body")
             val total = body.contentLength()
             val tmp = File("${dest.absolutePath}.tmp")
@@ -60,6 +61,7 @@ class ModelDownloadManager @Inject constructor(
             _state.value = ModelDownloadState.Complete
             NotificationHelper.postReady(context, pendingUrl)
         }.onFailure { e ->
+            File("${dest.absolutePath}.tmp").delete()
             _state.value = ModelDownloadState.Failed(e.message ?: "Download failed")
         }
     }
