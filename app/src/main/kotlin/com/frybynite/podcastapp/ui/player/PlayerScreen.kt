@@ -56,6 +56,7 @@ fun PlayerScreen(
     val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
     val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
     val podcastTitle by vm.podcastTitle.collectAsStateWithLifecycle()
+    val episodeTitle by vm.episodeTitle.collectAsStateWithLifecycle()
     val sleepTimerSeconds by vm.sleepTimerSeconds.collectAsStateWithLifecycle()
     val currentPositionMs by vm.currentPositionMs.collectAsStateWithLifecycle()
     val durationMs by vm.durationMs.collectAsStateWithLifecycle()
@@ -166,7 +167,7 @@ fun PlayerScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(podcastTitle ?: "Playing") },
+                title = { Text(episodeTitle ?: podcastTitle ?: "Playing") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")

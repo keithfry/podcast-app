@@ -73,6 +73,9 @@ class PlayerViewModel @Inject constructor(
     private val _podcastTitle = MutableStateFlow<String?>(null)
     val podcastTitle: StateFlow<String?> = _podcastTitle.asStateFlow()
 
+    private val _episodeTitle = MutableStateFlow<String?>(null)
+    val episodeTitle: StateFlow<String?> = _episodeTitle.asStateFlow()
+
     // Sleep timer: remaining seconds, null = not active
     private val _sleepTimerSeconds = MutableStateFlow<Int?>(null)
     val sleepTimerSeconds: StateFlow<Int?> = _sleepTimerSeconds.asStateFlow()
@@ -201,6 +204,7 @@ class PlayerViewModel @Inject constructor(
             Log.d(TAG, "loadAndPlay: podcast=${podcast?.title} imageUrl=${podcast?.imageUrl}")
             _podcastImageUrl.value = podcast?.imageUrl
             _podcastTitle.value = podcast?.title
+            _episodeTitle.value = entity.title
             playEpisode(entity.toDomain())
         }
     }
