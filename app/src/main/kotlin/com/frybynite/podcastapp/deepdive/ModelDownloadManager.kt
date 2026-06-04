@@ -28,10 +28,14 @@ class ModelDownloadManager @Inject constructor(
         const val MODEL_URL = "https://storage.googleapis.com/mediapipe-models/llm_inference/gemma-2b-it-gpu-int4/float16/latest/model.task"
     }
 
+    init {
+        NotificationHelper.createChannel(context)
+    }
+
     private val _state = MutableStateFlow<ModelDownloadState>(ModelDownloadState.Idle)
     val state: StateFlow<ModelDownloadState> = _state
 
-    suspend fun downloadModel() = withContext(Dispatchers.IO) {
+    suspend fun downloadModel(pendingUrl: String) = withContext(Dispatchers.IO) {
         val dest = context.filesDir.resolve("models/gemma-2b-it-int4.bin")
         dest.parentFile?.mkdirs()
         _state.value = ModelDownloadState.Downloading(0f)
@@ -54,6 +58,7 @@ class ModelDownloadManager @Inject constructor(
             }
             tmp.renameTo(dest)
             _state.value = ModelDownloadState.Complete
+            NotificationHelper.postReady(context, pendingUrl)
         }.onFailure { e ->
             _state.value = ModelDownloadState.Failed(e.message ?: "Download failed")
         }
