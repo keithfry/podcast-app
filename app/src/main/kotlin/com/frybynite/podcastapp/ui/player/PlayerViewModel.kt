@@ -142,7 +142,6 @@ class PlayerViewModel @Inject constructor(
                             exitToneJob = viewModelScope.launch {
                                 toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 300)
                                 delay(400)
-                                pendingTtsFile?.delete()
                                 pendingTtsFile = null
                                 _deepDiveState.value = DeepDiveState.Idle
                                 _deepDiveChapterIndex.value = null
@@ -332,7 +331,8 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             runCatching {
-                val ttsFile = deepDiveOrchestrator.process(resolvedUrl, deepDiveResumeEpisodeUri) { step ->
+                val chapterTitle = _chapters.value.getOrNull(_deepDiveChapterIndex.value ?: -1)?.title
+                val ttsFile = deepDiveOrchestrator.process(resolvedUrl, deepDiveResumeEpisodeUri, chapterTitle) { step ->
                     _deepDiveState.value = DeepDiveState.Loading(step)
                     android.util.Log.i("DeepDive", "moreAboutThis: step=$step")
                 }
@@ -392,7 +392,6 @@ class PlayerViewModel @Inject constructor(
             controller?.prepare()
             controller?.seekTo(deepDiveResumePositionMs)
             controller?.play()
-            pendingTtsFile?.delete()
             pendingTtsFile = null
             _deepDiveState.value = DeepDiveState.Idle
             _deepDiveChapterIndex.value = null
@@ -418,7 +417,6 @@ class PlayerViewModel @Inject constructor(
         controller?.prepare()
         controller?.seekTo(startTimeMs)
         controller?.play()
-        pendingTtsFile?.delete()
         pendingTtsFile = null
         _deepDiveState.value = DeepDiveState.Idle
         _deepDiveChapterIndex.value = null
@@ -434,7 +432,6 @@ class PlayerViewModel @Inject constructor(
         tickingJob?.cancel()
         exitToneJob?.cancel()
         toneGen.release()
-        pendingTtsFile?.delete()
         controller?.release()
         super.onCleared()
     }
