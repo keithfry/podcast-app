@@ -25,6 +25,7 @@ class GemmaTextSummarizer @Inject constructor(
         val options = LlmInference.LlmInferenceOptions.builder()
             .setModelPath(modelFile.absolutePath)
             .setMaxTokens(512)
+            .setPreferredBackend(LlmInference.Backend.CPU)
             .build()
         inference = LlmInference.createFromOptions(context, options)
     }
