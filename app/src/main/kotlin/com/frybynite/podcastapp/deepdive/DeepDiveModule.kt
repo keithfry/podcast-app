@@ -22,9 +22,8 @@ object DeepDiveModule {
 
     @Provides @Singleton
     fun provideTtsSynthesizer(
-        android: AndroidTtsSynthesizer,
-        kokoro: KokoroTtsSynthesizer
-    ): TtsSynthesizer = if (OpenClDetector.isSupported()) android else kokoro
+        android: AndroidTtsSynthesizer
+    ): TtsSynthesizer = android
 
     @Provides @Named("groq_api_key")
     fun provideGroqApiKey(): String = BuildConfig.GROQ_API_KEY
