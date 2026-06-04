@@ -27,8 +27,10 @@ class DeepDiveOrchestrator @Inject constructor(
 ) {
     suspend fun isCached(chapterUrl: String, episodeAudioUrl: String?): Boolean {
         if (episodeAudioUrl == null) return false
-        val row = deepDiveDao.get(episodeAudioUrl, chapterUrl) ?: return false
-        return File(row.filePath).exists()
+        val row = deepDiveDao.get(episodeAudioUrl, chapterUrl)
+        val fileExists = row?.let { File(it.filePath).exists() } ?: false
+        Log.i("DeepDive", "isCached: chapterUrl=$chapterUrl episodeUrl=$episodeAudioUrl row=${row?.filePath} fileExists=$fileExists")
+        return fileExists
     }
 
     suspend fun process(

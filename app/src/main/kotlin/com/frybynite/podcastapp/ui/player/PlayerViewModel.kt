@@ -339,10 +339,14 @@ class PlayerViewModel @Inject constructor(
         exitToneJob?.cancel()
         exitToneJob = null
 
+        // Capture as local vals so coroutine reads a snapshot, not a mutable var.
+        val episodeUri = deepDiveResumeEpisodeUri
+        val resumePos = deepDiveResumePositionMs
+
         viewModelScope.launch {
             runCatching {
                 val chapterTitle = _chapters.value.getOrNull(_deepDiveChapterIndex.value ?: -1)?.title
-                val cached = deepDiveOrchestrator.isCached(resolvedUrl, deepDiveResumeEpisodeUri)
+                val cached = deepDiveOrchestrator.isCached(resolvedUrl, episodeUri)
 
                 if (!cached) {
                     // Show loading overlay + tick + pause only when generation is needed.
@@ -357,7 +361,7 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
 
-                val ttsFile = deepDiveOrchestrator.process(resolvedUrl, deepDiveResumeEpisodeUri, chapterTitle) { step ->
+                val ttsFile = deepDiveOrchestrator.process(resolvedUrl, episodeUri, chapterTitle) { step ->
                     _deepDiveState.value = DeepDiveState.Loading(step)
                     android.util.Log.i("DeepDive", "moreAboutThis: step=$step")
                 }
@@ -375,11 +379,11 @@ class PlayerViewModel @Inject constructor(
                     .setUri(android.net.Uri.fromFile(ttsFile))
                     .build()
                 val resumeItem = androidx.media3.common.MediaItem.Builder()
-                    .setMediaId(deepDiveResumeEpisodeUri!!)
-                    .setUri(deepDiveResumeEpisodeUri!!)
+                    .setMediaId(episodeUri!!)
+                    .setUri(episodeUri!!)
                     .build()
 
-                android.util.Log.i("DeepDive", "moreAboutThis: injecting TTS item, resuming at ${deepDiveResumePositionMs}ms")
+                android.util.Log.i("DeepDive", "moreAboutThis: injecting TTS item, resuming at ${resumePos}ms")
                 controller?.setMediaItems(listOf(ttsItem, resumeItem))
                 controller?.prepare()
                 controller?.play()
