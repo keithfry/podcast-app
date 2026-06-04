@@ -40,11 +40,12 @@ class ModelDownloadManager @Inject constructor(
     val state: StateFlow<ModelDownloadState> = _state
 
     suspend fun downloadModel(pendingUrl: String) = withContext(Dispatchers.IO) {
-        // Try GPU first, fall back to CPU
-        val success = downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl, isGpu = true)
-        if (!success) {
-            Log.i("DeepDive", "GPU model failed, falling back to CPU model")
-            downloadFile(CPU_MODEL_URL, CPU_MODEL_FILE, pendingUrl, isGpu = false)
+        // Download CPU model as reliable baseline
+        val cpuSuccess = downloadFile(CPU_MODEL_URL, CPU_MODEL_FILE, pendingUrl, isGpu = false)
+        // Also attempt GPU model in background — used if device supports OpenCL
+        if (cpuSuccess) {
+            Log.i("DeepDive", "CPU model ready, attempting GPU model download")
+            downloadFile(GPU_MODEL_URL, GPU_MODEL_FILE, pendingUrl = "", isGpu = true)
         }
     }
 
@@ -56,7 +57,7 @@ class ModelDownloadManager @Inject constructor(
     ): Boolean = withContext(Dispatchers.IO) {
         val dest = context.filesDir.resolve(relativePath)
         dest.parentFile?.mkdirs()
-        if (!isGpu) _state.value = ModelDownloadState.Downloading(0f)
+        if (!isGpu || _state.value == ModelDownloadState.Idle) _state.value = ModelDownloadState.Downloading(0f)
         runCatching {
             val response = client.newCall(Request.Builder().url(url).build()).execute()
             if (!response.isSuccessful) error("HTTP ${response.code}: ${response.message}")
@@ -76,8 +77,10 @@ class ModelDownloadManager @Inject constructor(
                 }
             }
             tmp.renameTo(dest)
-            _state.value = ModelDownloadState.Complete
-            NotificationHelper.postReady(context, pendingUrl)
+            if (!isGpu) {
+                _state.value = ModelDownloadState.Complete
+                if (pendingUrl.isNotEmpty()) NotificationHelper.postReady(context, pendingUrl)
+            }
         }.onFailure { e ->
             Log.e("DeepDive", "Model download failed (${if (isGpu) "GPU" else "CPU"})", e)
             File("${dest.absolutePath}.tmp").delete()
