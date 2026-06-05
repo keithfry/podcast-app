@@ -174,7 +174,7 @@ class PlaybackService : MediaLibraryService() {
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 val audioUrl = mediaItem?.mediaId ?: return
-                Log.i(TAG, "onMediaItemTransition: audioUrl=$audioUrl reason=$reason")
+                Log.i(TAG, "onMediaItemTransition: audioUrl=$audioUrl title=${mediaItem?.mediaMetadata?.title} reason=$reason")
                 chaptersJob?.cancel()
                 chaptersJob = serviceScope.launch {
                     chapterRepo.chaptersForEpisode(audioUrl).collect { list ->
