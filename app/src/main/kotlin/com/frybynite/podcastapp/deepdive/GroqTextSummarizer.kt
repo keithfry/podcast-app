@@ -59,7 +59,7 @@ class GroqTextSummarizer @Inject constructor(
         val depthLine = if (existingSummary != null)
             "Go beyond what they already know. " else ""
 
-        val prompt = """You are helping a podcast listener go deeper on a story they just heard.
+        val prompt = """You are helping a podcast listener go deeper on a story.
 $knownLine
 Full article: $text
 
