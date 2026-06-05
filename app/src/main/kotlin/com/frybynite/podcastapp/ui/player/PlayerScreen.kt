@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
 import kotlinx.coroutines.delay
@@ -347,7 +348,7 @@ fun PlayerScreen(
             LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = chapterListState) {
                 itemsIndexed(chapters) { idx, chapter ->
                     val isSnapHovered = snapHoverIdx == idx
-                    val isActive = idx == currentIdx
+                    val isActive = idx == currentIdx && deepDiveState !is DeepDiveState.Playing
                     val hasUrl = chapter.url != null
                     val revealScope = rememberCoroutineScope()
                     val revealWidth = 192.dp
@@ -365,8 +366,7 @@ fun PlayerScreen(
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
                                 .width(revealWidth)
-                                .matchParentSize()
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                .matchParentSize(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -376,6 +376,7 @@ fun PlayerScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight()
+                                    .background(Color(0xFF5B8DB8))
                                     .clickable {
                                         if (hasUrl) {
                                             chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
@@ -385,14 +386,15 @@ fun PlayerScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha))
-                                Text("Open", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha))
+                                Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha), tint = Color.White)
+                                Text("Open", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha), color = Color.White)
                             }
                             // Share
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight()
+                                    .background(Color(0xFF5A9E6F))
                                     .clickable {
                                         if (hasUrl) {
                                             chapter.url?.let { url ->
@@ -409,14 +411,15 @@ fun PlayerScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha))
-                                Text("Share", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha))
+                                Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha), tint = Color.White)
+                                Text("Share", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha), color = Color.White)
                             }
                             // More
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight()
+                                    .background(Color(0xFFB05C5C))
                                     .clickable {
                                         if (hasUrl) vm.moreAboutThis(chapter.url, idx)
                                         collapse()
@@ -424,8 +427,8 @@ fun PlayerScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha))
-                                Text("More", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha))
+                                Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha), tint = Color.White)
+                                Text("More", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha), color = Color.White)
                             }
                         }
 
