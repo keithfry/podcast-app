@@ -40,18 +40,25 @@ class DownloadWorker @AssistedInject constructor(
     private suspend fun downloadToFile(audioUrl: String): File = withContext(Dispatchers.IO) {
         val episode = episodeDao.getByAudioUrl(audioUrl) ?: throw Exception("Unknown episode")
         val podcastTitle = podcastDao.getByUrl(episode.podcastFeedUrl)?.title ?: "untitled"
-        val file = cacheStorage.mainAudioFile(
+        val finalFile = cacheStorage.mainAudioFile(
             episode.podcastFeedUrl, podcastTitle, audioUrl, episode.title
         )
-        file.parentFile?.mkdirs()
+        finalFile.parentFile?.mkdirs()
+        val tmpFile = File(finalFile.parentFile, "${finalFile.name}.tmp")
 
         val request = Request.Builder().url(audioUrl).build()
         val response = okHttp.newCall(request).execute()
         if (!response.isSuccessful) throw Exception("HTTP ${response.code}")
-        response.body?.byteStream()?.use { input ->
-            file.outputStream().use { output -> input.copyTo(output) }
-        } ?: throw Exception("Empty body")
-        file
+        try {
+            response.body?.byteStream()?.use { input ->
+                tmpFile.outputStream().use { output -> input.copyTo(output) }
+            } ?: throw Exception("Empty body")
+            if (!tmpFile.renameTo(finalFile)) throw Exception("Rename failed")
+        } catch (e: Exception) {
+            tmpFile.delete()
+            throw e
+        }
+        finalFile
     }
 
     companion object {
