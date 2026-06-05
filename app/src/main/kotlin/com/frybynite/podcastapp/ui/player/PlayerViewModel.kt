@@ -43,6 +43,7 @@ class PlayerViewModel @Inject constructor(
     private val chapterRepo: ChapterRepository,
     private val episodeDao: EpisodeDao,
     private val podcastDao: PodcastDao,
+    private val podcastRepo: com.frybynite.podcastapp.data.repository.PodcastRepository,
     private val deepDiveDao: com.frybynite.podcastapp.data.db.dao.DeepDiveDao,
     private val speedPrefs: SpeedPreferences,
     private val deepDiveOrchestrator: DeepDiveOrchestrator,
@@ -187,12 +188,15 @@ class PlayerViewModel @Inject constructor(
             .setArtist(_podcastTitle.value)
             .apply { _podcastImageUrl.value?.let { setArtworkUri(android.net.Uri.parse(it)) } }
             .build()
+        val playUri = episode.downloadPath
+            ?.let { android.net.Uri.fromFile(java.io.File(it)) }
+            ?: android.net.Uri.parse(episode.audioUrl)
+        Log.d(TAG, "playEpisode: uri=$playUri (local=${episode.downloadPath != null})")
         val item = androidx.media3.common.MediaItem.Builder()
             .setMediaId(episode.audioUrl)
-            .setUri(episode.audioUrl)
+            .setUri(playUri)
             .setMediaMetadata(metadata)
             .build()
-        Log.d(TAG, "playEpisode: setting media item and calling prepare/play")
         controller?.setMediaItem(item)
         controller?.prepare()
         controller?.play()
@@ -211,6 +215,11 @@ class PlayerViewModel @Inject constructor(
             _podcastImageUrl.value = podcast?.imageUrl
             _podcastTitle.value = podcast?.title
             _episodeTitle.value = entity.title
+            // Auto-download for offline use while streaming plays simultaneously.
+            if (entity.downloadStatus == "NONE" && entity.downloadPath == null) {
+                Log.i(TAG, "loadAndPlay: queuing background download for ${entity.audioUrl}")
+                podcastRepo.downloadEpisode(entity.audioUrl)
+            }
             cachedDeepDiveJob?.cancel()
             cachedDeepDiveJob = viewModelScope.launch {
                 deepDiveDao.flowForEpisode(entity.audioUrl).collect { rows ->
