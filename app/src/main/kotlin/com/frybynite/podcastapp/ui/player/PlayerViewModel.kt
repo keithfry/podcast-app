@@ -331,8 +331,15 @@ class PlayerViewModel @Inject constructor(
             _deepDiveState.value = DeepDiveState.ModelRequired
             return
         }
-        deepDiveResumePositionMs = controller?.currentPosition ?: return
-        deepDiveResumeEpisodeUri = controller?.currentMediaItem?.mediaId ?: return
+        val currentMediaId = controller?.currentMediaItem?.mediaId ?: return
+        if (!currentMediaId.startsWith("tts://")) {
+            // Normal episode: capture position + URI now.
+            deepDiveResumePositionMs = controller?.currentPosition ?: return
+            deepDiveResumeEpisodeUri = currentMediaId
+        }
+        // If TTS is playing (tts://…), keep the existing deepDiveResumeEpisodeUri/positionMs
+        // set by the previous deep-dive trigger — they already point to the real episode.
+        if (deepDiveResumeEpisodeUri == null) return
         _deepDiveChapterIndex.value = sourceChapterIndex ?: _currentChapterIndex.value
         android.util.Log.i("DeepDive", "moreAboutThis: savedPos=${deepDiveResumePositionMs}ms episodeUri=$deepDiveResumeEpisodeUri sourceChapter=${_deepDiveChapterIndex.value}")
 
