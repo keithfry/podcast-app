@@ -537,6 +537,11 @@ fun PlayerScreen(
 
         if (deepDiveState is DeepDiveState.Loading) {
             val step = (deepDiveState as DeepDiveState.Loading).step
+            val stepLabel = when (step) {
+                DeepDiveStep.FETCHING -> "Getting link details"
+                DeepDiveStep.SUMMARIZING -> "Generating summary"
+                DeepDiveStep.SYNTHESIZING -> "Converting to audio"
+            }
             Box(
                 Modifier
                     .fillMaxSize()
@@ -551,31 +556,26 @@ fun PlayerScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        CircularProgressIndicator()
                         Text(
                             text = "More About This",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            DeepDiveStepRow(
-                                label = "Getting link details",
-                                active = step == DeepDiveStep.FETCHING,
-                                done = step > DeepDiveStep.FETCHING
-                            )
-                            DeepDiveStepRow(
-                                label = "Generating summary text",
-                                active = step == DeepDiveStep.SUMMARIZING,
-                                done = step > DeepDiveStep.SUMMARIZING
-                            )
-                            DeepDiveStepRow(
-                                label = "Converting to audio",
-                                active = step == DeepDiveStep.SYNTHESIZING,
-                                done = false
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Text("Generating", style = MaterialTheme.typography.bodyMedium)
                         }
+                        Text(
+                            text = stepLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -697,41 +697,6 @@ private fun SpeedBottomSheet(
     }
 }
 
-@Composable
-private fun DeepDiveStepRow(label: String, active: Boolean, done: Boolean) {
-    val tint = when {
-        done -> MaterialTheme.colorScheme.primary
-        active -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        if (done) {
-            Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.Check,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(18.dp)
-            )
-        } else {
-            Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
-                if (active) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                else Box(
-                    Modifier
-                        .size(8.dp)
-                        .background(tint, shape = MaterialTheme.shapes.small)
-                )
-            }
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = tint
-        )
-    }
-}
 
 @Composable
 private fun SeekIcon(seconds: Int, isForward: Boolean) {
