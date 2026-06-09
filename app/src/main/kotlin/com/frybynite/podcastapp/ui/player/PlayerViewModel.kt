@@ -18,6 +18,7 @@ import com.frybynite.podcastapp.data.repository.ChapterRepository
 import com.frybynite.podcastapp.data.repository.toDomain
 import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
+import com.frybynite.podcastapp.deepdive.ModelDownloadState
 import com.frybynite.podcastapp.deepdive.TextSummarizer
 import com.frybynite.podcastapp.domain.model.Chapter
 import com.frybynite.podcastapp.domain.model.Episode
@@ -114,6 +115,18 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             DeepDiveRouter.pendingUrl.collectLatest { url ->
                 if (url.isNotEmpty()) moreAboutThis(url)
+            }
+        }
+        viewModelScope.launch {
+            modelDownloadManager.state.collectLatest { state ->
+                if (state is ModelDownloadState.Complete) {
+                    val url = pendingDeepDiveUrl
+                    if (url != null) {
+                        android.util.Log.i("DeepDive", "Model download complete — auto-starting deep dive for $url")
+                        pendingDeepDiveUrl = null
+                        moreAboutThis(url)
+                    }
+                }
             }
         }
     }

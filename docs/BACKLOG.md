@@ -22,6 +22,21 @@
 
 - **Review Miso TTS as alternative** — evaluate Miso TTS for the "More about this" deep-dive audio generation, vs current Modal/Kokoro + Android TextToSpeech fallback. Compare voice quality, latency, cost, and on-device vs cloud tradeoffs.
 
+## Read-Along / Transcript
+
+- **Synchronized read-along transcript** — display word-level transcript of the podcast MP3 synchronized to playback position, with the current word/phrase highlighted (karaoke-style). Tap any word to seek to that timestamp.
+
+  **How it works:**
+  1. **Transcription:** Call Groq's Whisper API (`whisper-large-v3-turbo`, ~$0.004/min) with `response_format=verbose_json` and `timestamp_granularities[]=word` to get per-word start/end timestamps. Store result as JSON in the episode cache dir alongside existing deep-dive files.
+  2. **Data model:** `TranscriptWord(text: String, startMs: Long, endMs: Long)` stored in Room or as a flat JSON file. Chapter boundaries from the existing chapter list can segment the transcript into sections.
+  3. **Playback sync:** `PlayerViewModel` exposes current position via `player.currentPosition` polled on a coroutine (16ms tick or `LaunchedEffect` loop). UI maps position → active word index via binary search on `startMs`.
+  4. **UI:** `LazyColumn` of word spans (or `FlowRow` for word-wrap). Active word highlighted in accent color, auto-scrolled to stay visible. Tapping a word calls `player.seekTo(word.startMs)`.
+  5. **Trigger:** On-demand — "Read along" button in `PlayerScreen` or chapter context menu. Transcript fetched/transcribed on first open, cached thereafter.
+
+  **Implementation touch points:** `GroqTranscriber` (new, calls Whisper API), `TranscriptRepository` (cache JSON to disk, load on demand), `PlayerViewModel.transcriptState: StateFlow<TranscriptUiState>`, `ReadAlongSheet` (new bottom sheet composable), `DeepDiveModule` wiring. Reuses existing `OkHttpClient` and episode cache path helpers.
+
+  **Alternative — on-device:** MediaPipe Audio Classifier or `android.speech.SpeechRecognizer` with `RESULTS_RECOGNITION` extras — no word timestamps on Android without a custom Whisper port. On-device feasible via `whisper.cpp` JNI (150 MB model) but significant integration effort vs. Groq API call.
+
 ## Phase 2
 
 - **Always-on wake word** — Picovoice Porcupine or Vosk integration for hands-free activation without tapping the mic FAB.

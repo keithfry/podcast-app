@@ -27,23 +27,35 @@ class GemmaTextSummarizer @Inject constructor(
 
     private fun ensureLoaded() {
         if (inference != null) return
-        val (modelFile, backend, label) = if (OpenClDetector.isSupported() && gpuModelFile.isValid()) {
-            Triple(gpuModelFile, LlmInference.Backend.GPU, "GPU")
-        } else if (cpuModelFile.isValid()) {
-            Triple(cpuModelFile, LlmInference.Backend.CPU, "CPU")
-        } else {
-            error("No valid model available")
+        if (gpuModelFile.isValid()) {
+            runCatching {
+                Log.i("DeepDive", "Loading GPU model: ${gpuModelFile.name}")
+                inference = LlmInference.createFromOptions(
+                    context,
+                    LlmInference.LlmInferenceOptions.builder()
+                        .setModelPath(gpuModelFile.absolutePath)
+                        .setMaxTokens(512)
+                        .setPreferredBackend(LlmInference.Backend.GPU)
+                        .build()
+                )
+                Log.i("DeepDive", "GPU model loaded successfully")
+            }.onFailure { e ->
+                Log.w("DeepDive", "GPU backend failed (${e.message?.take(120)}), trying CPU backend")
+            }
         }
-        Log.i("DeepDive", "Loading $label model: ${modelFile.name}")
-        inference = LlmInference.createFromOptions(
-            context,
-            LlmInference.LlmInferenceOptions.builder()
-                .setModelPath(modelFile.absolutePath)
-                .setMaxTokens(512)
-                .setPreferredBackend(backend)
-                .build()
-        )
-        Log.i("DeepDive", "$label model loaded successfully")
+        if (inference == null && cpuModelFile.isValid()) {
+            Log.i("DeepDive", "Loading CPU model: ${cpuModelFile.name}")
+            inference = LlmInference.createFromOptions(
+                context,
+                LlmInference.LlmInferenceOptions.builder()
+                    .setModelPath(cpuModelFile.absolutePath)
+                    .setMaxTokens(512)
+                    .setPreferredBackend(LlmInference.Backend.CPU)
+                    .build()
+            )
+            Log.i("DeepDive", "CPU model loaded successfully")
+        }
+        if (inference == null) error("No valid model available")
     }
 
     override suspend fun summarize(text: String, existingSummary: String?): String = withContext(Dispatchers.Default) {

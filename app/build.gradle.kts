@@ -37,7 +37,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += "-Xskip-metadata-version-check"
+    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -83,6 +86,8 @@ dependencies {
     implementation(libs.browser)
     implementation(libs.appcompat)
     implementation(libs.mediapipe.tasks.genai)
+    implementation("com.google.mlkit:genai-prompt:1.0.0-beta2") // AiCore path (kept, not in active pipeline)
+    implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
     implementation(libs.jsoup)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.kxml2)

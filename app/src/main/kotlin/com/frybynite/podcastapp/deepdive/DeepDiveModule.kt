@@ -16,15 +16,16 @@ object DeepDiveModule {
 
     @Provides @Singleton
     fun provideTextSummarizer(
+        litert: LiteRtTextSummarizer,
         gemma: GemmaTextSummarizer,
         groq: GroqTextSummarizer
-    ): TextSummarizer = if (OpenClDetector.isSupported()) gemma else groq
+    ): TextSummarizer = FallbackTextSummarizer(litert, gemma, groq)
 
     @Provides @Singleton
     fun provideTtsSynthesizer(
-        android: AndroidTtsSynthesizer,
-        kokoro: KokoroTtsSynthesizer
-    ): TtsSynthesizer = if (OpenClDetector.isSupported()) android else kokoro
+        kokoro: KokoroTtsSynthesizer,
+        android: AndroidTtsSynthesizer
+    ): TtsSynthesizer = FallbackTtsSynthesizer(kokoro, android)
 
     @Provides @Named("groq_api_key")
     fun provideGroqApiKey(): String = BuildConfig.GROQ_API_KEY
