@@ -59,6 +59,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var player: ExoPlayer
     private lateinit var castPlayer: CastPlayer
     private var activePlayer: Player? = null
+    @Volatile private var switchingPlayers = false
     private lateinit var mediaLibrarySession: MediaLibrarySession
 
     private var chapters: List<Chapter> = emptyList()
@@ -224,7 +225,7 @@ class PlaybackService : MediaLibraryService() {
                     }
                 }
                 // If currently casting, update castPlayer with the new media item
-                if (::castPlayer.isInitialized && activePlayer === castPlayer && castPlayer.isCastSessionAvailable) {
+                if (!switchingPlayers && ::castPlayer.isInitialized && activePlayer === castPlayer && castPlayer.isCastSessionAvailable) {
                     val newItem = mediaItem.buildUpon().setUri(audioUrl).build()
                     castPlayer.setMediaItem(newItem)
                     castPlayer.prepare()
@@ -250,8 +251,10 @@ class PlaybackService : MediaLibraryService() {
     override fun onDestroy() {
         Log.i(TAG, "onDestroy: releasing session and player")
         serviceScope.cancel()
-        CastContext.getSharedInstance(this).sessionManager
-            .removeSessionManagerListener(castSessionListener, CastSession::class.java)
+        runCatching {
+            CastContext.getSharedInstance(this).sessionManager
+                .removeSessionManagerListener(castSessionListener, CastSession::class.java)
+        }
         if (::castPlayer.isInitialized) castPlayer.release()
         mediaLibrarySession.release()
         player.release()
@@ -259,6 +262,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun switchToPlayer(newPlayer: Player) {
+        switchingPlayers = true
         val currentPosition = activePlayer?.currentPosition ?: 0L
         val currentItem = activePlayer?.currentMediaItem
         val wasPlaying = activePlayer?.isPlaying ?: false
@@ -281,6 +285,7 @@ class PlaybackService : MediaLibraryService() {
             newPlayer.prepare()
             if (wasPlaying) newPlayer.play()
         }
+        switchingPlayers = false
     }
 
 }
