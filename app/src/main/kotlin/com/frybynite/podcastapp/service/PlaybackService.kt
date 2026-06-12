@@ -42,6 +42,7 @@ class PlaybackService : MediaLibraryService() {
         const val BROWSE_ROOT = "root"
         const val PODCAST_PREFIX = "podcast:"
         const val EPISODE_PREFIX = "episode:"
+        const val CONTENT_STYLE_LIST_ITEM_HINT_VALUE = 1
     }
 
     @Inject lateinit var chapterRepo: ChapterRepository
@@ -141,8 +142,12 @@ class PlaybackService : MediaLibraryService() {
                     }
                     parentId.startsWith(PODCAST_PREFIX) -> {
                         val feedUrl = parentId.removePrefix(PODCAST_PREFIX)
+                        val podcast = podcastRepo.podcasts.first().find { it.feedUrl == feedUrl }
                         val episodes = podcastRepo.episodesForPodcast(feedUrl).first()
-                        LibraryResult.ofItemList(episodes.map { it.toMediaItem() }, params)
+                        LibraryResult.ofItemList(
+                            episodes.map { it.toMediaItem(podcast?.imageUrl) },
+                            params
+                        )
                     }
                     else -> LibraryResult.ofItemList(emptyList(), params)
                 }
@@ -214,10 +219,17 @@ private fun Podcast.toMediaItem() = MediaItem.Builder()
             .setIsBrowsable(true)
             .setIsPlayable(false)
             .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST)
+            .setArtworkUri(imageUrl?.let { android.net.Uri.parse(it) })
+            .setExtras(Bundle().apply {
+                putInt(
+                    "androidx.media3.session.MediaMetadataCompat.CONTENT_STYLE_BROWSABLE_HINT",
+                    PlaybackService.CONTENT_STYLE_LIST_ITEM_HINT_VALUE
+                )
+            })
             .build()
     ).build()
 
-private fun Episode.toMediaItem() = MediaItem.Builder()
+private fun Episode.toMediaItem(podcastImageUrl: String?) = MediaItem.Builder()
     .setMediaId(audioUrl)
     .setUri(audioUrl)
     .setMediaMetadata(
@@ -226,5 +238,6 @@ private fun Episode.toMediaItem() = MediaItem.Builder()
             .setIsBrowsable(false)
             .setIsPlayable(true)
             .setMediaType(MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE)
+            .setArtworkUri(podcastImageUrl?.let { android.net.Uri.parse(it) })
             .build()
     ).build()
