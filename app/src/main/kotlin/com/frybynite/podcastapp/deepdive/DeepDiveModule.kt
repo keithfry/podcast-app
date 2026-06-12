@@ -1,9 +1,11 @@
 package com.frybynite.podcastapp.deepdive
 
+import android.content.Context
 import com.frybynite.podcastapp.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -16,10 +18,14 @@ object DeepDiveModule {
 
     @Provides @Singleton
     fun provideTextSummarizer(
+        @ApplicationContext context: Context,
         litert: LiteRtTextSummarizer,
         gemma: GemmaTextSummarizer,
         groq: GroqTextSummarizer
-    ): TextSummarizer = FallbackTextSummarizer(litert, gemma, groq)
+    ): TextSummarizer {
+        val isAutomotive = context.packageManager.hasSystemFeature("android.hardware.type.automotive")
+        return if (isAutomotive) groq else FallbackTextSummarizer(litert, gemma, groq)
+    }
 
     @Provides @Singleton
     fun provideTtsSynthesizer(
