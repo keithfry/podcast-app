@@ -15,9 +15,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.mediarouter.app.MediaRouteButton
+import androidx.mediarouter.media.MediaControlIntent
+import androidx.mediarouter.media.MediaRouteSelector
 import com.frybynite.podcastapp.domain.model.DownloadStatus
 import com.frybynite.podcastapp.domain.model.Episode
 import java.text.SimpleDateFormat
@@ -34,6 +39,8 @@ fun EpisodeListScreen(
     val episodes by vm.episodes.collectAsStateWithLifecycle(emptyList())
     val isRefreshing by vm.isRefreshing.collectAsStateWithLifecycle()
     val pullState = rememberPullToRefreshState()
+    val context = LocalContext.current
+    val isAutomotive = context.packageManager.hasSystemFeature("android.hardware.type.automotive")
 
     if (pullState.isRefreshing) {
         LaunchedEffect(Unit) {
@@ -51,6 +58,21 @@ fun EpisodeListScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    if (!isAutomotive) {
+                        AndroidView(
+                            factory = { ctx ->
+                                MediaRouteButton(ctx).apply {
+                                    val selector = MediaRouteSelector.Builder()
+                                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+                                        .build()
+                                    routeSelector = selector
+                                }
+                            },
+                            modifier = Modifier.size(48.dp)
+                        )
                     }
                 }
             )
