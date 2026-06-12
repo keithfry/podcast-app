@@ -61,6 +61,7 @@ fun PlayerScreen(
     vm: PlayerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val isAutomotive = context.packageManager.hasSystemFeature("android.hardware.type.automotive")
     val chapters by vm.chapters.collectAsStateWithLifecycle()
     val currentIdx by vm.currentChapterIndex.collectAsStateWithLifecycle()
     val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
@@ -162,7 +163,7 @@ fun PlayerScreen(
             VoiceCommand.OPEN_LINK -> currentChapter?.url?.let {
                 CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it))
             }
-            VoiceCommand.SHARE_LINK -> currentChapter?.url?.let { url ->
+            VoiceCommand.SHARE_LINK -> if (!isAutomotive) currentChapter?.url?.let { url ->
                 context.startActivity(Intent.createChooser(
                     Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -326,7 +327,7 @@ fun PlayerScreen(
                     OutlinedButton(onClick = {
                         CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(url))
                     }) { Text("Open") }
-                    OutlinedButton(onClick = {
+                    if (!isAutomotive) OutlinedButton(onClick = {
                         context.startActivity(Intent.createChooser(
                             Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
@@ -390,7 +391,7 @@ fun PlayerScreen(
                                 Text("Open", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha), color = Color.White)
                             }
                             // Share
-                            Column(
+                            if (!isAutomotive) Column(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight()
