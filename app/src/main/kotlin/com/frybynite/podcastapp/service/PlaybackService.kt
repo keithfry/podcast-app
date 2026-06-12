@@ -40,6 +40,7 @@ class PlaybackService : MediaLibraryService() {
         const val CMD_NEXT_CHAPTER = "com.frybynite.podcastapp.NEXT_CHAPTER"
         const val CMD_PREV_CHAPTER = "com.frybynite.podcastapp.PREV_CHAPTER"
         const val BROWSE_ROOT = "root"
+        const val RECENT_ROOT = "root_recent"
         const val PODCAST_PREFIX = "podcast:"
         const val EPISODE_PREFIX = "episode:"
         const val CONTENT_STYLE_LIST_ITEM_HINT_VALUE = 1
@@ -110,21 +111,23 @@ class PlaybackService : MediaLibraryService() {
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?
-        ): ListenableFuture<LibraryResult<MediaItem>> =
-            Futures.immediateFuture(
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val rootId = if (params?.isRecent == true) RECENT_ROOT else BROWSE_ROOT
+            return Futures.immediateFuture(
                 LibraryResult.ofItem(
                     MediaItem.Builder()
-                        .setMediaId(BROWSE_ROOT)
+                        .setMediaId(rootId)
                         .setMediaMetadata(
                             MediaMetadata.Builder()
                                 .setIsBrowsable(true)
                                 .setIsPlayable(false)
                                 .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                                .setTitle("Podcasts")
+                                .setTitle(if (rootId == RECENT_ROOT) "Recent" else "Podcasts")
                                 .build()
                         ).build(), params
                 )
             )
+        }
 
         override fun onGetChildren(
             session: MediaLibrarySession,
@@ -136,6 +139,17 @@ class PlaybackService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
             serviceScope.future {
                 when {
+                    parentId == RECENT_ROOT -> {
+                        val podcasts = podcastRepo.podcasts.first()
+                        val recent = podcasts.flatMap { podcast ->
+                            val episodes = podcastRepo.episodesForPodcast(podcast.feedUrl).first()
+                            episodes.map { Pair(podcast, it) }
+                        }
+                            .sortedByDescending { (_, episode) -> episode.pubDate }
+                            .take(5)
+                            .map { (podcast, episode) -> episode.toMediaItem(podcast.imageUrl) }
+                        LibraryResult.ofItemList(recent, params)
+                    }
                     parentId == BROWSE_ROOT -> {
                         val podcasts = podcastRepo.podcasts.first()
                         LibraryResult.ofItemList(podcasts.map { it.toMediaItem() }, params)
