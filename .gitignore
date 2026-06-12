@@ -6,6 +6,7 @@ local.properties
 *.jks
 *.keystore
 worktrees/
+worktree/
 __pycache__/
 *.pyc
 models/
