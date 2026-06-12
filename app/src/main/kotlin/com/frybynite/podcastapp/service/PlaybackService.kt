@@ -28,6 +28,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.future
 import android.util.Log
+import androidx.media3.cast.CastPlayer
+import androidx.media3.cast.SessionAvailabilityListener
+import com.google.android.gms.cast.framework.CastContext
+import com.google.android.gms.cast.framework.CastSession
+import com.google.android.gms.cast.framework.SessionManagerListener
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -53,9 +58,27 @@ class PlaybackService : MediaLibraryService() {
     private var chaptersJob: Job? = null
 
     private lateinit var player: ExoPlayer
+    private lateinit var castPlayer: CastPlayer
+    private var activePlayer: Player? = null
     private lateinit var mediaLibrarySession: MediaLibrarySession
 
     private var chapters: List<Chapter> = emptyList()
+
+    private val castSessionListener = object : SessionManagerListener<CastSession> {
+        override fun onSessionStarted(session: CastSession, sessionId: String) {
+            switchToPlayer(castPlayer)
+        }
+        override fun onSessionEnded(session: CastSession, error: Int) {
+            switchToPlayer(player)
+        }
+        override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {}
+        override fun onSessionResumeFailed(session: CastSession, error: Int) {}
+        override fun onSessionSuspended(session: CastSession, reason: Int) {}
+        override fun onSessionStartFailed(session: CastSession, error: Int) {}
+        override fun onSessionStarting(session: CastSession) {}
+        override fun onSessionEnding(session: CastSession) {}
+        override fun onSessionResuming(session: CastSession, sessionId: String) {}
+    }
 
     private val callback = object : MediaLibrarySession.Callback {
         override fun onConnect(
@@ -91,17 +114,17 @@ class PlaybackService : MediaLibraryService() {
             customCommand: SessionCommand,
             args: Bundle
         ): ListenableFuture<SessionResult> {
-            val pos = player.currentPosition
+            val pos = (activePlayer ?: player).currentPosition
             when (customCommand.customAction) {
                 CMD_NEXT_CHAPTER -> {
                     val target = ChapterNavigator.nextChapterStart(chapters, pos)
                     Log.i(TAG, "CMD_NEXT_CHAPTER: pos=${pos}ms chapters=${chapters.size} target=${target}ms")
-                    target?.let { player.seekTo(it) }
+                    target?.let { (activePlayer ?: player).seekTo(it) }
                 }
                 CMD_PREV_CHAPTER -> {
                     val target = ChapterNavigator.prevChapterStart(chapters, pos)
                     Log.i(TAG, "CMD_PREV_CHAPTER: pos=${pos}ms chapters=${chapters.size} target=${target}ms")
-                    target?.let { player.seekTo(it) }
+                    target?.let { (activePlayer ?: player).seekTo(it) }
                 }
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
@@ -201,14 +224,28 @@ class PlaybackService : MediaLibraryService() {
                         chapters = list
                     }
                 }
+                // If currently casting, update castPlayer with the new media item
+                if (::castPlayer.isInitialized && activePlayer === castPlayer && castPlayer.isCastSessionAvailable) {
+                    val newItem = mediaItem.buildUpon().setUri(audioUrl).build()
+                    castPlayer.setMediaItem(newItem)
+                    castPlayer.prepare()
+                }
             }
         })
+        castPlayer = CastPlayer(CastContext.getSharedInstance(this))
+        castPlayer.setSessionAvailabilityListener(object : SessionAvailabilityListener {
+            override fun onCastSessionAvailable() {}
+            override fun onCastSessionUnavailable() {}
+        })
+        activePlayer = player
+        CastContext.getSharedInstance(this).sessionManager
+            .addSessionManagerListener(castSessionListener, CastSession::class.java)
         val sessionActivity = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        mediaLibrarySession = MediaLibrarySession.Builder(this, player, callback)
+        mediaLibrarySession = MediaLibrarySession.Builder(this, activePlayer!!, callback)
             .setSessionActivity(sessionActivity)
             .build()
     }
@@ -218,10 +255,38 @@ class PlaybackService : MediaLibraryService() {
     override fun onDestroy() {
         Log.i(TAG, "onDestroy: releasing session and player")
         serviceScope.cancel()
+        CastContext.getSharedInstance(this).sessionManager
+            .removeSessionManagerListener(castSessionListener, CastSession::class.java)
+        castPlayer.release()
         mediaLibrarySession.release()
         player.release()
         super.onDestroy()
     }
+
+    private fun switchToPlayer(newPlayer: Player) {
+        val currentPosition = activePlayer?.currentPosition ?: 0L
+        val currentItem = activePlayer?.currentMediaItem
+        val wasPlaying = activePlayer?.isPlaying ?: false
+        activePlayer?.stop()
+
+        activePlayer = newPlayer
+        mediaLibrarySession.release()
+        val sessionActivity = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        mediaLibrarySession = MediaLibrarySession.Builder(this, newPlayer, callback)
+            .setSessionActivity(sessionActivity)
+            .build()
+
+        if (currentItem != null) {
+            newPlayer.setMediaItem(currentItem, currentPosition)
+            newPlayer.prepare()
+            if (wasPlaying) newPlayer.play()
+        }
+    }
+
 }
 
 private fun Podcast.toMediaItem() = MediaItem.Builder()
