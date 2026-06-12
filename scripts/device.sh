@@ -3,7 +3,22 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-ADB_DEFAULT="${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb"
+WIRELESS=0
+WIRELESS_TARGET="10.0.0.34:37387"
+AUTOMOTIVE=0
+AUTOMOTIVE_AVD="Automotive_1408p_landscape"
+
+for arg in "$@"; do
+    case "$arg" in
+        --wireless) WIRELESS=1 ;;
+        --automotive) AUTOMOTIVE=1 ;;
+        *) echo "ERROR: Unknown argument: $arg" >&2; exit 1 ;;
+    esac
+done
+
+SDK_ROOT="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+
+ADB_DEFAULT="$SDK_ROOT/platform-tools/adb"
 if ! command -v adb &>/dev/null; then
     if [[ -x "$ADB_DEFAULT" ]]; then
         export PATH="$(dirname "$ADB_DEFAULT"):$PATH"
@@ -13,11 +28,44 @@ if ! command -v adb &>/dev/null; then
     fi
 fi
 
-DEVICE_SERIAL=$(adb devices | awk '/device$/ && !/emulator/{print $1}' | head -1)
+EMULATOR_BIN="$SDK_ROOT/emulator/emulator"
 
-if [[ -z "$DEVICE_SERIAL" ]]; then
-    echo "ERROR: No physical device connected. Connect via USB and enable USB debugging." >&2
-    exit 1
+if [[ "$AUTOMOTIVE" == "1" ]]; then
+    # Find running automotive emulator
+    DEVICE_SERIAL=$(adb devices | awk '/emulator.*device$/{print $1}' | head -1)
+
+    if [[ -z "$DEVICE_SERIAL" ]]; then
+        if [[ ! -x "$EMULATOR_BIN" ]]; then
+            echo "ERROR: Emulator not found at $EMULATOR_BIN" >&2
+            exit 1
+        fi
+        echo "Starting $AUTOMOTIVE_AVD..."
+        "$EMULATOR_BIN" -avd "$AUTOMOTIVE_AVD" -no-snapshot-load &
+        echo "Waiting for emulator to boot..."
+        # Wait for adb to see the device
+        for i in $(seq 1 60); do
+            DEVICE_SERIAL=$(adb devices | awk '/emulator.*device$/{print $1}' | head -1)
+            [[ -n "$DEVICE_SERIAL" ]] && break
+            sleep 2
+        done
+        if [[ -z "$DEVICE_SERIAL" ]]; then
+            echo "ERROR: Emulator did not appear within 120s." >&2
+            exit 1
+        fi
+        # Wait for boot to complete
+        echo "Waiting for boot to complete..."
+        adb -s "$DEVICE_SERIAL" wait-for-device shell 'while [[ "$(getprop sys.boot_completed)" != "1" ]]; do sleep 2; done'
+    fi
+elif [[ "$WIRELESS" == "1" ]]; then
+    echo "Connecting wirelessly to $WIRELESS_TARGET..."
+    adb connect "$WIRELESS_TARGET" >/dev/null
+    DEVICE_SERIAL="$WIRELESS_TARGET"
+else
+    DEVICE_SERIAL=$(adb devices | awk '/device$/ && !/emulator/{print $1}' | head -1)
+    if [[ -z "$DEVICE_SERIAL" ]]; then
+        echo "ERROR: No physical device connected. Connect via USB and enable USB debugging." >&2
+        exit 1
+    fi
 fi
 
 echo "Device: $DEVICE_SERIAL ($(adb -s "$DEVICE_SERIAL" shell getprop ro.product.model 2>/dev/null | tr -d '\r'))"
