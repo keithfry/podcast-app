@@ -236,7 +236,7 @@ private fun Podcast.toMediaItem() = MediaItem.Builder()
             .setArtworkUri(imageUrl?.let { android.net.Uri.parse(it) })
             .setExtras(Bundle().apply {
                 putInt(
-                    "androidx.media3.session.MediaMetadataCompat.CONTENT_STYLE_BROWSABLE_HINT",
+                    "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT",
                     PlaybackService.CONTENT_STYLE_LIST_ITEM_HINT_VALUE
                 )
             })

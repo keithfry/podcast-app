@@ -25,6 +25,13 @@ AUTOMOTIVE_AVD="Automotive_1408p_landscape"
 
 # Check if an emulator is already running
 DEVICE_SERIAL=$(adb devices | awk '/emulator.*device$/{print $1}' | head -1)
+if [[ -n "$DEVICE_SERIAL" ]]; then
+    CHARACTERISTICS=$(adb -s "$DEVICE_SERIAL" shell getprop ro.build.characteristics 2>/dev/null | tr -d '\r')
+    if [[ "$CHARACTERISTICS" != *"automotive"* ]]; then
+        echo "Running emulator ($DEVICE_SERIAL) is not automotive (characteristics: $CHARACTERISTICS). Starting $AUTOMOTIVE_AVD..."
+        DEVICE_SERIAL=""
+    fi
+fi
 
 if [[ -z "$DEVICE_SERIAL" ]]; then
     echo "Starting emulator: $AUTOMOTIVE_AVD"
