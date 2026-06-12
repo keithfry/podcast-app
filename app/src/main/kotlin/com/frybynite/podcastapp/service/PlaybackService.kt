@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.future
 import android.util.Log
 import androidx.media3.cast.CastPlayer
-import androidx.media3.cast.SessionAvailabilityListener
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.SessionManagerListener
@@ -233,10 +232,6 @@ class PlaybackService : MediaLibraryService() {
             }
         })
         castPlayer = CastPlayer(CastContext.getSharedInstance(this))
-        castPlayer.setSessionAvailabilityListener(object : SessionAvailabilityListener {
-            override fun onCastSessionAvailable() {}
-            override fun onCastSessionUnavailable() {}
-        })
         activePlayer = player
         CastContext.getSharedInstance(this).sessionManager
             .addSessionManagerListener(castSessionListener, CastSession::class.java)
@@ -257,7 +252,7 @@ class PlaybackService : MediaLibraryService() {
         serviceScope.cancel()
         CastContext.getSharedInstance(this).sessionManager
             .removeSessionManagerListener(castSessionListener, CastSession::class.java)
-        castPlayer.release()
+        if (::castPlayer.isInitialized) castPlayer.release()
         mediaLibrarySession.release()
         player.release()
         super.onDestroy()
@@ -270,15 +265,16 @@ class PlaybackService : MediaLibraryService() {
         activePlayer?.stop()
 
         activePlayer = newPlayer
-        mediaLibrarySession.release()
         val sessionActivity = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val oldSession = mediaLibrarySession
         mediaLibrarySession = MediaLibrarySession.Builder(this, newPlayer, callback)
             .setSessionActivity(sessionActivity)
             .build()
+        oldSession.release()
 
         if (currentItem != null) {
             newPlayer.setMediaItem(currentItem, currentPosition)
