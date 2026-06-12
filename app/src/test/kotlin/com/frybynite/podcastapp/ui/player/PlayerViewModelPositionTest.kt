@@ -1,9 +1,11 @@
 package com.frybynite.podcastapp.ui.player
 
+import com.frybynite.podcastapp.data.db.dao.DeepDiveDao
 import com.frybynite.podcastapp.data.db.dao.EpisodeDao
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.preferences.SpeedPreferences
 import com.frybynite.podcastapp.data.repository.ChapterRepository
+import com.frybynite.podcastapp.data.repository.PodcastRepository
 import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
 import com.frybynite.podcastapp.deepdive.TextSummarizer
@@ -34,6 +36,8 @@ class PlayerViewModelPositionTest {
             speedPrefs = mockk(relaxed = true) { io.mockk.every { speed } returns 1f },
             deepDiveOrchestrator = mockk(relaxed = true),
             summarizer = mockk(relaxed = true),
+            podcastRepo = mockk(relaxed = true),
+            deepDiveDao = mockk(relaxed = true),
             modelDownloadManager = mockk(relaxed = true)
         )
         assertEquals(0L, vm.currentPositionMs.value)
@@ -48,6 +52,8 @@ class PlayerViewModelPositionTest {
             speedPrefs = mockk(relaxed = true) { io.mockk.every { speed } returns 1f },
             deepDiveOrchestrator = mockk(relaxed = true),
             summarizer = mockk(relaxed = true),
+            podcastRepo = mockk(relaxed = true),
+            deepDiveDao = mockk(relaxed = true),
             modelDownloadManager = mockk(relaxed = true)
         )
         assertEquals(0L, vm.durationMs.value)

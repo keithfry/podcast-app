@@ -3,6 +3,7 @@ package com.frybynite.podcastapp.service
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -83,6 +84,32 @@ class PlaybackService : MediaLibraryService() {
                 .setAvailableSessionCommands(sessionCommands)
                 .setCustomLayout(commandButtons)
                 .build()
+        }
+
+        override fun onMediaButtonEvent(
+            session: MediaSession,
+            controllerInfo: MediaSession.ControllerInfo,
+            intent: Intent
+        ): Boolean {
+            @Suppress("DEPRECATION")
+            val keyEvent = intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT) ?: return false
+            if (keyEvent.action != KeyEvent.ACTION_DOWN) return false
+            val isDeepDive = player.currentMediaItem?.mediaId?.startsWith("tts://") == true
+            val pos = player.currentPosition
+            val dur = player.duration.takeIf { it > 0 } ?: return false
+            return when (keyEvent.keyCode) {
+                KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                    val target = MediaButtonHandler.handleNext(chapters, pos, isDeepDive, dur)
+                    Log.i(TAG, "MEDIA_NEXT: pos=${pos}ms deepDive=$isDeepDive target=${target}ms")
+                    target?.let { player.seekTo(it) } != null
+                }
+                KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                    val target = MediaButtonHandler.handlePrev(chapters, pos, isDeepDive)
+                    Log.i(TAG, "MEDIA_PREVIOUS: pos=${pos}ms deepDive=$isDeepDive target=${target}ms")
+                    target?.let { player.seekTo(it) } != null
+                }
+                else -> false
+            }
         }
 
         override fun onCustomCommand(
