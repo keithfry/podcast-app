@@ -747,7 +747,7 @@ private fun SeekIcon(seconds: Int, isForward: Boolean) {
 
 private operator fun DeepDiveStep.compareTo(other: DeepDiveStep): Int = ordinal.compareTo(other.ordinal)
 
-private fun formatSleepTimer(seconds: Int): String {
+internal fun formatSleepTimer(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return if (m > 0) "%d:%02d".format(m, s) else "${s}s"

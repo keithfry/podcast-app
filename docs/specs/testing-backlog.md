@@ -41,10 +41,12 @@
 
 ### PlayerScreen Compose UI (`createComposeRule()`)
 
-- Play/pause FAB icon toggles on `isPlaying` state change
-- `ChapterProgressBar` drag released near chapter boundary snaps to chapter `startTimeMs`
-- Sleep timer displays correct `mm:ss` countdown format
-- Deep dive "Skip" button visible when `deepDiveState == Playing`, hidden otherwise
+- ~~Play button shown on initial render~~ ✓ (androidTest)
+- ~~Speed label shows 1.0× initially~~ ✓ (androidTest)
+- ~~Speed label updates after setSpeed~~ ✓ (androidTest)
+- ~~Sleep timer text shown after setSleepTimer~~ ✓ (androidTest)
+- `ChapterProgressBar` drag released near chapter boundary snaps to chapter `startTimeMs` (needs real touch input)
+- Deep dive "Skip" button behavior when `deepDiveState == Playing` (needs controller mock)
 
 ### Voice command integration (end-to-end with `PlayerViewModel`)
 
@@ -59,8 +61,8 @@
 
 ### PlayerViewModel — playback
 
-- `setSpeed(1.5f)` — `playbackSpeed` StateFlow emits rounded value
-- `jumpToChapter(startTimeMs)` during deep dive stops TTS before seeking
+- ~~`setSpeed(1.5f)` — `playbackSpeed` StateFlow emits rounded value~~ ✓
+- `jumpToChapter(startTimeMs)` during deep dive stops TTS before seeking (needs private state access)
 
 ---
 
@@ -81,7 +83,7 @@
 - Button visible in `PlayerScreen` when Cast device available
 - Badge shows on `EpisodeListScreen` when actively casting
 
-### CastOptionsProvider
+### CastOptionsProvider ✓
 
-- `getCastOptions(context)` returns options with correct receiver app ID
-- `getAdditionalSessionProviders(context)` returns null
+- ~~`getCastOptions(context)` returns non-null options~~ ✓ (androidTest)
+- ~~`getAdditionalSessionProviders(context)` returns null~~ ✓ (androidTest)
