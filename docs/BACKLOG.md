@@ -8,7 +8,7 @@
 
 - **Cast session resume** — `onSessionResumed` in `PlaybackService` is a no-op; resuming a Cast session after app restart does not restore the current episode or position.
 
-- **Listened / archived episodes** — mark an episode as listened (auto or manual), hide it from the list, and delete its audio file, deep-dive cache, and chapters. DB: add `isListened: Boolean` + `archivedAt: Long?` to `EpisodeEntity` (DB v3→v4 migration). Auto-trigger when playback position reaches ~95% of duration.
+- **Listened / archived episodes** — mark an episode as listened (auto or manual), hide it from the list, and delete its audio file, deep-dive cache, and chapters. DB: add `isListened: Boolean` + `archivedAt: Long?` to `EpisodeEntity` (DB v4→v5 migration). Auto-trigger when playback position reaches ~95% of duration.
 
 ## Voice / NLP
 
@@ -20,10 +20,6 @@
 ## Haptics
 
 - **Haptics preference** — expose a setting to disable haptic feedback on snap mode activation in `ChapterProgressBar`. (Noted in progress bar design doc `docs/plans/2026-06-03-progress-bar-design.md`.)
-
-## Android Auto
-
-- **Episode-level artwork in Android Auto** — show each episode's artwork (from RSS `<itunes:image>` or `<image>`) in the Android Auto browse/playback UI. Requires loading the artwork URI into `MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI` (or `METADATA_KEY_DISPLAY_ICON_URI`) on the `MediaSessionCompat` metadata, and setting it on `MediaDescriptionCompat` for browse items returned by `MediaBrowserServiceCompat.onLoadChildren`. Artwork must be a content:// or https:// URI accessible to the Auto host process; bitmap caching via Glide/Coil recommended to avoid blocking the binder thread.
 
 ## External Audio Controls
 
