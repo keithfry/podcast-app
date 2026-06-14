@@ -3,6 +3,7 @@ package com.frybynite.podcastapp.ui.episodes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.repository.PodcastRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EpisodeListViewModel @Inject constructor(
     private val repo: PodcastRepository,
+    private val podcastDao: PodcastDao,
     savedState: SavedStateHandle
 ) : ViewModel() {
 
@@ -21,6 +23,15 @@ class EpisodeListViewModel @Inject constructor(
         checkNotNull(savedState["feedUrl"]), "UTF-8"
     )
     val episodes = repo.episodesForPodcast(feedUrl)
+
+    private val _podcastImageUrl = MutableStateFlow<String?>(null)
+    val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _podcastImageUrl.value = podcastDao.getByUrl(feedUrl)?.imageUrl
+        }
+    }
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()

@@ -70,7 +70,7 @@ fun PlayerScreen(
     val currentIdx by vm.currentChapterIndex.collectAsStateWithLifecycle()
     val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
     val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
-    val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
+    val artworkUrl by vm.artworkUrl.collectAsStateWithLifecycle()
     val podcastTitle by vm.podcastTitle.collectAsStateWithLifecycle()
     val episodeTitle by vm.episodeTitle.collectAsStateWithLifecycle()
     val sleepTimerSeconds by vm.sleepTimerSeconds.collectAsStateWithLifecycle()
@@ -256,8 +256,8 @@ fun PlayerScreen(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = podcastImageUrl,
-                    contentDescription = "Podcast artwork",
+                    model = artworkUrl,
+                    contentDescription = "Episode artwork",
                     contentScale = ContentScale.Crop,
                     placeholder = androidx.compose.ui.res.painterResource(com.frybynite.podcastapp.R.drawable.ic_podcast_placeholder),
                     error = androidx.compose.ui.res.painterResource(com.frybynite.podcastapp.R.drawable.ic_podcast_placeholder),

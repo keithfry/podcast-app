@@ -73,7 +73,7 @@ class PlayerViewModelTest {
 
     // --- loadMetadata ---
 
-    @Test fun `loadMetadata sets episodeTitle podcastTitle and podcastImageUrl from DB`() = runTest {
+    @Test fun `loadMetadata sets episodeTitle podcastTitle and artworkUrl from DB`() = runTest {
         val episodeEntity = EpisodeEntity(
             audioUrl = "https://ep.mp3",
             podcastFeedUrl = "https://feed.com",
@@ -100,7 +100,7 @@ class PlayerViewModelTest {
 
         assertEquals("Great Episode", vm.episodeTitle.value)
         assertEquals("My Podcast", vm.podcastTitle.value)
-        assertEquals("https://img.com/art.jpg", vm.podcastImageUrl.value)
+        assertEquals("https://img.com/art.jpg", vm.artworkUrl.value)
     }
 
     @Test fun `loadMetadata seeds currentPositionMs and durationMs from stored data`() = runTest {

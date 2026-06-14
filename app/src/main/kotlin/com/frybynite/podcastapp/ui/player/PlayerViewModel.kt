@@ -73,8 +73,8 @@ class PlayerViewModel @Inject constructor(
     private val _playbackSpeed = MutableStateFlow(speedPrefs.speed)
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
 
-    private val _podcastImageUrl = MutableStateFlow<String?>(null)
-    val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
+    private val _artworkUrl = MutableStateFlow<String?>(null)
+    val artworkUrl: StateFlow<String?> = _artworkUrl.asStateFlow()
 
     private val _podcastTitle = MutableStateFlow<String?>(null)
     val podcastTitle: StateFlow<String?> = _podcastTitle.asStateFlow()
@@ -248,7 +248,7 @@ class PlayerViewModel @Inject constructor(
         val metadata = androidx.media3.common.MediaMetadata.Builder()
             .setTitle(episode.title)
             .setArtist(_podcastTitle.value)
-            .apply { _podcastImageUrl.value?.let { setArtworkUri(android.net.Uri.parse(it)) } }
+            .apply { _artworkUrl.value?.let { setArtworkUri(android.net.Uri.parse(it)) } }
             .build()
         val playUri = episode.downloadPath
             ?.let { android.net.Uri.fromFile(java.io.File(it)) }
@@ -285,8 +285,8 @@ class PlayerViewModel @Inject constructor(
                 return@launch
             }
             val podcast = podcastDao.getByUrl(entity.podcastFeedUrl)
-            Log.d(TAG, "loadMetadata: podcast=${podcast?.title} imageUrl=${podcast?.imageUrl}")
-            _podcastImageUrl.value = podcast?.imageUrl
+            Log.d(TAG, "loadMetadata: podcast=${podcast?.title} imageUrl=${podcast?.imageUrl} episodeImageUrl=${entity.imageUrl}")
+            _artworkUrl.value = entity.imageUrl ?: podcast?.imageUrl
             _podcastTitle.value = podcast?.title
             _episodeTitle.value = entity.title
             if (entity.downloadStatus == "NONE" && entity.downloadPath == null) {

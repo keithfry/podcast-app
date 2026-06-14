@@ -1,7 +1,7 @@
 # Database Specification
 
 Room database (`PodcastDatabase`), SQLite via Android Room.  
-Current version: **3**  
+Current version: **4**  
 Package: `com.frybynite.podcastapp.data.db`
 
 ---
@@ -36,8 +36,9 @@ Index: `podcastFeedUrl`
 | `pubDate` | INTEGER | NOT NULL | — | Unix epoch ms |
 | `durationSeconds` | INTEGER | NOT NULL | — | |
 | `chaptersUrl` | TEXT | NULL | — | URL for Podcast Index chapters JSON |
+| `imageUrl` | TEXT | NULL | — | Episode artwork URL (`itunes:image`); fallback to podcast artwork |
 | `downloadPath` | TEXT | NULL | — | Local file path when downloaded |
-| `downloadStatus` | TEXT | NOT NULL | `"NONE"` | Enum: `NONE`, `DOWNLOADING`, `DOWNLOADED` |
+| `downloadStatus` | TEXT | NOT NULL | `"NONE"` | Enum: `NONE`, `QUEUED`, `DOWNLOADING`, `DONE` |
 | `lastPositionMs` | INTEGER | NOT NULL | `0` | Playback resume position |
 
 ---
@@ -92,9 +93,10 @@ Composite primary key: `(episodeAudioUrl, chapterUrl)`
 | 1 | Initial schema: `podcasts`, `episodes`, `chapters` |
 | 2 | Added `lastPositionMs` to `episodes` |
 | 3 | Added `deep_dives` table |
+| 4 | Added `imageUrl` to `episodes` (per-episode `itunes:image` artwork) |
 
 ---
 
 ## Planned Changes (Backlog)
 
-- **v4** — Add `isListened: Boolean` + `archivedAt: Long?` to `episodes`. Auto-set `isListened = true` when `lastPositionMs` reaches ~95% of `durationSeconds * 1000`.
+- Add `isListened: Boolean` + `archivedAt: Long?` to `episodes`. Auto-set `isListened = true` when `lastPositionMs` reaches ~95% of `durationSeconds * 1000`.

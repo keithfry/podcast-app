@@ -40,6 +40,7 @@ class RssParser {
         var epPubDate = 0L
         var epDurationSeconds = 0
         var epChaptersUrl: String? = null
+        var epImageUrl: String? = null
         var currentText = ""
 
         var event = parser.eventType
@@ -52,10 +53,12 @@ class RssParser {
                         parser.name == "item" -> {
                             inItem = true
                             epTitle = ""; epAudioUrl = ""; epPubDate = 0L
-                            epDurationSeconds = 0; epChaptersUrl = null
+                            epDurationSeconds = 0; epChaptersUrl = null; epImageUrl = null
                         }
                         parser.name == "enclosure" -> if (inItem) epAudioUrl = parser.getAttributeValue(null, "url") ?: ""
                         parser.namespace == NS_PODCAST && parser.name == "chapters" -> if (inItem) epChaptersUrl = parser.getAttributeValue(null, "url")
+                        inItem && parser.namespace == NS_ITUNES && parser.name == "image" ->
+                            epImageUrl = parser.getAttributeValue(null, "href")
                         inChannel && !inItem && parser.namespace == NS_ITUNES && parser.name == "image" ->
                             podcastImage = parser.getAttributeValue(null, "href")
                         inChannel && !inItem && parser.name == "image" -> inChannelImage = true
@@ -71,7 +74,8 @@ class RssParser {
                                 title = epTitle,
                                 pubDate = epPubDate,
                                 durationSeconds = epDurationSeconds,
-                                chaptersUrl = epChaptersUrl
+                                chaptersUrl = epChaptersUrl,
+                                imageUrl = epImageUrl
                             )
                         )
                         inItem = false
