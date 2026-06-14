@@ -2,8 +2,8 @@ package com.frybynite.podcastapp
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import com.frybynite.podcastapp.deepdive.DeepDiveRouter
 import com.frybynite.podcastapp.deepdive.NotificationHelper
 import com.frybynite.podcastapp.ui.PodcastNavGraph
@@ -11,7 +11,7 @@ import com.frybynite.podcastapp.ui.theme.PodcastAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

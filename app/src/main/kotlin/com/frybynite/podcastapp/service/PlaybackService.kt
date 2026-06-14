@@ -275,13 +275,20 @@ class PlaybackService : MediaLibraryService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val oldSession = mediaLibrarySession
+        oldSession.release()
         mediaLibrarySession = MediaLibrarySession.Builder(this, newPlayer, callback)
             .setSessionActivity(sessionActivity)
             .build()
-        oldSession.release()
 
         if (currentItem != null) {
-            newPlayer.setMediaItem(currentItem, currentPosition)
+            val item = if (newPlayer === castPlayer && currentItem.localConfiguration?.mimeType == null) {
+                currentItem.buildUpon()
+                    .setMimeType("audio/mpeg")
+                    .build()
+            } else {
+                currentItem
+            }
+            newPlayer.setMediaItem(item, currentPosition)
             newPlayer.prepare()
             if (wasPlaying) newPlayer.play()
         }
