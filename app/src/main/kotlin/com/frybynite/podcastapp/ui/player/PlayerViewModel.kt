@@ -34,6 +34,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.google.android.gms.cast.framework.CastContext
+import com.google.android.gms.cast.framework.CastSession
+import com.google.android.gms.cast.framework.SessionManagerListener
 import javax.inject.Inject
 
 private const val TAG = "PlayerVM"
@@ -79,6 +82,9 @@ class PlayerViewModel @Inject constructor(
     private val _episodeTitle = MutableStateFlow<String?>(null)
     val episodeTitle: StateFlow<String?> = _episodeTitle.asStateFlow()
 
+    private val _isCasting = MutableStateFlow(false)
+    val isCasting: StateFlow<Boolean> = _isCasting.asStateFlow()
+
     // Sleep timer: remaining seconds, null = not active
     private val _sleepTimerSeconds = MutableStateFlow<Int?>(null)
     val sleepTimerSeconds: StateFlow<Int?> = _sleepTimerSeconds.asStateFlow()
@@ -114,6 +120,18 @@ class PlayerViewModel @Inject constructor(
     var controller: MediaController? = null
         private set
 
+    private val castListener = object : SessionManagerListener<CastSession> {
+        override fun onSessionStarted(session: CastSession, sessionId: String) { _isCasting.value = true }
+        override fun onSessionEnded(session: CastSession, error: Int) { _isCasting.value = false }
+        override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) { _isCasting.value = true }
+        override fun onSessionSuspended(session: CastSession, reason: Int) { _isCasting.value = false }
+        override fun onSessionStartFailed(session: CastSession, error: Int) {}
+        override fun onSessionStarting(session: CastSession) {}
+        override fun onSessionEnding(session: CastSession) {}
+        override fun onSessionResuming(session: CastSession, sessionId: String) {}
+        override fun onSessionResumeFailed(session: CastSession, error: Int) {}
+    }
+
     init {
         viewModelScope.launch {
             DeepDiveRouter.pendingUrl.collectLatest { url ->
@@ -132,6 +150,9 @@ class PlayerViewModel @Inject constructor(
                 }
             }
         }
+        val castContext = CastContext.getSharedInstance(context)
+        _isCasting.value = castContext.sessionManager.currentCastSession != null
+        castContext.sessionManager.addSessionManagerListener(castListener, CastSession::class.java)
     }
 
     fun connect(audioUrl: String) {
@@ -581,6 +602,10 @@ class PlayerViewModel @Inject constructor(
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                 episodeDao.updateLastPosition(ep.audioUrl, pos)
             }
+        }
+        runCatching {
+            CastContext.getSharedInstance(context).sessionManager
+                .removeSessionManagerListener(castListener, CastSession::class.java)
         }
         super.onCleared()
     }

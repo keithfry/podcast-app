@@ -15,6 +15,8 @@ coroutines = "1.8.1"
 lifecycle = "2.8.3"
 mediapipe-tasks-genai = "0.10.22"
 jsoup = "1.17.2"
+mediarouter = "1.7.0"
+cast-framework = "21.5.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.13.1" }
@@ -61,6 +63,9 @@ browser = { group = "androidx.browser", name = "browser", version = "1.8.0" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version = "1.7.0" }
 mediapipe-tasks-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipe-tasks-genai" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+media3-cast = { group = "androidx.media3", name = "media3-cast", version.ref = "media3" }
+mediarouter = { group = "androidx.mediarouter", name = "mediarouter", version.ref = "mediarouter" }
+play-services-cast-framework = { group = "com.google.android.gms", name = "play-services-cast-framework", version.ref = "cast-framework" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

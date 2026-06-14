@@ -26,6 +26,7 @@ android {
         buildConfigField("String", "GROQ_API_KEY", "\"${localProperties["GROQ_API_KEY"] ?: ""}\"")
         buildConfigField("String", "HF_TOKEN", "\"${localProperties["HF_TOKEN"] ?: ""}\"")
         buildConfigField("String", "MODAL_TTS_URL", "\"${localProperties["MODAL_TTS_URL"] ?: ""}\"")
+        buildConfigField("String", "CAST_APP_ID", "\"${localProperties["CAST_APP_ID"] ?: ""}\"")
     }
 
     buildTypes {
@@ -68,6 +69,9 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.media3.ui)
+    implementation(libs.media3.cast)
+    implementation(libs.mediarouter)
+    implementation(libs.play.services.cast.framework)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)

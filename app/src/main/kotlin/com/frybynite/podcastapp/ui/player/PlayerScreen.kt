@@ -52,6 +52,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.mediarouter.app.MediaRouteButton
+import androidx.mediarouter.media.MediaControlIntent
+import androidx.mediarouter.media.MediaRouteSelector
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -76,6 +80,7 @@ fun PlayerScreen(
     val deepDiveChapterIndex by vm.deepDiveChapterIndex.collectAsStateWithLifecycle()
     val cachedDeepDiveUrls by vm.cachedDeepDiveUrls.collectAsStateWithLifecycle()
     val modelDownloadState by vm.modelDownloadState.collectAsStateWithLifecycle()
+    val isCasting by vm.isCasting.collectAsStateWithLifecycle()
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
@@ -187,6 +192,19 @@ fun PlayerScreen(
                     }
                 },
                 actions = {
+                    if (!isAutomotive) {
+                        AndroidView(
+                            factory = { ctx ->
+                                MediaRouteButton(ctx).apply {
+                                    val selector = MediaRouteSelector.Builder()
+                                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+                                        .build()
+                                    routeSelector = selector
+                                }
+                            },
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
                     IconButton(onClick = { showSleepSheet = true }) {
                         if (sleepTimerSeconds != null) {
                             Text(
@@ -246,6 +264,17 @@ fun PlayerScreen(
                     fallback = androidx.compose.ui.res.painterResource(com.frybynite.podcastapp.R.drawable.ic_podcast_placeholder),
                     modifier = Modifier.fillMaxSize()
                 )
+                if (isCasting) {
+                    Icon(
+                        imageVector = Icons.Filled.Cast,
+                        contentDescription = "Casting",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(4.dp)
+                            .size(20.dp)
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
             Row(
