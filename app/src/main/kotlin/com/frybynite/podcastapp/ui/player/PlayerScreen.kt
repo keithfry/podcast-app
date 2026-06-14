@@ -359,8 +359,8 @@ fun PlayerScreen(
                     fun collapse() = snapTo(0f)
 
                     Box {
-                        // Reveal panel (behind the row)
-                        Row(
+                        // Reveal panel (behind the row) — only when chapter has a URL
+                        if (hasUrl) Row(
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
                                 .width(revealWidth)
@@ -368,7 +368,6 @@ fun PlayerScreen(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val enabledAlpha = if (hasUrl) 1f else 0.35f
                             // Open
                             Column(
                                 modifier = Modifier
@@ -376,16 +375,14 @@ fun PlayerScreen(
                                     .fillMaxHeight()
                                     .background(Color(0xFF5B8DB8))
                                     .clickable {
-                                        if (hasUrl) {
-                                            chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
-                                        }
+                                        chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
                                         collapse()
                                     },
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha), tint = Color.White)
-                                Text("Open", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha), color = Color.White)
+                                Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp), tint = Color.White)
+                                Text("Open", style = MaterialTheme.typography.labelSmall, color = Color.White)
                             }
                             // Share
                             if (!isAutomotive) Column(
@@ -394,23 +391,21 @@ fun PlayerScreen(
                                     .fillMaxHeight()
                                     .background(Color(0xFF5A9E6F))
                                     .clickable {
-                                        if (hasUrl) {
-                                            chapter.url?.let { url ->
-                                                context.startActivity(Intent.createChooser(
-                                                    Intent(Intent.ACTION_SEND).apply {
-                                                        type = "text/plain"
-                                                        putExtra(Intent.EXTRA_TEXT, url)
-                                                    }, "Share link"
-                                                ))
-                                            }
+                                        chapter.url?.let { url ->
+                                            context.startActivity(Intent.createChooser(
+                                                Intent(Intent.ACTION_SEND).apply {
+                                                    type = "text/plain"
+                                                    putExtra(Intent.EXTRA_TEXT, url)
+                                                }, "Share link"
+                                            ))
                                         }
                                         collapse()
                                     },
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha), tint = Color.White)
-                                Text("Share", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha), color = Color.White)
+                                Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp), tint = Color.White)
+                                Text("Share", style = MaterialTheme.typography.labelSmall, color = Color.White)
                             }
                             // More
                             Column(
@@ -419,14 +414,14 @@ fun PlayerScreen(
                                     .fillMaxHeight()
                                     .background(Color(0xFFB05C5C))
                                     .clickable {
-                                        if (hasUrl) vm.moreAboutThis(chapter.url, idx)
+                                        vm.moreAboutThis(chapter.url, idx)
                                         collapse()
                                     },
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp).graphicsLayer(alpha = enabledAlpha), tint = Color.White)
-                                Text("More", style = MaterialTheme.typography.labelSmall, modifier = Modifier.graphicsLayer(alpha = enabledAlpha), color = Color.White)
+                                Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp), tint = Color.White)
+                                Text("More", style = MaterialTheme.typography.labelSmall, color = Color.White)
                             }
                         }
 
@@ -449,17 +444,19 @@ fun PlayerScreen(
                                         androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
                                     ) else Modifier
                                 )
-                                .draggable(
-                                    orientation = Orientation.Horizontal,
-                                    state = rememberDraggableState { delta ->
-                                        revealScope.launch {
-                                            offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidthPx, 0f))
+                                .then(
+                                    if (hasUrl) Modifier.draggable(
+                                        orientation = Orientation.Horizontal,
+                                        state = rememberDraggableState { delta ->
+                                            revealScope.launch {
+                                                offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidthPx, 0f))
+                                            }
+                                        },
+                                        onDragStopped = { velocity ->
+                                            val target = if (offsetX.value < -revealWidthPx * 0.35f || velocity < -600f) -revealWidthPx else 0f
+                                            snapTo(target)
                                         }
-                                    },
-                                    onDragStopped = { velocity ->
-                                        val target = if (offsetX.value < -revealWidthPx * 0.35f || velocity < -600f) -revealWidthPx else 0f
-                                        snapTo(target)
-                                    }
+                                    ) else Modifier
                                 )
                                 .combinedClickable(
                                     onClick = { vm.jumpToChapter(chapter.startTimeMs); collapse() },
