@@ -102,7 +102,7 @@ fun EpisodeListScreen(
 }
 
 @Composable
-private fun EpisodeRow(episode: Episode, onClick: () -> Unit, onDownload: () -> Unit) {
+internal fun EpisodeRow(episode: Episode, onClick: () -> Unit, onDownload: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
