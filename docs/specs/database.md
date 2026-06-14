@@ -1,0 +1,100 @@
+# Database Specification
+
+Room database (`PodcastDatabase`), SQLite via Android Room.  
+Current version: **3**  
+Package: `com.frybynite.podcastapp.data.db`
+
+---
+
+## Tables
+
+### `podcasts`
+
+Primary key: `feedUrl`
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| `feedUrl` | TEXT | NOT NULL | PK — RSS feed URL |
+| `title` | TEXT | NOT NULL | |
+| `author` | TEXT | NOT NULL | |
+| `description` | TEXT | NOT NULL | |
+| `imageUrl` | TEXT | NULL | Podcast artwork URL |
+| `lastUpdated` | INTEGER | NOT NULL | Unix epoch ms |
+
+---
+
+### `episodes`
+
+Primary key: `audioUrl`  
+Index: `podcastFeedUrl`
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| `audioUrl` | TEXT | NOT NULL | — | PK — MP3/audio URL |
+| `podcastFeedUrl` | TEXT | NOT NULL | — | FK → `podcasts.feedUrl` (not enforced) |
+| `title` | TEXT | NOT NULL | — | |
+| `pubDate` | INTEGER | NOT NULL | — | Unix epoch ms |
+| `durationSeconds` | INTEGER | NOT NULL | — | |
+| `chaptersUrl` | TEXT | NULL | — | URL for Podcast Index chapters JSON |
+| `downloadPath` | TEXT | NULL | — | Local file path when downloaded |
+| `downloadStatus` | TEXT | NOT NULL | `"NONE"` | Enum: `NONE`, `DOWNLOADING`, `DOWNLOADED` |
+| `lastPositionMs` | INTEGER | NOT NULL | `0` | Playback resume position |
+
+---
+
+### `chapters`
+
+Primary key: `id` (auto-generated)  
+Index: `episodeAudioUrl`
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| `id` | INTEGER | NOT NULL | PK autoincrement |
+| `episodeAudioUrl` | TEXT | NOT NULL | FK → `episodes.audioUrl` (not enforced) |
+| `startTimeMs` | INTEGER | NOT NULL | |
+| `endTimeMs` | INTEGER | NOT NULL | |
+| `title` | TEXT | NOT NULL | |
+| `url` | TEXT | NULL | Associated web URL (used for deep-dive) |
+
+Chapters are always replaced atomically per episode (`replaceChaptersForEpisode` transaction: delete then insert).
+
+---
+
+### `deep_dives`
+
+Composite primary key: `(episodeAudioUrl, chapterUrl)`
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| `episodeAudioUrl` | TEXT | NOT NULL | PK part 1 — FK → `episodes.audioUrl` (not enforced) |
+| `chapterUrl` | TEXT | NOT NULL | PK part 2 — FK → `chapters.url` (not enforced) |
+| `filePath` | TEXT | NOT NULL | Local path to cached audio file |
+| `summaryText` | TEXT | NOT NULL | Pre-generated text summary |
+| `createdAt` | INTEGER | NOT NULL | Unix epoch ms |
+
+---
+
+## DAOs
+
+| DAO | Table | Key operations |
+|-----|-------|----------------|
+| `PodcastDao` | `podcasts` | `getAll(): Flow`, `getByUrl()`, `upsert()`, `delete()` |
+| `EpisodeDao` | `episodes` | `getForPodcast(): Flow`, `getByAudioUrl()`, `upsertAll()`, `updateDownloadStatus()`, `updateLastPosition()` |
+| `ChapterDao` | `chapters` | `getForEpisode(): Flow`, `countForEpisode()`, `replaceChaptersForEpisode()` (transaction) |
+| `DeepDiveDao` | `deep_dives` | `get()`, `upsert()`, `flowForEpisode()`, `deleteForEpisode()` |
+
+---
+
+## Version History
+
+| Version | Change |
+|---------|--------|
+| 1 | Initial schema: `podcasts`, `episodes`, `chapters` |
+| 2 | Added `lastPositionMs` to `episodes` |
+| 3 | Added `deep_dives` table |
+
+---
+
+## Planned Changes (Backlog)
+
+- **v4** — Add `isListened: Boolean` + `archivedAt: Long?` to `episodes`. Auto-set `isListened = true` when `lastPositionMs` reaches ~95% of `durationSeconds * 1000`.
