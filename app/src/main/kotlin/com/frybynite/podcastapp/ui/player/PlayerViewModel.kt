@@ -150,9 +150,11 @@ class PlayerViewModel @Inject constructor(
                 }
             }
         }
-        val castContext = CastContext.getSharedInstance(context)
-        _isCasting.value = castContext.sessionManager.currentCastSession != null
-        castContext.sessionManager.addSessionManagerListener(castListener, CastSession::class.java)
+        runCatching {
+            val castContext = CastContext.getSharedInstance(context)
+            _isCasting.value = castContext.sessionManager.currentCastSession != null
+            castContext.sessionManager.addSessionManagerListener(castListener, CastSession::class.java)
+        }
     }
 
     fun connect(audioUrl: String) {
