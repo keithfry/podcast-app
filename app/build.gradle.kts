@@ -103,4 +103,7 @@ dependencies {
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation("org.json:json:20231013")
     androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.turbine)
 }
