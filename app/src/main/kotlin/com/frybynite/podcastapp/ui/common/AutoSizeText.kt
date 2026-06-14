@@ -28,12 +28,12 @@ fun AutoSizeText(
     Text(
         text = text,
         style = style.copy(fontSize = fontSize),
-        maxLines = 1,
-        softWrap = false,
-        overflow = TextOverflow.Visible,
+        maxLines = 2,
+        softWrap = true,
+        overflow = TextOverflow.Clip,
         modifier = modifier.drawWithContent { if (readyToDraw) drawContent() },
         onTextLayout = { result ->
-            if (result.didOverflowWidth && fontSize > minFontSize) {
+            if (result.hasVisualOverflow && fontSize > minFontSize) {
                 val next = (fontSize.value - 1f).sp
                 fontSize = if (next > minFontSize) next else minFontSize
             } else {
