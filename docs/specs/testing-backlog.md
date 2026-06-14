@@ -24,20 +24,20 @@
 - `switchToPlayer` preserves current position and playing state when switching ExoPlayer → mock CastPlayer
 - `onMediaButtonEvent(KEYCODE_MEDIA_NEXT)` delegates to chapter navigator
 
-### ChapterRepository
+### ChapterRepository ✓
 
-- `fetchAndCacheChapters` cache hit: MockWebServer receives 0 requests
-- `fetchAndCacheChapters` cache miss: fetches, parses, and saves chapters to DAO
+- ~~`fetchAndCacheChapters` cache hit: MockWebServer receives 0 requests~~ ✓
+- ~~`fetchAndCacheChapters` cache miss: fetches, parses, and saves chapters to DAO~~ ✓
 
 ---
 
 ## Medium Impact
 
-### DeepDiveOrchestrator
+### DeepDiveOrchestrator ✓
 
-- Fresh miss: fetch → summarize → TTS → `deepDiveDao.upsert` all called in sequence
-- `fetchExistingSummary` reads `summary` field from metadata JSON correctly
-- File relocation with fallback to copy when rename fails
+- ~~Fresh miss: fetch → summarize → TTS → `deepDiveDao.upsert` all called in sequence~~ ✓
+- ~~`fetchExistingSummary` reads `summary` field from metadata JSON correctly~~ ✓
+- ~~File relocation with fallback to copy when rename fails~~ ✓
 
 ### PlayerScreen Compose UI (`createComposeRule()`)
 
@@ -51,11 +51,11 @@
 - "next chapter" command → `currentChapterIndex` increments
 - "more about this" with chapter that has a URL → `deepDiveState` transitions to `Fetching`
 
-### PodcastRepository gaps
+### PodcastRepository gaps ✓
 
-- `refreshPodcast(feedUrl)` re-fetches RSS and updates episodes in DB
-- `removePodcast(feedUrl)` deletes podcast and cascades episode removal
-- Network failure sets error state, existing DB data preserved
+- ~~`refreshPodcast(feedUrl)` re-fetches RSS and updates episodes in DB~~ ✓
+- ~~`removePodcast(feedUrl)` deletes podcast and cascades episode removal~~ ✓
+- ~~Network failure sets error state, existing DB data preserved~~ ✓
 
 ### PlayerViewModel — playback
 
