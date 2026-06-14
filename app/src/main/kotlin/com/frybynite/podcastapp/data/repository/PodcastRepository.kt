@@ -34,7 +34,7 @@ class PodcastRepository @Inject constructor(
         val parsed = rssParser.parse(xml)
         val podcast = parsed.podcast.copy(feedUrl = feedUrl, lastUpdated = System.currentTimeMillis())
         podcastDao.upsert(podcast.toEntity())
-        episodeDao.upsertAll(parsed.episodes.map { it.toEntity(feedUrl) })
+        episodeDao.upsertFromFeed(parsed.episodes.map { it.toEntity(feedUrl) })
     }
 
     suspend fun refreshPodcast(feedUrl: String) = addPodcast(feedUrl)

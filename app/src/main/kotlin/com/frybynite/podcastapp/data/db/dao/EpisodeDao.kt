@@ -12,8 +12,40 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE audioUrl = :audioUrl")
     suspend fun getByAudioUrl(audioUrl: String): EpisodeEntity?
 
+    // Used only in tests — replaces the full row including local state.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(episodes: List<EpisodeEntity>)
+
+    // Feed refresh: update RSS-sourced fields for existing rows; insert new rows.
+    // Preserves downloadPath, downloadStatus, lastPositionMs on conflict.
+    @Transaction
+    suspend fun upsertFromFeed(episodes: List<EpisodeEntity>) {
+        insertIgnore(episodes)
+        for (ep in episodes) {
+            updateRssFields(ep.audioUrl, ep.title, ep.pubDate, ep.durationSeconds, ep.chaptersUrl, ep.imageUrl)
+        }
+    }
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnore(episodes: List<EpisodeEntity>)
+
+    @Query("""
+        UPDATE episodes
+        SET title = :title,
+            pubDate = :pubDate,
+            durationSeconds = :durationSeconds,
+            chaptersUrl = :chaptersUrl,
+            imageUrl = :imageUrl
+        WHERE audioUrl = :audioUrl
+    """)
+    suspend fun updateRssFields(
+        audioUrl: String,
+        title: String,
+        pubDate: Long,
+        durationSeconds: Int,
+        chaptersUrl: String?,
+        imageUrl: String?
+    )
 
     @Query("UPDATE episodes SET downloadPath = :path, downloadStatus = :status WHERE audioUrl = :audioUrl")
     suspend fun updateDownloadStatus(audioUrl: String, path: String?, status: String)
