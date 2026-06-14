@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
+import com.frybynite.podcastapp.ui.common.AutoSizeText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.clickable
@@ -185,7 +186,7 @@ fun PlayerScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(episodeTitle ?: podcastTitle ?: "Playing") },
+                title = { AutoSizeText(episodeTitle ?: podcastTitle ?: "Playing") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
