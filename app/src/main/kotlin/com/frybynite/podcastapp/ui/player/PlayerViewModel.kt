@@ -85,6 +85,9 @@ class PlayerViewModel @Inject constructor(
     private var sleepTimerJob: Job? = null
 
     private var chaptersJob: Job? = null
+    private var positionSaveJob: Job? = null
+    private var currentEpisode: Episode? = null
+    private var episodeLoaded = false
 
     private val _deepDiveState = MutableStateFlow<DeepDiveState>(DeepDiveState.Idle)
     val deepDiveState: StateFlow<DeepDiveState> = _deepDiveState.asStateFlow()
@@ -145,8 +148,23 @@ class PlayerViewModel @Inject constructor(
                 controller?.setPlaybackParameters(PlaybackParameters(speedPrefs.speed))
                 controller?.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(playing: Boolean) {
-                        Log.d(TAG, "onIsPlayingChanged: playing=$playing")
+                        Log.d(TAG, "onIsPlayingChanged: playing=$playing episodeLoaded=$episodeLoaded")
+                        // Only reflect play state and save position once this episode is loaded
+                        if (!episodeLoaded) return
                         _isPlaying.value = playing
+                        if (playing) {
+                            positionSaveJob?.cancel()
+                            positionSaveJob = viewModelScope.launch {
+                                while (true) {
+                                    delay(10_000L)
+                                    savePosition()
+                                }
+                            }
+                        } else {
+                            positionSaveJob?.cancel()
+                            positionSaveJob = null
+                            viewModelScope.launch { savePosition() }
+                        }
                     }
                     override fun onPositionDiscontinuity(
                         oldPosition: Player.PositionInfo,
@@ -155,6 +173,11 @@ class PlayerViewModel @Inject constructor(
                     ) {
                         Log.d(TAG, "onPositionDiscontinuity: ${oldPosition.positionMs}ms -> ${newPosition.positionMs}ms reason=$reason")
                         updateCurrentChapterIndex()
+                        val ep = currentEpisode ?: return
+                        val pos = newPosition.positionMs.takeIf { it > 0L } ?: return
+                        // Guard: only save if controller is playing this episode, not a previous one
+                        if (controller?.currentMediaItem?.mediaId != ep.audioUrl) return
+                        viewModelScope.launch { episodeDao.updateLastPosition(ep.audioUrl, pos) }
                     }
                     override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                         val incomingId = mediaItem?.mediaId ?: return
@@ -176,7 +199,7 @@ class PlayerViewModel @Inject constructor(
                         updateCurrentChapterIndex()
                     }
                 })
-                loadAndPlay(audioUrl)
+                loadMetadata(audioUrl)
             }.onFailure { e ->
                 Log.e(TAG, "connect: MediaController failed", e)
             }
@@ -185,15 +208,18 @@ class PlayerViewModel @Inject constructor(
 
     fun playEpisode(episode: Episode) {
         Log.i(TAG, "playEpisode: title=${episode.title} audioUrl=${episode.audioUrl} chaptersUrl=${episode.chaptersUrl}")
-        chaptersJob?.cancel()
-        chaptersJob = viewModelScope.launch {
-            episode.chaptersUrl?.let { url ->
-                Log.d(TAG, "playEpisode: fetching chapters from $url")
-                chapterRepo.fetchAndCacheChapters(episode.audioUrl, url)
-            }
-            chapterRepo.chaptersForEpisode(episode.audioUrl).collect { list ->
-                Log.d(TAG, "playEpisode: chapters updated count=${list.size}")
-                _chapters.value = list
+        // Chapters already loaded by loadMetadata; only re-fetch if switching to a different episode
+        if (episode.audioUrl != currentEpisode?.audioUrl || _chapters.value.isEmpty()) {
+            chaptersJob?.cancel()
+            chaptersJob = viewModelScope.launch {
+                episode.chaptersUrl?.let { url ->
+                    Log.d(TAG, "playEpisode: fetching chapters from $url")
+                    chapterRepo.fetchAndCacheChapters(episode.audioUrl, url)
+                }
+                chapterRepo.chaptersForEpisode(episode.audioUrl).collect { list ->
+                    Log.d(TAG, "playEpisode: chapters updated count=${list.size}")
+                    _chapters.value = list
+                }
             }
         }
         val metadata = androidx.media3.common.MediaMetadata.Builder()
@@ -210,27 +236,38 @@ class PlayerViewModel @Inject constructor(
             .setUri(playUri)
             .setMediaMetadata(metadata)
             .build()
-        controller?.setMediaItem(item)
+        controller?.setMediaItem(item, episode.lastPositionMs)
         controller?.prepare()
         controller?.play()
+        episodeLoaded = true
     }
 
-    fun loadAndPlay(audioUrl: String) {
-        Log.i(TAG, "loadAndPlay: audioUrl=$audioUrl")
+    fun loadMetadata(audioUrl: String) {
+        Log.i(TAG, "loadMetadata: audioUrl=$audioUrl")
+        // Synchronous reset — clears stale state from any previously loaded episode
+        chaptersJob?.cancel()
+        positionSaveJob?.cancel()
+        positionSaveJob = null
+        currentEpisode = null
+        episodeLoaded = false
+        _chapters.value = emptyList()
+        _currentPositionMs.value = 0L
+        _durationMs.value = 0L
+        _currentChapterIndex.value = 0
+        _isPlaying.value = false
         viewModelScope.launch {
             val entity = episodeDao.getByAudioUrl(audioUrl)
             if (entity == null) {
-                Log.w(TAG, "loadAndPlay: no episode found for audioUrl=$audioUrl")
+                Log.w(TAG, "loadMetadata: no episode found for audioUrl=$audioUrl")
                 return@launch
             }
             val podcast = podcastDao.getByUrl(entity.podcastFeedUrl)
-            Log.d(TAG, "loadAndPlay: podcast=${podcast?.title} imageUrl=${podcast?.imageUrl}")
+            Log.d(TAG, "loadMetadata: podcast=${podcast?.title} imageUrl=${podcast?.imageUrl}")
             _podcastImageUrl.value = podcast?.imageUrl
             _podcastTitle.value = podcast?.title
             _episodeTitle.value = entity.title
-            // Auto-download for offline use while streaming plays simultaneously.
             if (entity.downloadStatus == "NONE" && entity.downloadPath == null) {
-                Log.i(TAG, "loadAndPlay: queuing background download for ${entity.audioUrl}")
+                Log.i(TAG, "loadMetadata: queuing background download for ${entity.audioUrl}")
                 podcastRepo.downloadEpisode(entity.audioUrl)
             }
             cachedDeepDiveJob?.cancel()
@@ -240,8 +277,50 @@ class PlayerViewModel @Inject constructor(
                         .map { it.chapterUrl }.toSet()
                 }
             }
-            playEpisode(entity.toDomain())
+            val episode = entity.toDomain()
+            currentEpisode = episode
+            episodeLoaded = false
+            // Seed position and duration from stored data so UI shows correct state before play
+            _currentPositionMs.value = episode.lastPositionMs
+            _durationMs.value = entity.durationSeconds * 1000L
+            // Fetch chapters so chapter list is visible before playback starts
+            chaptersJob?.cancel()
+            chaptersJob = viewModelScope.launch {
+                entity.chaptersUrl?.let { url ->
+                    Log.d(TAG, "loadMetadata: fetching chapters from $url")
+                    chapterRepo.fetchAndCacheChapters(entity.audioUrl, url)
+                }
+                chapterRepo.chaptersForEpisode(entity.audioUrl).collect { list ->
+                    Log.d(TAG, "loadMetadata: chapters updated count=${list.size}")
+                    _chapters.value = list
+                    val pos = currentEpisode?.lastPositionMs ?: 0L
+                    if (list.isNotEmpty()) {
+                        val idx = list.indexOfLast { it.startTimeMs <= pos }
+                        if (idx >= 0) _currentChapterIndex.value = idx
+                    }
+                }
+            }
         }
+    }
+
+    fun togglePlayPause() {
+        val c = controller ?: return
+        if (c.isPlaying) {
+            c.pause()
+        } else if (episodeLoaded) {
+            c.play()
+        } else {
+            val ep = currentEpisode ?: return
+            playEpisode(ep)
+        }
+    }
+
+    private suspend fun savePosition() {
+        val ep = currentEpisode ?: return
+        if (controller?.currentMediaItem?.mediaId != ep.audioUrl) return
+        val pos = controller?.currentPosition?.takeIf { it > 0L } ?: return
+        Log.d(TAG, "savePosition: audioUrl=${ep.audioUrl} pos=${pos}ms")
+        episodeDao.updateLastPosition(ep.audioUrl, pos)
     }
 
     fun updateCurrentChapterIndex() {
@@ -250,8 +329,9 @@ class PlayerViewModel @Inject constructor(
         if (s is DeepDiveState.Loading) return
         val pos = controller?.currentPosition ?: return
         val dur = controller?.duration?.takeIf { it > 0 } ?: 0L
-        _currentPositionMs.value = pos
-        _durationMs.value = dur
+        // Don't overwrite a known position with 0 during prepare/seek transitions
+        if (pos > 0L || _currentPositionMs.value == 0L) _currentPositionMs.value = pos
+        if (dur > 0L) _durationMs.value = dur
         // Playing: update bar for TTS progress but don't move the chapter highlight.
         if (s == DeepDiveState.Playing) return
         val idx = _chapters.value.indexOfLast { it.startTimeMs <= pos }
@@ -491,8 +571,17 @@ class PlayerViewModel @Inject constructor(
         Log.i(TAG, "onCleared: releasing controller and resources")
         tickingJob?.cancel()
         exitToneJob?.cancel()
+        positionSaveJob?.cancel()
+        val ep = currentEpisode
+        val pos = controller?.currentPosition?.takeIf { it > 0L }
         toneGen.release()
         controller?.release()
+        if (ep != null && pos != null) {
+            Log.d(TAG, "onCleared: saving position ${pos}ms for ${ep.audioUrl}")
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                episodeDao.updateLastPosition(ep.audioUrl, pos)
+            }
+        }
         super.onCleared()
     }
 }

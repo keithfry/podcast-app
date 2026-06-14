@@ -6,6 +6,10 @@
 
 - **"More about this" deep-dive** — voice command ("more about this", "tell me more", etc.) mid-playback. If current chapter has a `url`, fetches and summarizes that URL on-device, generates TTS audio, and injects it between segments. Skipping discards the audio and resumes normal playback. See plan: `docs/plans/2026-06-03-more-about-this-design.md`. On-device AI preference: MediaPipe LLM Inference (Gemma) for summarization, Android TextToSpeech for audio.
 
+## Episode Segment Slide-Up Panel
+
+- **Hide link/share/more options when segment has no URL** — when a chapter/segment lacks a `url`, the slide-up panel should not render the link, share, or "more" actions since those are URL-dependent. Conditionally show that section only when `chapter.url != null`.
+
 ## Haptics
 
 - **Haptics preference** — expose a setting to disable haptic feedback on snap mode activation in `ChapterProgressBar`. (Noted in progress bar design doc `docs/plans/2026-06-03-progress-bar-design.md`.)

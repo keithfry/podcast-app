@@ -13,5 +13,6 @@ data class EpisodeEntity(
     val durationSeconds: Int,
     val chaptersUrl: String?,
     val downloadPath: String?,
-    val downloadStatus: String = "NONE"
+    val downloadStatus: String = "NONE",
+    val lastPositionMs: Long = 0L
 )

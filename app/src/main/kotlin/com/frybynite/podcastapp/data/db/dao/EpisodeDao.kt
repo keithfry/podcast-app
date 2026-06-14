@@ -17,4 +17,7 @@ interface EpisodeDao {
 
     @Query("UPDATE episodes SET downloadPath = :path, downloadStatus = :status WHERE audioUrl = :audioUrl")
     suspend fun updateDownloadStatus(audioUrl: String, path: String?, status: String)
+
+    @Query("UPDATE episodes SET lastPositionMs = :positionMs WHERE audioUrl = :audioUrl")
+    suspend fun updateLastPosition(audioUrl: String, positionMs: Long)
 }

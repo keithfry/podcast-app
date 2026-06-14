@@ -289,10 +289,7 @@ fun PlayerScreen(
                     SeekIcon(seconds = 10, isForward = false)
                 }
                 IconButton(
-                    onClick = {
-                        val c = vm.controller
-                        if (c?.isPlaying == true) c.pause() else c?.play()
-                    },
+                    onClick = { vm.togglePlayPause() },
                     modifier = Modifier.size(64.dp)
                 ) {
                     Icon(

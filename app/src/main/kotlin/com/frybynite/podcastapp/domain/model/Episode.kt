@@ -8,7 +8,8 @@ data class Episode(
     val durationSeconds: Int,
     val chaptersUrl: String?,
     val downloadPath: String? = null,
-    val downloadStatus: DownloadStatus = DownloadStatus.NONE
+    val downloadStatus: DownloadStatus = DownloadStatus.NONE,
+    val lastPositionMs: Long = 0L
 )
 
 enum class DownloadStatus { NONE, QUEUED, DOWNLOADING, DONE }
