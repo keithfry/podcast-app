@@ -563,26 +563,33 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun jumpToChapter(startTimeMs: Long) {
-        if (_deepDiveState.value != DeepDiveState.Playing) {
-            Log.i(TAG, "jumpToChapter: seeking to ${startTimeMs}ms")
+        val currentChapterStart = _chapters.value.getOrNull(_currentChapterIndex.value)?.startTimeMs
+        val isAlreadyPlayingThisChapter = _isPlaying.value && currentChapterStart == startTimeMs
+
+        if (_deepDiveState.value == DeepDiveState.Playing) {
+            Log.i(TAG, "jumpToChapter: interrupting deep dive, jumping to ${startTimeMs}ms")
+            exitToneJob?.cancel()
+            exitToneJob = null
+            val episodeUri = deepDiveResumeEpisodeUri ?: return
+            val resumeItem = androidx.media3.common.MediaItem.Builder()
+                .setMediaId(episodeUri)
+                .setUri(episodeUri)
+                .build()
+            controller?.setMediaItem(resumeItem)
+            controller?.prepare()
             controller?.seekTo(startTimeMs)
+            controller?.play()
+            pendingTtsFile = null
+            _deepDiveState.value = DeepDiveState.Idle
+            _deepDiveChapterIndex.value = null
             return
         }
-        Log.i(TAG, "jumpToChapter: interrupting deep dive, jumping to ${startTimeMs}ms")
-        exitToneJob?.cancel()
-        exitToneJob = null
-        val episodeUri = deepDiveResumeEpisodeUri ?: return
-        val resumeItem = androidx.media3.common.MediaItem.Builder()
-            .setMediaId(episodeUri)
-            .setUri(episodeUri)
-            .build()
-        controller?.setMediaItem(resumeItem)
-        controller?.prepare()
+
+        if (isAlreadyPlayingThisChapter) return
+
+        Log.i(TAG, "jumpToChapter: seeking to ${startTimeMs}ms (wasPlaying=${_isPlaying.value})")
         controller?.seekTo(startTimeMs)
-        controller?.play()
-        pendingTtsFile = null
-        _deepDiveState.value = DeepDiveState.Idle
-        _deepDiveChapterIndex.value = null
+        if (!_isPlaying.value) controller?.play()
     }
 
     fun dismissDeepDiveError() {
