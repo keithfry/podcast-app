@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PodcastDao {
-    @Query("SELECT * FROM podcasts ORDER BY lastUpdated DESC")
+    @Query("SELECT * FROM podcasts ORDER BY title COLLATE NOCASE ASC")
     fun getAll(): Flow<List<PodcastEntity>>
 
     @Query("SELECT * FROM podcasts WHERE feedUrl = :feedUrl")
