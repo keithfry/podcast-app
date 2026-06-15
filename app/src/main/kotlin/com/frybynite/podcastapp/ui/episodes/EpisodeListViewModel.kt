@@ -19,14 +19,14 @@ import javax.inject.Inject
 class EpisodeListViewModel @Inject constructor(
     private val repo: PodcastRepository,
     private val podcastDao: PodcastDao,
-    savedState: SavedStateHandle
+    private val savedState: SavedStateHandle
 ) : ViewModel() {
 
     private val feedUrl: String = java.net.URLDecoder.decode(
         checkNotNull(savedState["feedUrl"]), "UTF-8"
     )
 
-    private val _showHeard = MutableStateFlow(false)
+    private val _showHeard = MutableStateFlow(savedState["showHeard"] ?: false)
     val showHeard: StateFlow<Boolean> = _showHeard.asStateFlow()
 
     // All episodes — screen controls visibility per-row with AnimatedVisibility
@@ -54,7 +54,9 @@ class EpisodeListViewModel @Inject constructor(
     }
 
     fun toggleShowHeard() {
-        _showHeard.value = !_showHeard.value
+        val next = !_showHeard.value
+        _showHeard.value = next
+        savedState["showHeard"] = next
     }
 
     fun downloadEpisode(audioUrl: String) {
