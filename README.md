@@ -5,12 +5,20 @@ Native Android podcast player with chapter-aware playback, voice control, and pe
 ## Features
 
 - **Subscribe** to podcasts by RSS feed URL
-- **Stream or download** episodes for offline playback
-- **Chapter navigation** — skip ±30s, or jump between named sections
-- **Chapter link actions** — Open source article in Chrome Custom Tab or share to any app
+- **Stream or download** episodes for offline playback — download progress shown inline per episode
+- **Chapter navigation** — skip ±30s, jump between named sections, or tap a chapter to start playback
+- **Chapter link actions** — open source article in Chrome Custom Tab or share to any app
+- **Episode artwork** — per-episode `itunes:image` with podcast artwork fallback
+- **Heard tracking** — auto-mark episodes heard at end; manual toggle; show/hide heard episodes per podcast (persisted)
+- **Playback position** — persisted across sessions; marking unheard resets position to zero
+- **Deep-dive AI summary** — on-device LiteRt (Gemma) summarizer generates episode summaries
+- **Chromecast** — cast to Google Cast devices via dual-player setup with MediaRouteButton
+- **Sleep timer** — stop playback after a configurable duration
 - **Voice commands** — Google Assistant / headset buttons via MediaSession (Tier 1); in-app mic button with speech recognition (Tier 2)
+- **Bluetooth media buttons** — mapped to chapter navigation
 - **Background playback** — persistent media notification with controls
 - **Android Auto ready** — built on `MediaLibraryService` foundation
+- **Podcast list** — sorted alphabetically (case-insensitive)
 
 ## Requirements
 
@@ -58,4 +66,4 @@ UI (Jetpack Compose)
               └── PlaybackService — MediaLibraryService + ExoPlayer (foreground service)
 ```
 
-**Stack:** Kotlin · Jetpack Compose · Media3/ExoPlayer · Room · Hilt · WorkManager · OkHttp · Moshi · Min API 29
+**Stack:** Kotlin · Jetpack Compose · Media3/ExoPlayer · Room · Hilt · WorkManager · OkHttp · Moshi · LiteRt (Gemma) · Cast SDK · Min API 29
