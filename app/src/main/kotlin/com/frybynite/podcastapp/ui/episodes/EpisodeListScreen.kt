@@ -261,10 +261,14 @@ internal fun EpisodeRow(
                     else -> if (downloadProgress != null && downloadProgress > 0f) {
                         CircularProgressIndicator(
                             progress = { downloadProgress },
-                            modifier = Modifier.size(24.dp).padding(end = 12.dp)
+                            modifier = Modifier.size(48.dp).padding(end = 12.dp),
+                            strokeWidth = 2.dp
                         )
                     } else {
-                        CircularProgressIndicator(Modifier.size(24.dp).padding(end = 12.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp).padding(end = 12.dp),
+                            strokeWidth = 2.dp
+                        )
                     }
                 }
             }
