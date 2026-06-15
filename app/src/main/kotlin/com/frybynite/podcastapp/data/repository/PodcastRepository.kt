@@ -1,6 +1,7 @@
 package com.frybynite.podcastapp.data.repository
 
 import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.frybynite.podcastapp.data.db.dao.EpisodeDao
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
@@ -48,6 +49,16 @@ class PodcastRepository @Inject constructor(
     suspend fun removePodcast(feedUrl: String) {
         podcastDao.getByUrl(feedUrl)?.let { podcastDao.delete(it) }
     }
+
+    fun downloadProgressFlow(): Flow<Map<String, Float>> =
+        workManager.getWorkInfosByTagFlow(DownloadWorker.TAG).map { infos ->
+            infos.filter { it.state == WorkInfo.State.RUNNING }
+                .mapNotNull { info ->
+                    val url = info.progress.getString(DownloadWorker.KEY_AUDIO_URL) ?: return@mapNotNull null
+                    val progress = info.progress.getFloat(DownloadWorker.KEY_PROGRESS, 0f)
+                    url to progress
+                }.toMap()
+        }
 
     fun downloadEpisode(audioUrl: String) {
         workManager.enqueueUniqueWork(

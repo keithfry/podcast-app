@@ -49,9 +49,30 @@ class DownloadWorker @AssistedInject constructor(
         val request = Request.Builder().url(audioUrl).build()
         val response = okHttp.newCall(request).execute()
         if (!response.isSuccessful) throw Exception("HTTP ${response.code}")
+        val totalBytes = response.body?.contentLength() ?: -1L
         try {
             response.body?.byteStream()?.use { input ->
-                tmpFile.outputStream().use { output -> input.copyTo(output) }
+                tmpFile.outputStream().use { output ->
+                    val buffer = ByteArray(8192)
+                    var bytesWritten = 0L
+                    var lastReportedPct = -1
+                    var n = input.read(buffer)
+                    while (n >= 0) {
+                        output.write(buffer, 0, n)
+                        bytesWritten += n
+                        if (totalBytes > 0) {
+                            val pct = ((bytesWritten * 100) / totalBytes).toInt()
+                            if (pct != lastReportedPct) {
+                                lastReportedPct = pct
+                                setProgress(workDataOf(
+                                    KEY_AUDIO_URL to audioUrl,
+                                    KEY_PROGRESS to bytesWritten.toFloat() / totalBytes
+                                ))
+                            }
+                        }
+                        n = input.read(buffer)
+                    }
+                }
             } ?: throw Exception("Empty body")
             if (!tmpFile.renameTo(finalFile)) throw Exception("Rename failed")
         } catch (e: Exception) {
@@ -63,10 +84,13 @@ class DownloadWorker @AssistedInject constructor(
 
     companion object {
         const val KEY_AUDIO_URL = "audio_url"
+        const val KEY_PROGRESS = "progress"
+        const val TAG = "episode_download"
 
         fun buildRequest(audioUrl: String): OneTimeWorkRequest =
             OneTimeWorkRequestBuilder<DownloadWorker>()
                 .setInputData(workDataOf(KEY_AUDIO_URL to audioUrl))
+                .addTag(TAG)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)

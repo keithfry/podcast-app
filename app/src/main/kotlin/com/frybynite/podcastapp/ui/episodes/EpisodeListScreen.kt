@@ -61,6 +61,7 @@ fun EpisodeListScreen(
     val isRefreshing by vm.isRefreshing.collectAsStateWithLifecycle()
     val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
     val showHeard by vm.showHeard.collectAsStateWithLifecycle()
+    val downloadProgress by vm.downloadProgress.collectAsStateWithLifecycle()
     val pullState = rememberPullToRefreshState()
     val context = LocalContext.current
     val isAutomotive = context.packageManager.hasSystemFeature("android.hardware.type.automotive")
@@ -136,6 +137,7 @@ fun EpisodeListScreen(
                             EpisodeRow(
                                 episode = episode,
                                 fallbackImageUrl = podcastImageUrl,
+                                downloadProgress = downloadProgress[episode.audioUrl],
                                 onClick = { onEpisodeClick(episode.audioUrl) },
                                 onDownload = { vm.downloadEpisode(episode.audioUrl) },
                                 onToggleHeard = { vm.setEpisodeHeard(episode.audioUrl, !episode.isHeard) }
@@ -157,6 +159,7 @@ fun EpisodeListScreen(
 internal fun EpisodeRow(
     episode: Episode,
     fallbackImageUrl: String? = null,
+    downloadProgress: Float? = null,
     onClick: () -> Unit,
     onDownload: () -> Unit,
     onToggleHeard: () -> Unit = {}
@@ -255,7 +258,14 @@ internal fun EpisodeRow(
                         Icons.Filled.DownloadDone, "Downloaded",
                         modifier = Modifier.padding(12.dp)
                     )
-                    else -> CircularProgressIndicator(Modifier.size(24.dp).padding(end = 12.dp))
+                    else -> if (downloadProgress != null && downloadProgress > 0f) {
+                        CircularProgressIndicator(
+                            progress = { downloadProgress },
+                            modifier = Modifier.size(24.dp).padding(end = 12.dp)
+                        )
+                    } else {
+                        CircularProgressIndicator(Modifier.size(24.dp).padding(end = 12.dp))
+                    }
                 }
             }
         }

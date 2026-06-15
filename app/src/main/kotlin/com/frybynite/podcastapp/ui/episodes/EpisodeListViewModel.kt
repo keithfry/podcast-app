@@ -35,6 +35,9 @@ class EpisodeListViewModel @Inject constructor(
     val episodes: StateFlow<List<Episode>> = repo.episodesForPodcast(feedUrl)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val downloadProgress: StateFlow<Map<String, Float>> = repo.downloadProgressFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
     private val _podcastImageUrl = MutableStateFlow<String?>(null)
     val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
 
