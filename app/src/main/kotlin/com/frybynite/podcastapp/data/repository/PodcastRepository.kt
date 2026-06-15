@@ -79,6 +79,7 @@ class PodcastRepository @Inject constructor(
             cleanupEpisodeFiles(audioUrl)
         } else {
             episodeDao.markUnheard(audioUrl)
+            episodeDao.updateLastPosition(audioUrl, 0L)
         }
     }
 
