@@ -258,18 +258,11 @@ internal fun EpisodeRow(
                         Icons.Filled.DownloadDone, "Downloaded",
                         modifier = Modifier.padding(12.dp)
                     )
-                    else -> if (downloadProgress != null && downloadProgress > 0f) {
-                        CircularProgressIndicator(
-                            progress = { downloadProgress },
-                            modifier = Modifier.size(48.dp).padding(end = 12.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp).padding(end = 12.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
+                    else -> CircularProgressIndicator(
+                        progress = { (downloadProgress ?: 0f).coerceAtLeast(0.05f) },
+                        modifier = Modifier.size(48.dp).padding(end = 12.dp),
+                        strokeWidth = 2.dp
+                    )
                 }
             }
         }
