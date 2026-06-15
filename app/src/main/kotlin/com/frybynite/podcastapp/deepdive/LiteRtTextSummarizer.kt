@@ -65,8 +65,13 @@ class LiteRtTextSummarizer @Inject constructor(
         }
         conversation.close()
         val raw = sb.toString()
-        // Strip Qwen3 think blocks (present when /no_think is ignored or partial)
-        val result = raw.replace(Regex("<think>[\\s\\S]*?</think>"), "").trim()
+        // Strip Qwen3 think artifacts: full blocks, orphaned tags, echoed /no_think prefix
+        val result = raw
+            .replace(Regex("<think>[\\s\\S]*?</think>"), "")  // complete think block
+            .replace(Regex("<think>[\\s\\S]*"), "")            // unclosed think block at end
+            .replace(Regex("</think>"), "")                    // orphaned closing tag
+            .replace(Regex("^/no_think\\s*", RegexOption.MULTILINE), "")  // echoed directive
+            .trim()
         if (result.isEmpty()) error("LiteRt returned empty response")
         Log.i("DeepDive", "LiteRt: on-device SUCCESS, output=${result.length} chars\n$result")
         result
