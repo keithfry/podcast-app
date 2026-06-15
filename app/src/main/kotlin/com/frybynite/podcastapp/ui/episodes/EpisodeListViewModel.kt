@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
+import com.frybynite.podcastapp.data.preferences.EpisodeListPreferences
 import com.frybynite.podcastapp.data.repository.PodcastRepository
 import com.frybynite.podcastapp.domain.model.Episode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,14 +20,15 @@ import javax.inject.Inject
 class EpisodeListViewModel @Inject constructor(
     private val repo: PodcastRepository,
     private val podcastDao: PodcastDao,
-    private val savedState: SavedStateHandle
+    private val episodeListPrefs: EpisodeListPreferences,
+    savedState: SavedStateHandle
 ) : ViewModel() {
 
     private val feedUrl: String = java.net.URLDecoder.decode(
         checkNotNull(savedState["feedUrl"]), "UTF-8"
     )
 
-    private val _showHeard = MutableStateFlow(savedState["showHeard"] ?: false)
+    private val _showHeard = MutableStateFlow(episodeListPrefs.getShowHeard(feedUrl))
     val showHeard: StateFlow<Boolean> = _showHeard.asStateFlow()
 
     // All episodes — screen controls visibility per-row with AnimatedVisibility
@@ -56,7 +58,7 @@ class EpisodeListViewModel @Inject constructor(
     fun toggleShowHeard() {
         val next = !_showHeard.value
         _showHeard.value = next
-        savedState["showHeard"] = next
+        episodeListPrefs.setShowHeard(feedUrl, next)
     }
 
     fun downloadEpisode(audioUrl: String) {
