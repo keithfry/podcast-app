@@ -1,9 +1,5 @@
 # Backlog
 
-## Episode List UI
-
-- **Animate heard episodes on show/hide toggle** — when "Show heard" checkbox changes, heard episode rows should animate open (vertical expand from `height=0`) when appearing and collapse (vertical shrink to `height=0`) when disappearing, instead of instantly appearing/disappearing. Use `AnimatedVisibility` with `expandVertically`/`shrinkVertically` enter/exit transitions, keyed per item so only heard rows animate while unheard rows stay static.
-
 ## Playback Position / Episode State
 
 - **Episode switching state inconsistencies** — when navigating between two episodes that both have saved positions, residual state from the previous episode can bleed into the new one before `loadMetadata`'s async DB fetch completes. Symptoms: wrong position shown briefly, wrong chapter highlighted, or play/pause state reflecting the previous episode. Root cause is the window between the synchronous reset in `loadMetadata` and the coroutine completing. Potential fix: pass the target `audioUrl` through the listener guards so any controller event whose `currentMediaItem.mediaId` doesn't match the in-flight load is ignored entirely.

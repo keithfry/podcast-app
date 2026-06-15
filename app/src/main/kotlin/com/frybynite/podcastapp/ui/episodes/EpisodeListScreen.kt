@@ -1,5 +1,8 @@
 package com.frybynite.podcastapp.ui.episodes
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -124,14 +127,22 @@ fun EpisodeListScreen(
                     HorizontalDivider()
                 }
                 items(episodes, key = { it.audioUrl }) { episode ->
-                    EpisodeRow(
-                        episode = episode,
-                        fallbackImageUrl = podcastImageUrl,
-                        onClick = { onEpisodeClick(episode.audioUrl) },
-                        onDownload = { vm.downloadEpisode(episode.audioUrl) },
-                        onToggleHeard = { vm.setEpisodeHeard(episode.audioUrl, !episode.isHeard) }
-                    )
-                    HorizontalDivider()
+                    AnimatedVisibility(
+                        visible = showHeard || !episode.isHeard,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column {
+                            EpisodeRow(
+                                episode = episode,
+                                fallbackImageUrl = podcastImageUrl,
+                                onClick = { onEpisodeClick(episode.audioUrl) },
+                                onDownload = { vm.downloadEpisode(episode.audioUrl) },
+                                onToggleHeard = { vm.setEpisodeHeard(episode.audioUrl, !episode.isHeard) }
+                            )
+                            HorizontalDivider()
+                        }
+                    }
                 }
             }
             PullToRefreshContainer(

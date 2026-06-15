@@ -11,9 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,13 +29,8 @@ class EpisodeListViewModel @Inject constructor(
     private val _showHeard = MutableStateFlow(false)
     val showHeard: StateFlow<Boolean> = _showHeard.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val episodes: StateFlow<List<Episode>> = _showHeard
-        .flatMapLatest { show ->
-            repo.episodesForPodcast(feedUrl).map { list ->
-                if (show) list else list.filter { !it.isHeard }
-            }
-        }
+    // All episodes — screen controls visibility per-row with AnimatedVisibility
+    val episodes: StateFlow<List<Episode>> = repo.episodesForPodcast(feedUrl)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _podcastImageUrl = MutableStateFlow<String?>(null)
