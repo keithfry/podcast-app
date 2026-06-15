@@ -229,7 +229,7 @@ class PlayerViewModel @Inject constructor(
         }, context.mainExecutor)
     }
 
-    fun playEpisode(episode: Episode) {
+    fun playEpisode(episode: Episode, startPositionMs: Long = episode.lastPositionMs) {
         Log.i(TAG, "playEpisode: title=${episode.title} audioUrl=${episode.audioUrl} chaptersUrl=${episode.chaptersUrl}")
         // Chapters already loaded by loadMetadata; only re-fetch if switching to a different episode
         if (episode.audioUrl != currentEpisode?.audioUrl || _chapters.value.isEmpty()) {
@@ -259,7 +259,7 @@ class PlayerViewModel @Inject constructor(
             .setUri(playUri)
             .setMediaMetadata(metadata)
             .build()
-        controller?.setMediaItem(item, episode.lastPositionMs)
+        controller?.setMediaItem(item, startPositionMs)
         controller?.prepare()
         controller?.play()
         episodeLoaded = true
@@ -587,9 +587,14 @@ class PlayerViewModel @Inject constructor(
 
         if (isAlreadyPlayingThisChapter) return
 
-        Log.i(TAG, "jumpToChapter: seeking to ${startTimeMs}ms (wasPlaying=${_isPlaying.value})")
-        controller?.seekTo(startTimeMs)
-        if (!_isPlaying.value) controller?.play()
+        Log.i(TAG, "jumpToChapter: seeking to ${startTimeMs}ms (wasPlaying=${_isPlaying.value}, episodeLoaded=$episodeLoaded)")
+        if (!episodeLoaded) {
+            val ep = currentEpisode ?: return
+            playEpisode(ep, startPositionMs = startTimeMs)
+        } else {
+            controller?.seekTo(startTimeMs)
+            if (!_isPlaying.value) controller?.play()
+        }
     }
 
     fun dismissDeepDiveError() {
