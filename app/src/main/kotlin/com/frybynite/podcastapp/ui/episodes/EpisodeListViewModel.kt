@@ -5,10 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.repository.PodcastRepository
+import com.frybynite.podcastapp.domain.model.Episode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,7 +28,18 @@ class EpisodeListViewModel @Inject constructor(
     private val feedUrl: String = java.net.URLDecoder.decode(
         checkNotNull(savedState["feedUrl"]), "UTF-8"
     )
-    val episodes = repo.episodesForPodcast(feedUrl)
+
+    private val _showHeard = MutableStateFlow(false)
+    val showHeard: StateFlow<Boolean> = _showHeard.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val episodes: StateFlow<List<Episode>> = _showHeard
+        .flatMapLatest { show ->
+            repo.episodesForPodcast(feedUrl).map { list ->
+                if (show) list else list.filter { !it.isHeard }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _podcastImageUrl = MutableStateFlow<String?>(null)
     val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
@@ -44,7 +61,15 @@ class EpisodeListViewModel @Inject constructor(
         }
     }
 
+    fun toggleShowHeard() {
+        _showHeard.value = !_showHeard.value
+    }
+
     fun downloadEpisode(audioUrl: String) {
         repo.downloadEpisode(audioUrl)
+    }
+
+    fun setEpisodeHeard(audioUrl: String, isHeard: Boolean) {
+        viewModelScope.launch { repo.setEpisodeHeard(audioUrl, isHeard) }
     }
 }

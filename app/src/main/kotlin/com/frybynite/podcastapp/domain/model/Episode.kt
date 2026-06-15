@@ -10,7 +10,8 @@ data class Episode(
     val imageUrl: String? = null,
     val downloadPath: String? = null,
     val downloadStatus: DownloadStatus = DownloadStatus.NONE,
-    val lastPositionMs: Long = 0L
+    val lastPositionMs: Long = 0L,
+    val isHeard: Boolean = false
 )
 
 enum class DownloadStatus { NONE, QUEUED, DOWNLOADING, DONE }

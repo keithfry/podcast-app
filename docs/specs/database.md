@@ -1,7 +1,7 @@
 # Database Specification
 
 Room database (`PodcastDatabase`), SQLite via Android Room.  
-Current version: **4**  
+Current version: **5**  
 Package: `com.frybynite.podcastapp.data.db`
 
 ---
@@ -40,6 +40,7 @@ Index: `podcastFeedUrl`
 | `downloadPath` | TEXT | NULL | — | Local file path when downloaded |
 | `downloadStatus` | TEXT | NOT NULL | `"NONE"` | Enum: `NONE`, `QUEUED`, `DOWNLOADING`, `DONE` |
 | `lastPositionMs` | INTEGER | NOT NULL | `0` | Playback resume position |
+| `isHeard` | INTEGER | NOT NULL | `0` | 1 when episode has been listened to |
 
 ---
 
@@ -80,7 +81,7 @@ Composite primary key: `(episodeAudioUrl, chapterUrl)`
 | DAO | Table | Key operations |
 |-----|-------|----------------|
 | `PodcastDao` | `podcasts` | `getAll(): Flow`, `getByUrl()`, `upsert()`, `delete()` |
-| `EpisodeDao` | `episodes` | `getForPodcast(): Flow`, `getByAudioUrl()`, `upsertAll()`, `updateDownloadStatus()`, `updateLastPosition()` |
+| `EpisodeDao` | `episodes` | `getForPodcast(): Flow`, `getByAudioUrl()`, `upsertAll()`, `updateDownloadStatus()`, `updateLastPosition()`, `markHeard()` |
 | `ChapterDao` | `chapters` | `getForEpisode(): Flow`, `countForEpisode()`, `replaceChaptersForEpisode()` (transaction) |
 | `DeepDiveDao` | `deep_dives` | `get()`, `upsert()`, `flowForEpisode()`, `deleteForEpisode()` |
 
@@ -94,9 +95,4 @@ Composite primary key: `(episodeAudioUrl, chapterUrl)`
 | 2 | Added `lastPositionMs` to `episodes` |
 | 3 | Added `deep_dives` table |
 | 4 | Added `imageUrl` to `episodes` (per-episode `itunes:image` artwork) |
-
----
-
-## Planned Changes (Backlog)
-
-- Add `isListened: Boolean` + `archivedAt: Long?` to `episodes`. Auto-set `isListened = true` when `lastPositionMs` reaches ~95% of `durationSeconds * 1000`.
+| 5 | Added `isHeard` to `episodes`; auto-set at 95% playback or manual mark |

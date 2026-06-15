@@ -52,4 +52,10 @@ interface EpisodeDao {
 
     @Query("UPDATE episodes SET lastPositionMs = :positionMs WHERE audioUrl = :audioUrl")
     suspend fun updateLastPosition(audioUrl: String, positionMs: Long)
+
+    @Query("UPDATE episodes SET isHeard = 1 WHERE audioUrl = :audioUrl")
+    suspend fun markHeard(audioUrl: String)
+
+    @Query("UPDATE episodes SET isHeard = 0 WHERE audioUrl = :audioUrl")
+    suspend fun markUnheard(audioUrl: String)
 }

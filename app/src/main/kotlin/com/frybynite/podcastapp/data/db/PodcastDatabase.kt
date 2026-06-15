@@ -13,7 +13,7 @@ import com.frybynite.podcastapp.data.db.entities.PodcastEntity
 
 @Database(
     entities = [PodcastEntity::class, EpisodeEntity::class, ChapterEntity::class, DeepDiveEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class PodcastDatabase : RoomDatabase() {

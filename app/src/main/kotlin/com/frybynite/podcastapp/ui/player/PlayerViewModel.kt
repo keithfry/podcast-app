@@ -94,6 +94,7 @@ class PlayerViewModel @Inject constructor(
     private var positionSaveJob: Job? = null
     private var currentEpisode: Episode? = null
     private var episodeLoaded = false
+    private var heardMarked = false
 
     private val _deepDiveState = MutableStateFlow<DeepDiveState>(DeepDiveState.Idle)
     val deepDiveState: StateFlow<DeepDiveState> = _deepDiveState.asStateFlow()
@@ -273,6 +274,7 @@ class PlayerViewModel @Inject constructor(
         positionSaveJob = null
         currentEpisode = null
         episodeLoaded = false
+        heardMarked = false
         _chapters.value = emptyList()
         _currentPositionMs.value = 0L
         _durationMs.value = 0L
@@ -355,6 +357,14 @@ class PlayerViewModel @Inject constructor(
         // Don't overwrite a known position with 0 during prepare/seek transitions
         if (pos > 0L || _currentPositionMs.value == 0L) _currentPositionMs.value = pos
         if (dur > 0L) _durationMs.value = dur
+        // Auto-mark heard when playback reaches 95% of episode duration
+        val liveDur = _durationMs.value
+        if (!heardMarked && episodeLoaded && liveDur > 0 && pos >= liveDur * 0.95) {
+            heardMarked = true
+            currentEpisode?.audioUrl?.let { url ->
+                viewModelScope.launch { podcastRepo.markEpisodeHeard(url) }
+            }
+        }
         // Playing: update bar for TTS progress but don't move the chapter highlight.
         if (s == DeepDiveState.Playing) return
         val idx = _chapters.value.indexOfLast { it.startTimeMs <= pos }
