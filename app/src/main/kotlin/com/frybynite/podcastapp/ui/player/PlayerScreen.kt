@@ -127,16 +127,6 @@ fun PlayerScreen(
         )
     }
 
-    if (showTranscript) {
-        TranscriptPanel(
-            segments = transcriptSegments,
-            activeIndex = activeSegmentIndex,
-            loading = transcriptLoading,
-            onSeek = { segment -> vm.seekToSegment(segment) },
-            onDismiss = { vm.toggleTranscript() }
-        )
-    }
-
     if (deepDiveState is DeepDiveState.ModelRequired) {
         AlertDialog(
             onDismissRequest = { vm.dismissDeepDiveError() },
@@ -264,6 +254,13 @@ fun PlayerScreen(
         LaunchedEffect(snapHoverIdx) {
             val idx = snapHoverIdx ?: return@LaunchedEffect
             if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
+        }
+        LaunchedEffect(activeSegmentIndex) {
+            if (showTranscript && activeSegmentIndex >= 0 && transcriptSegments.isNotEmpty()) {
+                val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex) ?: return@LaunchedEffect
+                val chapterIdx = chapters.indexOfLast { it.startTimeMs / 1000f <= activeSeg.startTimeSec }
+                if (chapterIdx >= 0) chapterListState.animateScrollToItem(chapterIdx)
+            }
         }
 
         // Reusable content blocks
@@ -536,6 +533,55 @@ fun PlayerScreen(
                         }
                     }
                     HorizontalDivider()
+                    if (showTranscript) {
+                        if (idx == 0 && transcriptLoading) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        } else {
+                            val chapterStartSec = chapter.startTimeMs / 1000f
+                            val nextChapterStartSec =
+                                chapters.getOrNull(idx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
+                            val chapterSegs = segmentsForChapter(
+                                transcriptSegments, chapterStartSec, nextChapterStartSec
+                            )
+                            chapterSegs.forEachIndexed { localIdx, segment ->
+                                val globalIdx = transcriptSegments.indexOf(segment)
+                                val isActive = globalIdx == activeSegmentIndex
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { vm.seekToSegment(segment) }
+                                        .background(
+                                            color = if (isActive) MaterialTheme.colorScheme.primaryContainer
+                                                    else Color.Transparent
+                                        )
+                                        .padding(
+                                            start = 64.dp, end = 12.dp,
+                                            top = 6.dp, bottom = 6.dp
+                                        )
+                                ) {
+                                    Text(
+                                        text = segment.text,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer
+                                                else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                if (localIdx < chapterSegs.lastIndex) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 64.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
                     if (deepDiveState is DeepDiveState.Playing && deepDiveChapterIndex == idx) {
                         Row(
                             modifier = Modifier
