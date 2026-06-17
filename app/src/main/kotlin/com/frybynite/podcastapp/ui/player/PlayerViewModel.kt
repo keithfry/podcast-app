@@ -406,7 +406,11 @@ class PlayerViewModel @Inject constructor(
         if (segments.isNotEmpty()) {
             val posSec = pos / 1000f
             val idx = segments.indexOfLast { it.startTimeSec <= posSec }
-            _activeSegmentIndex.value = if (idx >= 0 && posSec < segments[idx].endTimeSec) idx else -1
+            val next = if (idx >= 0 && posSec < segments[idx].endTimeSec) idx else -1
+            Log.d(TAG, "transcript: pos=${posSec}s idx=$idx next=$next segCount=${segments.size} endTime=${segments.getOrNull(idx)?.endTimeSec}")
+            _activeSegmentIndex.value = next
+        } else {
+            Log.d(TAG, "transcript: segments empty, skipping")
         }
     }
 

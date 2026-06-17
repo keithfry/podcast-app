@@ -559,7 +559,7 @@ fun PlayerScreen(
                             ChapterTranscriptRows(
                                 chapterSegs = chapterSegs,
                                 firstGlobalIdx = firstGlobalIdx,
-                                activeSegmentIndex = activeSegmentIndex,
+                                activeSegmentIndexFlow = vm.activeSegmentIndex,
                                 onSeek = { vm.seekToSegment(it) }
                             )
                         }
@@ -805,9 +805,10 @@ internal fun formatSleepTimer(seconds: Int): String {
 private fun ChapterTranscriptRows(
     chapterSegs: List<TranscriptSegment>,
     firstGlobalIdx: Int,
-    activeSegmentIndex: Int,
+    activeSegmentIndexFlow: kotlinx.coroutines.flow.StateFlow<Int>,
     onSeek: (TranscriptSegment) -> Unit
 ) {
+    val activeSegmentIndex by activeSegmentIndexFlow.collectAsStateWithLifecycle()
     chapterSegs.forEachIndexed { localIdx, segment ->
         val isActive = firstGlobalIdx >= 0 && (firstGlobalIdx + localIdx) == activeSegmentIndex
         Row(
