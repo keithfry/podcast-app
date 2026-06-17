@@ -33,33 +33,7 @@
 
 ## Read-Along / Transcript
 
-- **Transcript: active sentence scroll precision** — `LaunchedEffect(activeSegmentIndex)` scrolls to the chapter header containing the active sentence, not to the sentence itself (sentences are rendered inside `itemsIndexed` items, not as separate `LazyColumn` items). For chapters with many sentences, the active sentence can be off-screen. Fix requires restructuring the chapter list to emit sentences as separate `LazyColumn` items, enabling `animateScrollToItem(sentenceItemIndex)`.
-
-- **Transcript: no-chapter episode support** — episodes with a transcript URL but no `chaptersUrl` show the transcript toggle button but render nothing (the `itemsIndexed(chapters)` loop doesn't execute). Fix: when `chapters` is empty and `showTranscript` is true, render all transcript segments directly in the `LazyColumn` without chapter grouping.
-
-- **Synchronized read-along transcript** — display sentence-level transcript synchronized to playback position, with the active sentence highlighted. Tap any sentence to seek to that timestamp.
-
-  **Transcript file format** (`{prefix}-YYYY-MM-DD.transcript.json`):
-  ```json
-  {
-    "version": "1.0.0",
-    "segments": [
-      { "startTime": 0.0, "endTime": 3.2, "text": "Welcome to AI Daily Radar." },
-      { "startTime": 3.2, "endTime": 7.8, "text": "Today we have twelve stories." }
-    ]
-  }
-  ```
-  `startTime` / `endTime` are float seconds from the TTS audio. Full episode coverage (intro + items + outro).
-
-  **How it works:**
-  1. **Discovery:** Resolve transcript URL from RSS `<podcast:transcript>` tag (already planned), or derive from episode URL pattern (`{prefix}-YYYY-MM-DD.transcript.json`).
-  2. **Fetch:** Lazy — fetch on transcript toggle, not on episode load. Cache JSON to episode cache dir alongside deep-dive files.
-  3. **Data model:** `TranscriptSegment(startTime: Float, endTime: Float, text: String)`. No Room storage — flat JSON file cache only.
-  4. **Playback sync:** `PlayerViewModel` polls `player.currentPosition` on a coroutine tick. Active segment = first segment where `startTime ≤ currentPositionSec < endTime`. Binary search on `startTime`.
-  5. **UI:** Toggle button in `PlayerScreen` shows/hides transcript panel (hidden by default). `LazyColumn` of segment texts. Active segment highlighted in accent color, auto-scrolled into view. Survives scrubbing and chapter jumps. Works offline if JSON is cached.
-  6. **Seek:** Tap segment → `player.seekTo((segment.startTime * 1000).toLong())`.
-
-  **Implementation touch points:** `TranscriptRepository` (fetch + cache JSON, discover URL from RSS or pattern), `TranscriptSegment` data class, `PlayerViewModel.transcriptState: StateFlow<TranscriptUiState>`, `ReadAlongPanel` (new composable in `PlayerScreen`). Reuses existing `OkHttpClient` and episode cache path helpers.
+- **Transcript: no-chapter episode support** — episodes with a transcript URL but no `chaptersUrl` show the transcript toggle button but render nothing (the `chapters.forEachIndexed` loop doesn't execute). Fix: when `chapters` is empty and `showTranscript` is true, render all transcript segments directly in the `LazyColumn` without chapter grouping.
 
 ## Phase 2
 
