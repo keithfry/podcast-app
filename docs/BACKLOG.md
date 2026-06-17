@@ -31,18 +31,29 @@
 
 ## Read-Along / Transcript
 
-- **Synchronized read-along transcript** — display word-level transcript of the podcast MP3 synchronized to playback position, with the current word/phrase highlighted (karaoke-style). Tap any word to seek to that timestamp.
+- **Synchronized read-along transcript** — display sentence-level transcript synchronized to playback position, with the active sentence highlighted. Tap any sentence to seek to that timestamp.
+
+  **Transcript file format** (`{prefix}-YYYY-MM-DD.transcript.json`):
+  ```json
+  {
+    "version": "1.0.0",
+    "segments": [
+      { "startTime": 0.0, "endTime": 3.2, "text": "Welcome to AI Daily Radar." },
+      { "startTime": 3.2, "endTime": 7.8, "text": "Today we have twelve stories." }
+    ]
+  }
+  ```
+  `startTime` / `endTime` are float seconds from the TTS audio. Full episode coverage (intro + items + outro).
 
   **How it works:**
-  1. **Transcription:** Call Groq's Whisper API (`whisper-large-v3-turbo`, ~$0.004/min) with `response_format=verbose_json` and `timestamp_granularities[]=word` to get per-word start/end timestamps. Store result as JSON in the episode cache dir alongside existing deep-dive files.
-  2. **Data model:** `TranscriptWord(text: String, startMs: Long, endMs: Long)` stored in Room or as a flat JSON file. Chapter boundaries from the existing chapter list can segment the transcript into sections.
-  3. **Playback sync:** `PlayerViewModel` exposes current position via `player.currentPosition` polled on a coroutine (16ms tick or `LaunchedEffect` loop). UI maps position → active word index via binary search on `startMs`.
-  4. **UI:** `LazyColumn` of word spans (or `FlowRow` for word-wrap). Active word highlighted in accent color, auto-scrolled to stay visible. Tapping a word calls `player.seekTo(word.startMs)`.
-  5. **Trigger:** On-demand — "Read along" button in `PlayerScreen` or chapter context menu. Transcript fetched/transcribed on first open, cached thereafter.
+  1. **Discovery:** Resolve transcript URL from RSS `<podcast:transcript>` tag (already planned), or derive from episode URL pattern (`{prefix}-YYYY-MM-DD.transcript.json`).
+  2. **Fetch:** Lazy — fetch on transcript toggle, not on episode load. Cache JSON to episode cache dir alongside deep-dive files.
+  3. **Data model:** `TranscriptSegment(startTime: Float, endTime: Float, text: String)`. No Room storage — flat JSON file cache only.
+  4. **Playback sync:** `PlayerViewModel` polls `player.currentPosition` on a coroutine tick. Active segment = first segment where `startTime ≤ currentPositionSec < endTime`. Binary search on `startTime`.
+  5. **UI:** Toggle button in `PlayerScreen` shows/hides transcript panel (hidden by default). `LazyColumn` of segment texts. Active segment highlighted in accent color, auto-scrolled into view. Survives scrubbing and chapter jumps. Works offline if JSON is cached.
+  6. **Seek:** Tap segment → `player.seekTo((segment.startTime * 1000).toLong())`.
 
-  **Implementation touch points:** `GroqTranscriber` (new, calls Whisper API), `TranscriptRepository` (cache JSON to disk, load on demand), `PlayerViewModel.transcriptState: StateFlow<TranscriptUiState>`, `ReadAlongSheet` (new bottom sheet composable), `DeepDiveModule` wiring. Reuses existing `OkHttpClient` and episode cache path helpers.
-
-  **Alternative — on-device:** MediaPipe Audio Classifier or `android.speech.SpeechRecognizer` with `RESULTS_RECOGNITION` extras — no word timestamps on Android without a custom Whisper port. On-device feasible via `whisper.cpp` JNI (150 MB model) but significant integration effort vs. Groq API call.
+  **Implementation touch points:** `TranscriptRepository` (fetch + cache JSON, discover URL from RSS or pattern), `TranscriptSegment` data class, `PlayerViewModel.transcriptState: StateFlow<TranscriptUiState>`, `ReadAlongPanel` (new composable in `PlayerScreen`). Reuses existing `OkHttpClient` and episode cache path helpers.
 
 ## Phase 2
 
