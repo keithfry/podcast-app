@@ -25,4 +25,14 @@ class FeedApi(private val client: OkHttpClient, private val moshi: Moshi) {
         moshi.adapter(ChaptersResponse::class.java).fromJson(json)
             ?: throw Exception("Failed to parse chapters JSON")
     }
+
+    suspend fun fetchTranscript(url: String): TranscriptResponse = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url(url).build()
+        val json = client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw Exception("HTTP ${response.code}")
+            response.body?.string() ?: throw Exception("Empty body")
+        }
+        moshi.adapter(TranscriptResponse::class.java).fromJson(json)
+            ?: throw Exception("Failed to parse transcript JSON")
+    }
 }

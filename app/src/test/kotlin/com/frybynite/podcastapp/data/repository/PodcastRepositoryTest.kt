@@ -6,6 +6,7 @@ import com.frybynite.podcastapp.data.db.entities.EpisodeEntity
 import com.frybynite.podcastapp.data.db.entities.PodcastEntity
 import com.frybynite.podcastapp.data.network.FeedApi
 import com.frybynite.podcastapp.data.network.RssParser
+import com.frybynite.podcastapp.data.storage.CacheStorage
 import androidx.work.WorkManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -28,12 +29,13 @@ class PodcastRepositoryTest {
     private val podcastDao = mockk<PodcastDao>(relaxed = true)
     private val episodeDao = mockk<EpisodeDao>(relaxed = true)
     private val workManager = mockk<WorkManager>(relaxed = true)
+    private val cacheStorage = mockk<CacheStorage>(relaxed = true)
 
     @Before fun setUp() {
         server.start()
         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
         val feedApi = FeedApi(OkHttpClient(), moshi)
-        repo = PodcastRepository(feedApi, RssParser(), podcastDao, episodeDao, workManager)
+        repo = PodcastRepository(feedApi, RssParser(), podcastDao, episodeDao, workManager, cacheStorage)
     }
 
     @After fun tearDown() { server.shutdown() }
