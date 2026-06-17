@@ -390,6 +390,9 @@ fun PlayerScreen(
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(8.dp).align(Alignment.Start)
             )
+            val segmentIndexMap = remember(transcriptSegments) {
+                transcriptSegments.withIndex().associate { (i, s) -> s to i }
+            }
             LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = chapterListState) {
                 itemsIndexed(chapters) { idx, chapter ->
                     val isSnapHovered = snapHoverIdx == idx
@@ -551,7 +554,7 @@ fun PlayerScreen(
                                 transcriptSegments, chapterStartSec, nextChapterStartSec
                             )
                             chapterSegs.forEachIndexed { localIdx, segment ->
-                                val globalIdx = transcriptSegments.indexOf(segment)
+                                val globalIdx = segmentIndexMap[segment] ?: -1
                                 val isActive = globalIdx == activeSegmentIndex
                                 Row(
                                     modifier = Modifier
