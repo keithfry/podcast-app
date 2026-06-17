@@ -82,6 +82,11 @@ fun PlayerScreen(
     val cachedDeepDiveUrls by vm.cachedDeepDiveUrls.collectAsStateWithLifecycle()
     val modelDownloadState by vm.modelDownloadState.collectAsStateWithLifecycle()
     val isCasting by vm.isCasting.collectAsStateWithLifecycle()
+    val hasTranscript by vm.hasTranscript.collectAsStateWithLifecycle()
+    val showTranscript by vm.showTranscript.collectAsStateWithLifecycle()
+    val transcriptSegments by vm.transcriptSegments.collectAsStateWithLifecycle()
+    val activeSegmentIndex by vm.activeSegmentIndex.collectAsStateWithLifecycle()
+    val transcriptLoading by vm.transcriptLoading.collectAsStateWithLifecycle()
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
@@ -119,6 +124,16 @@ fun PlayerScreen(
             currentSpeed = playbackSpeed,
             onSpeedChange = { vm.setSpeed(it) },
             onDismiss = { showSpeedSheet = false }
+        )
+    }
+
+    if (showTranscript) {
+        TranscriptPanel(
+            segments = transcriptSegments,
+            activeIndex = activeSegmentIndex,
+            loading = transcriptLoading,
+            onSeek = { segment -> vm.seekToSegment(segment) },
+            onDismiss = { vm.toggleTranscript() }
         )
     }
 
@@ -205,6 +220,11 @@ fun PlayerScreen(
                             },
                             modifier = Modifier.size(48.dp)
                         )
+                    }
+                    if (hasTranscript) {
+                        IconButton(onClick = { vm.toggleTranscript() }) {
+                            Icon(Icons.Filled.Article, "Transcript")
+                        }
                     }
                     IconButton(onClick = { showSleepSheet = true }) {
                         if (sleepTimerSeconds != null) {
