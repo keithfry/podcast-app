@@ -28,7 +28,8 @@ class PodcastRepository @Inject constructor(
     private val episodeDao: EpisodeDao,
     private val workManager: WorkManager,
     private val cacheStorage: CacheStorage,
-    private val transcriptRepository: TranscriptRepository
+    private val transcriptRepository: TranscriptRepository,
+    private val deepDiveDao: com.frybynite.podcastapp.data.db.dao.DeepDiveDao
 ) {
     val podcasts: Flow<List<Podcast>> = podcastDao.getAll().map { list ->
         list.map { it.toDomain() }
@@ -91,6 +92,7 @@ class PodcastRepository @Inject constructor(
         cacheStorage.episodeDir(entity.podcastFeedUrl, podcastTitle, audioUrl, entity.title)
             .deleteRecursively()
         entity.transcriptUrl?.let { transcriptRepository.deleteCache(it) }
+        deepDiveDao.deleteForEpisode(audioUrl)
         episodeDao.updateDownloadStatus(audioUrl, null, "NONE")
     }
 }
