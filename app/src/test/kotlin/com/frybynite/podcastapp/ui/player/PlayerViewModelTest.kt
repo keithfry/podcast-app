@@ -8,6 +8,7 @@ import com.frybynite.podcastapp.data.db.entities.PodcastEntity
 import com.frybynite.podcastapp.data.preferences.SpeedPreferences
 import com.frybynite.podcastapp.data.repository.ChapterRepository
 import com.frybynite.podcastapp.data.repository.PodcastRepository
+import com.frybynite.podcastapp.data.repository.TranscriptRepository
 import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
 import com.frybynite.podcastapp.deepdive.ModelDownloadState
@@ -65,7 +66,8 @@ class PlayerViewModelTest {
             speedPrefs = mockk(relaxed = true) { every { speed } returns 1f },
             deepDiveOrchestrator = mockk(relaxed = true),
             summarizer = mockk(relaxed = true),
-            modelDownloadManager = modelDownloadManager
+            modelDownloadManager = modelDownloadManager,
+            transcriptRepo = mockk(relaxed = true)
         )
     }
 

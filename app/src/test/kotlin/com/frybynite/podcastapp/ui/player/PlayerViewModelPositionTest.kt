@@ -6,6 +6,7 @@ import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.preferences.SpeedPreferences
 import com.frybynite.podcastapp.data.repository.ChapterRepository
 import com.frybynite.podcastapp.data.repository.PodcastRepository
+import com.frybynite.podcastapp.data.repository.TranscriptRepository
 import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
 import com.frybynite.podcastapp.deepdive.TextSummarizer
@@ -38,7 +39,8 @@ class PlayerViewModelPositionTest {
             summarizer = mockk(relaxed = true),
             podcastRepo = mockk(relaxed = true),
             deepDiveDao = mockk(relaxed = true),
-            modelDownloadManager = mockk(relaxed = true)
+            modelDownloadManager = mockk(relaxed = true),
+            transcriptRepo = mockk(relaxed = true)
         )
         assertEquals(0L, vm.currentPositionMs.value)
     }
@@ -54,7 +56,8 @@ class PlayerViewModelPositionTest {
             summarizer = mockk(relaxed = true),
             podcastRepo = mockk(relaxed = true),
             deepDiveDao = mockk(relaxed = true),
-            modelDownloadManager = mockk(relaxed = true)
+            modelDownloadManager = mockk(relaxed = true),
+            transcriptRepo = mockk(relaxed = true)
         )
         assertEquals(0L, vm.durationMs.value)
     }

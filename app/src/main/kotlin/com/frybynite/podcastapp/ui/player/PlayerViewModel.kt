@@ -15,7 +15,9 @@ import com.frybynite.podcastapp.data.db.dao.EpisodeDao
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.preferences.SpeedPreferences
 import com.frybynite.podcastapp.data.repository.ChapterRepository
+import com.frybynite.podcastapp.data.repository.TranscriptRepository
 import com.frybynite.podcastapp.data.repository.toDomain
+import com.frybynite.podcastapp.domain.model.TranscriptSegment
 import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
 import com.frybynite.podcastapp.deepdive.ModelDownloadState
@@ -52,7 +54,8 @@ class PlayerViewModel @Inject constructor(
     private val speedPrefs: SpeedPreferences,
     private val deepDiveOrchestrator: DeepDiveOrchestrator,
     private val summarizer: TextSummarizer,
-    private val modelDownloadManager: ModelDownloadManager
+    private val modelDownloadManager: ModelDownloadManager,
+    private val transcriptRepo: TranscriptRepository
 ) : ViewModel() {
 
     private val _chapters = MutableStateFlow<List<Chapter>>(emptyList())
@@ -108,6 +111,23 @@ class PlayerViewModel @Inject constructor(
     private val _cachedDeepDiveUrls = MutableStateFlow<Set<String>>(emptySet())
     val cachedDeepDiveUrls: StateFlow<Set<String>> = _cachedDeepDiveUrls.asStateFlow()
     private var cachedDeepDiveJob: kotlinx.coroutines.Job? = null
+
+    private val _transcriptSegments = MutableStateFlow<List<TranscriptSegment>>(emptyList())
+    val transcriptSegments: StateFlow<List<TranscriptSegment>> = _transcriptSegments.asStateFlow()
+
+    private val _activeSegmentIndex = MutableStateFlow(-1)
+    val activeSegmentIndex: StateFlow<Int> = _activeSegmentIndex.asStateFlow()
+
+    private val _showTranscript = MutableStateFlow(false)
+    val showTranscript: StateFlow<Boolean> = _showTranscript.asStateFlow()
+
+    private val _transcriptLoading = MutableStateFlow(false)
+    val transcriptLoading: StateFlow<Boolean> = _transcriptLoading.asStateFlow()
+
+    private val _hasTranscript = MutableStateFlow(false)
+    val hasTranscript: StateFlow<Boolean> = _hasTranscript.asStateFlow()
+
+    private var transcriptJob: Job? = null
 
     private var pendingTtsFile: java.io.File? = null
     private var pendingDeepDiveUrl: String? = null
@@ -280,6 +300,12 @@ class PlayerViewModel @Inject constructor(
         _durationMs.value = 0L
         _currentChapterIndex.value = 0
         _isPlaying.value = false
+        transcriptJob?.cancel()
+        transcriptJob = null
+        _transcriptSegments.value = emptyList()
+        _activeSegmentIndex.value = -1
+        _showTranscript.value = false
+        _hasTranscript.value = false
         viewModelScope.launch {
             val entity = episodeDao.getByAudioUrl(audioUrl)
             if (entity == null) {
@@ -304,6 +330,7 @@ class PlayerViewModel @Inject constructor(
             }
             val episode = entity.toDomain()
             currentEpisode = episode
+            _hasTranscript.value = episode.transcriptUrl != null
             episodeLoaded = false
             // Seed position and duration from stored data so UI shows correct state before play
             _currentPositionMs.value = episode.lastPositionMs
@@ -373,6 +400,12 @@ class PlayerViewModel @Inject constructor(
             _currentChapterIndex.value = idx
         } else if (idx >= 0) {
             _currentChapterIndex.value = idx
+        }
+        val segments = _transcriptSegments.value
+        if (segments.isNotEmpty()) {
+            val posSec = pos / 1000f
+            val idx = segments.indexOfLast { it.startTimeSec <= posSec }
+            _activeSegmentIndex.value = if (idx >= 0 && posSec < segments[idx].endTimeSec) idx else -1
         }
     }
 
@@ -570,6 +603,30 @@ class PlayerViewModel @Inject constructor(
             _deepDiveChapterIndex.value = null
             exitToneJob = null
         }
+    }
+
+    fun toggleTranscript() {
+        val url = currentEpisode?.transcriptUrl ?: return
+        val next = !_showTranscript.value
+        _showTranscript.value = next
+        if (next && _transcriptSegments.value.isEmpty()) {
+            loadTranscript(url)
+        }
+    }
+
+    private fun loadTranscript(url: String) {
+        transcriptJob?.cancel()
+        transcriptJob = viewModelScope.launch {
+            _transcriptLoading.value = true
+            runCatching { transcriptRepo.fetchTranscript(url) }
+                .onSuccess { _transcriptSegments.value = it }
+                .onFailure { Log.e(TAG, "loadTranscript failed", it) }
+            _transcriptLoading.value = false
+        }
+    }
+
+    fun seekToSegment(segment: TranscriptSegment) {
+        controller?.seekTo((segment.startTimeSec * 1000).toLong())
     }
 
     fun jumpToChapter(startTimeMs: Long) {
