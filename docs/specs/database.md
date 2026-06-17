@@ -1,7 +1,7 @@
 # Database Specification
 
 Room database (`PodcastDatabase`), SQLite via Android Room.  
-Current version: **5**  
+Current version: **6**  
 Package: `com.frybynite.podcastapp.data.db`
 
 ---
@@ -36,6 +36,7 @@ Index: `podcastFeedUrl`
 | `pubDate` | INTEGER | NOT NULL | — | Unix epoch ms |
 | `durationSeconds` | INTEGER | NOT NULL | — | |
 | `chaptersUrl` | TEXT | NULL | — | URL for Podcast Index chapters JSON |
+| `transcriptUrl` | TEXT | NULL | — | URL for pre-generated transcript JSON (podcast:transcript tag) |
 | `imageUrl` | TEXT | NULL | — | Episode artwork URL (`itunes:image`); fallback to podcast artwork |
 | `downloadPath` | TEXT | NULL | — | Local file path when downloaded |
 | `downloadStatus` | TEXT | NOT NULL | `"NONE"` | Enum: `NONE`, `QUEUED`, `DOWNLOADING`, `DONE` |
@@ -96,3 +97,4 @@ Composite primary key: `(episodeAudioUrl, chapterUrl)`
 | 3 | Added `deep_dives` table |
 | 4 | Added `imageUrl` to `episodes` (per-episode `itunes:image` artwork) |
 | 5 | Added `isHeard` to `episodes`; auto-set at 95% playback or manual mark |
+| 6 | Added `transcriptUrl` to `episodes`; URL for pre-generated sentence-level transcript JSON |

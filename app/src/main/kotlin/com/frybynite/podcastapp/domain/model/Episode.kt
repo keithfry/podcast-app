@@ -7,6 +7,7 @@ data class Episode(
     val pubDate: Long,
     val durationSeconds: Int,
     val chaptersUrl: String?,
+    val transcriptUrl: String? = null,
     val imageUrl: String? = null,
     val downloadPath: String? = null,
     val downloadStatus: DownloadStatus = DownloadStatus.NONE,

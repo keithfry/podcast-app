@@ -22,7 +22,7 @@ interface EpisodeDao {
     suspend fun upsertFromFeed(episodes: List<EpisodeEntity>) {
         insertIgnore(episodes)
         for (ep in episodes) {
-            updateRssFields(ep.audioUrl, ep.title, ep.pubDate, ep.durationSeconds, ep.chaptersUrl, ep.imageUrl)
+            updateRssFields(ep.audioUrl, ep.title, ep.pubDate, ep.durationSeconds, ep.chaptersUrl, ep.transcriptUrl, ep.imageUrl)
         }
     }
 
@@ -35,6 +35,7 @@ interface EpisodeDao {
             pubDate = :pubDate,
             durationSeconds = :durationSeconds,
             chaptersUrl = :chaptersUrl,
+            transcriptUrl = :transcriptUrl,
             imageUrl = :imageUrl
         WHERE audioUrl = :audioUrl
     """)
@@ -44,6 +45,7 @@ interface EpisodeDao {
         pubDate: Long,
         durationSeconds: Int,
         chaptersUrl: String?,
+        transcriptUrl: String?,
         imageUrl: String?
     )
 
