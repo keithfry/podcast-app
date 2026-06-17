@@ -31,6 +31,10 @@
 
 ## Read-Along / Transcript
 
+- **Transcript: active sentence scroll precision** — `LaunchedEffect(activeSegmentIndex)` scrolls to the chapter header containing the active sentence, not to the sentence itself (sentences are rendered inside `itemsIndexed` items, not as separate `LazyColumn` items). For chapters with many sentences, the active sentence can be off-screen. Fix requires restructuring the chapter list to emit sentences as separate `LazyColumn` items, enabling `animateScrollToItem(sentenceItemIndex)`.
+
+- **Transcript: no-chapter episode support** — episodes with a transcript URL but no `chaptersUrl` show the transcript toggle button but render nothing (the `itemsIndexed(chapters)` loop doesn't execute). Fix: when `chapters` is empty and `showTranscript` is true, render all transcript segments directly in the `LazyColumn` without chapter grouping.
+
 - **Synchronized read-along transcript** — display sentence-level transcript synchronized to playback position, with the active sentence highlighted. Tap any sentence to seek to that timestamp.
 
   **Transcript file format** (`{prefix}-YYYY-MM-DD.transcript.json`):
