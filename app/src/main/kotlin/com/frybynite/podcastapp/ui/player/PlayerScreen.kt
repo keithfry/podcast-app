@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -247,20 +249,24 @@ fun PlayerScreen(
         val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
         val chapterListState = rememberLazyListState()
 
-        LaunchedEffect(currentIdx) {
-            if (chapters.isNotEmpty() && snapHoverIdx == null)
+        LaunchedEffect(currentIdx, showTranscript) {
+            if (chapters.isNotEmpty() && snapHoverIdx == null && !showTranscript)
                 chapterListState.animateScrollToItem(currentIdx)
         }
         LaunchedEffect(snapHoverIdx) {
             val idx = snapHoverIdx ?: return@LaunchedEffect
             if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
         }
-        LaunchedEffect(activeSegmentIndex) {
-            if (showTranscript && activeSegmentIndex >= 0 && transcriptSegments.isNotEmpty()) {
-                val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex) ?: return@LaunchedEffect
-                val chapterIdx = chapters.indexOfLast { it.startTimeMs / 1000f <= activeSeg.startTimeSec }
-                if (chapterIdx >= 0) chapterListState.animateScrollToItem(chapterIdx)
-            }
+        LaunchedEffect(activeSegmentIndex, showTranscript) {
+            if (!showTranscript || activeSegmentIndex < 0 || transcriptSegments.isEmpty()) return@LaunchedEffect
+            val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex) ?: return@LaunchedEffect
+            val chapterIdx = chapters.indexOfLast { it.startTimeMs / 1000f <= activeSeg.startTimeSec }
+            if (chapterIdx < 0) return@LaunchedEffect
+            val chapterStartSec = chapters[chapterIdx].startTimeMs / 1000f
+            val nextChapterStartSec = chapters.getOrNull(chapterIdx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
+            val sentences = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
+            val localIdx = sentences.indexOf(activeSeg)
+            if (localIdx >= 0) chapterListState.animateScrollToItem(chapterIdx + 1 + localIdx)
         }
 
         // Reusable content blocks
@@ -391,188 +397,214 @@ fun PlayerScreen(
                 modifier = Modifier.padding(8.dp).align(Alignment.Start)
             )
             LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = chapterListState) {
-                itemsIndexed(chapters) { idx, chapter ->
-                    val isSnapHovered = snapHoverIdx == idx
-                    val isActive = idx == currentIdx && deepDiveState !is DeepDiveState.Playing
-                    val hasUrl = chapter.url != null
-                    val revealScope = rememberCoroutineScope()
-                    val revealWidth = 192.dp
-                    val revealWidthPx = with(LocalDensity.current) { revealWidth.toPx() }
-                    val offsetX = remember(chapter.episodeAudioUrl, chapter.startTimeMs) { Animatable(0f) }
+                chapters.forEachIndexed { idx, chapter ->
+                    item(key = "chapter_$idx") {
+                        val isSnapHovered = snapHoverIdx == idx
+                        val isActive = idx == currentIdx && deepDiveState !is DeepDiveState.Playing
+                        val hasUrl = chapter.url != null
+                        val revealScope = rememberCoroutineScope()
+                        val revealWidth = 192.dp
+                        val revealWidthPx = with(LocalDensity.current) { revealWidth.toPx() }
+                        val offsetX = remember(chapter.episodeAudioUrl, chapter.startTimeMs) { Animatable(0f) }
 
-                    fun snapTo(target: Float) = revealScope.launch {
-                        offsetX.animateTo(target, spring(stiffness = Spring.StiffnessMedium))
-                    }
-                    fun collapse() = snapTo(0f)
-
-                    Box {
-                        // Reveal panel (behind the row) — only when chapter has a URL
-                        if (hasUrl) Row(
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .width(revealWidth)
-                                .matchParentSize(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Open
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .background(Color(0xFF5B8DB8))
-                                    .clickable {
-                                        chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
-                                        collapse()
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp), tint = Color.White)
-                                Text("Open", style = MaterialTheme.typography.labelSmall, color = Color.White)
-                            }
-                            // Share
-                            if (!isAutomotive) Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .background(Color(0xFF5A9E6F))
-                                    .clickable {
-                                        chapter.url?.let { url ->
-                                            context.startActivity(Intent.createChooser(
-                                                Intent(Intent.ACTION_SEND).apply {
-                                                    type = "text/plain"
-                                                    putExtra(Intent.EXTRA_TEXT, url)
-                                                }, "Share link"
-                                            ))
-                                        }
-                                        collapse()
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp), tint = Color.White)
-                                Text("Share", style = MaterialTheme.typography.labelSmall, color = Color.White)
-                            }
-                            // More
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .background(Color(0xFFB05C5C))
-                                    .clickable {
-                                        vm.moreAboutThis(chapter.url, idx)
-                                        collapse()
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp), tint = Color.White)
-                                Text("More", style = MaterialTheme.typography.labelSmall, color = Color.White)
-                            }
+                        fun snapTo(target: Float) = revealScope.launch {
+                            offsetX.animateTo(target, spring(stiffness = Spring.StiffnessMedium))
                         }
+                        fun collapse() = snapTo(0f)
 
-                        // Chapter row (draggable, on top)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .offset { IntOffset(offsetX.value.toInt(), 0) }
-                                .background(
-                                    when {
-                                        isSnapHovered -> MaterialTheme.colorScheme.tertiaryContainer
-                                        isActive -> MaterialTheme.colorScheme.primaryContainer
-                                        else -> MaterialTheme.colorScheme.surface
-                                    }
-                                )
-                                .then(
-                                    if (isSnapHovered) Modifier.border(
-                                        2.dp,
-                                        MaterialTheme.colorScheme.tertiary,
-                                        androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-                                    ) else Modifier
-                                )
-                                .then(
-                                    if (hasUrl) Modifier.draggable(
-                                        orientation = Orientation.Horizontal,
-                                        state = rememberDraggableState { delta ->
-                                            revealScope.launch {
-                                                offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidthPx, 0f))
-                                            }
+                        Box {
+                            // Reveal panel (behind the row) — only when chapter has a URL
+                            if (hasUrl) Row(
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .width(revealWidth)
+                                    .matchParentSize(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Open
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFF5B8DB8))
+                                        .clickable {
+                                            chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
+                                            collapse()
                                         },
-                                        onDragStopped = { velocity ->
-                                            val target = if (offsetX.value < -revealWidthPx * 0.35f || velocity < -600f) -revealWidthPx else 0f
-                                            snapTo(target)
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp), tint = Color.White)
+                                    Text("Open", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                                }
+                                // Share
+                                if (!isAutomotive) Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFF5A9E6F))
+                                        .clickable {
+                                            chapter.url?.let { url ->
+                                                context.startActivity(Intent.createChooser(
+                                                    Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, url)
+                                                    }, "Share link"
+                                                ))
+                                            }
+                                            collapse()
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp), tint = Color.White)
+                                    Text("Share", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                                }
+                                // More
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFFB05C5C))
+                                        .clickable {
+                                            vm.moreAboutThis(chapter.url, idx)
+                                            collapse()
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp), tint = Color.White)
+                                    Text("More", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                                }
+                            }
+
+                            // Chapter row (draggable, on top)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .offset { IntOffset(offsetX.value.toInt(), 0) }
+                                    .background(
+                                        when {
+                                            isSnapHovered -> MaterialTheme.colorScheme.tertiaryContainer
+                                            isActive -> MaterialTheme.colorScheme.primaryContainer
+                                            else -> MaterialTheme.colorScheme.surface
                                         }
-                                    ) else Modifier
+                                    )
+                                    .then(
+                                        if (isSnapHovered) Modifier.border(
+                                            2.dp,
+                                            MaterialTheme.colorScheme.tertiary,
+                                            androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                        ) else Modifier
+                                    )
+                                    .then(
+                                        if (hasUrl) Modifier.draggable(
+                                            orientation = Orientation.Horizontal,
+                                            state = rememberDraggableState { delta ->
+                                                revealScope.launch {
+                                                    offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidthPx, 0f))
+                                                }
+                                            },
+                                            onDragStopped = { velocity ->
+                                                val target = if (offsetX.value < -revealWidthPx * 0.35f || velocity < -600f) -revealWidthPx else 0f
+                                                snapTo(target)
+                                            }
+                                        ) else Modifier
+                                    )
+                                    .combinedClickable(
+                                        onClick = { vm.jumpToChapter(chapter.startTimeMs); collapse() },
+                                        onLongClick = { collapse() }
+                                    )
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    formatMs(chapter.startTimeMs),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.width(52.dp)
                                 )
-                                .combinedClickable(
-                                    onClick = { vm.jumpToChapter(chapter.startTimeMs); collapse() },
-                                    onLongClick = { collapse() }
+                                Text(
+                                    chapter.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
                                 )
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                formatMs(chapter.startTimeMs),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.width(52.dp)
-                            )
-                            Text(
-                                chapter.title,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (chapter.url != null) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    if (chapter.url in cachedDeepDiveUrls) {
-                                        Icon(Icons.Filled.PlayCircle, contentDescription = "Deep dive ready", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                if (chapter.url != null) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        if (chapter.url in cachedDeepDiveUrls) {
+                                            Icon(Icons.Filled.PlayCircle, contentDescription = "Deep dive ready", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    HorizontalDivider()
-                    if (showTranscript) {
-                        if (idx == 0 && transcriptLoading) {
-                            Box(
+                        HorizontalDivider()
+                        if (deepDiveState is DeepDiveState.Playing && deepDiveChapterIndex == idx) {
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 12.dp),
-                                contentAlignment = Alignment.Center
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(52.dp))
+                                Text(
+                                    "More About This…",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    fontStyle = FontStyle.Italic,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            HorizontalDivider()
+                        }
+                    }
+                    if (showTranscript && idx == currentIdx) {
+                        if (transcriptLoading) {
+                            item(key = "transcript_loading") {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
                             }
                         } else {
                             val chapterStartSec = chapter.startTimeMs / 1000f
                             val nextChapterStartSec =
                                 chapters.getOrNull(idx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
-                            ChapterTranscriptRows(
-                                chapterStartSec = chapterStartSec,
-                                nextChapterStartSec = nextChapterStartSec,
-                                vm = vm
-                            )
+                            val chapterSegs = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
+                            itemsIndexed(chapterSegs, key = { _, seg -> "seg_${seg.startTimeSec}" }) { segIdx, segment ->
+                                val isSegActive = segment == transcriptSegments.getOrNull(activeSegmentIndex)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { vm.seekToSegment(segment) }
+                                        .background(
+                                            color = if (isSegActive)
+                                                if (isSystemInDarkTheme()) Color(0xFF1A3A5C) else Color(0xFFDCEEFD)
+                                            else Color.Transparent
+                                        )
+                                        .padding(start = 64.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
+                                ) {
+                                    Text(
+                                        text = segment.text,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                if (segIdx < chapterSegs.lastIndex) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 64.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                }
+                            }
                         }
-                    }
-                    if (deepDiveState is DeepDiveState.Playing && deepDiveChapterIndex == idx) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Spacer(Modifier.width(52.dp))
-                            Text(
-                                "More About This…",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                fontStyle = FontStyle.Italic,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        HorizontalDivider()
                     }
                 }
             }
@@ -791,43 +823,6 @@ internal fun formatSleepTimer(seconds: Int): String {
     return if (m > 0) "%d:%02d".format(m, s) else "${s}s"
 }
 
-@Composable
-private fun ChapterTranscriptRows(
-    chapterStartSec: Float,
-    nextChapterStartSec: Float,
-    vm: PlayerViewModel
-) {
-    val transcriptSegments by vm.transcriptSegments.collectAsStateWithLifecycle()
-    val activeSegmentIndex by vm.activeSegmentIndex.collectAsStateWithLifecycle()
-    val chapterSegs = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
-    val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex)
-    chapterSegs.forEachIndexed { localIdx, segment ->
-        val isActive = segment == activeSeg
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { vm.seekToSegment(segment) }
-                .background(
-                    color = if (isActive) MaterialTheme.colorScheme.primaryContainer
-                            else Color.Transparent
-                )
-                .padding(start = 64.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
-        ) {
-            Text(
-                text = segment.text,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurface
-            )
-        }
-        if (localIdx < chapterSegs.lastIndex) {
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 64.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-        }
-    }
-}
 
 private fun formatMs(ms: Long): String {
     val s = ms / 1000

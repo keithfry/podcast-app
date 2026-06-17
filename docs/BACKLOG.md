@@ -2,6 +2,8 @@
 
 ## Playback Position / Episode State
 
+- **Return to player screen on app resume** — minimizing and returning to the app navigates back to the main episode list instead of staying on `PlayerScreen`. When the app process is still alive, the back stack should restore `PlayerScreen` for the episode that was playing. Only navigate away if the app process was killed (no saved state). Fix: ensure `PlayerScreen` is in the back stack and `NavController` state survives `onPause`/`onResume` correctly; check `Activity.onNewIntent` and `NavHostFragment` save/restore behavior.
+
 - **Episode switching state inconsistencies** — when navigating between two episodes that both have saved positions, residual state from the previous episode can bleed into the new one before `loadMetadata`'s async DB fetch completes. Symptoms: wrong position shown briefly, wrong chapter highlighted, or play/pause state reflecting the previous episode. Root cause is the window between the synchronous reset in `loadMetadata` and the coroutine completing. Potential fix: pass the target `audioUrl` through the listener guards so any controller event whose `currentMediaItem.mediaId` doesn't match the in-flight load is ignored entirely.
 
 - **Handle non-MP3 mimeTypes for Cast** — when switching to `CastPlayer`, mimeType is hardcoded to `audio/mpeg`. Detect from URL extension (`.aac`, `.opus`, `.ogg`) or stored episode metadata to set the correct mimeType and avoid playback failures on non-MP3 feeds.
