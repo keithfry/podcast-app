@@ -306,6 +306,7 @@ class PlayerViewModel @Inject constructor(
         _activeSegmentIndex.value = -1
         _showTranscript.value = false
         _hasTranscript.value = false
+        _transcriptLoading.value = false
         viewModelScope.launch {
             val entity = episodeDao.getByAudioUrl(audioUrl)
             if (entity == null) {

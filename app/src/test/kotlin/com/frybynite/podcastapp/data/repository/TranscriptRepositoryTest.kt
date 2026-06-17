@@ -66,7 +66,7 @@ class TranscriptRepositoryTest {
 
         repo.fetchTranscript(url)
 
-        val cacheFile = File(tempDir, "${Math.abs(url.hashCode())}.json")
+        val cacheFile = File(tempDir, "${url.hashCode().toLong() and 0xFFFFFFFFL}.json")
         assertEquals(true, cacheFile.exists())
     }
 

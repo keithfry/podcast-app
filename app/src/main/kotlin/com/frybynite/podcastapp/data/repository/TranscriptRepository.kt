@@ -20,7 +20,7 @@ class TranscriptRepository(
     private val adapter by lazy { moshi.adapter(TranscriptResponse::class.java) }
 
     suspend fun fetchTranscript(transcriptUrl: String): List<TranscriptSegment> {
-        val cacheFile = File(transcriptsDir, "${Math.abs(transcriptUrl.hashCode())}.json")
+        val cacheFile = File(transcriptsDir, "${transcriptUrl.hashCode().toLong() and 0xFFFFFFFFL}.json")
         if (cacheFile.exists()) {
             Log.d(TAG, "fetchTranscript: cache hit for $transcriptUrl")
             return adapter.fromJson(cacheFile.readText())?.toSegments() ?: emptyList()
