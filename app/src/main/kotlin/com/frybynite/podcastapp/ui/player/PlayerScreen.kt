@@ -27,7 +27,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
-import com.frybynite.podcastapp.domain.model.TranscriptSegment
 import com.frybynite.podcastapp.ui.common.AutoSizeText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -391,9 +390,6 @@ fun PlayerScreen(
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(8.dp).align(Alignment.Start)
             )
-            val segmentIndexMap = remember(transcriptSegments) {
-                transcriptSegments.withIndex().associate { (i, s) -> s to i }
-            }
             LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = chapterListState) {
                 itemsIndexed(chapters) { idx, chapter ->
                     val isSnapHovered = snapHoverIdx == idx
@@ -551,16 +547,10 @@ fun PlayerScreen(
                             val chapterStartSec = chapter.startTimeMs / 1000f
                             val nextChapterStartSec =
                                 chapters.getOrNull(idx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
-                            val chapterSegs = segmentsForChapter(
-                                transcriptSegments, chapterStartSec, nextChapterStartSec
-                            )
-                            val firstGlobalIdx = if (chapterSegs.isEmpty()) -1
-                                else segmentIndexMap[chapterSegs.first()] ?: -1
                             ChapterTranscriptRows(
-                                chapterSegs = chapterSegs,
-                                firstGlobalIdx = firstGlobalIdx,
-                                activeSegmentIndexFlow = vm.activeSegmentIndex,
-                                onSeek = { vm.seekToSegment(it) }
+                                chapterStartSec = chapterStartSec,
+                                nextChapterStartSec = nextChapterStartSec,
+                                vm = vm
                             )
                         }
                     }
@@ -803,18 +793,20 @@ internal fun formatSleepTimer(seconds: Int): String {
 
 @Composable
 private fun ChapterTranscriptRows(
-    chapterSegs: List<TranscriptSegment>,
-    firstGlobalIdx: Int,
-    activeSegmentIndexFlow: kotlinx.coroutines.flow.StateFlow<Int>,
-    onSeek: (TranscriptSegment) -> Unit
+    chapterStartSec: Float,
+    nextChapterStartSec: Float,
+    vm: PlayerViewModel
 ) {
-    val activeSegmentIndex by activeSegmentIndexFlow.collectAsStateWithLifecycle()
+    val transcriptSegments by vm.transcriptSegments.collectAsStateWithLifecycle()
+    val activeSegmentIndex by vm.activeSegmentIndex.collectAsStateWithLifecycle()
+    val chapterSegs = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
+    val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex)
     chapterSegs.forEachIndexed { localIdx, segment ->
-        val isActive = firstGlobalIdx >= 0 && (firstGlobalIdx + localIdx) == activeSegmentIndex
+        val isActive = segment == activeSeg
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onSeek(segment) }
+                .clickable { vm.seekToSegment(segment) }
                 .background(
                     color = if (isActive) MaterialTheme.colorScheme.primaryContainer
                             else Color.Transparent
