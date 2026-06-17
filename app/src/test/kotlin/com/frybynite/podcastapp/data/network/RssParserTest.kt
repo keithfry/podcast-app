@@ -42,4 +42,45 @@ class RssParserTest {
         val result = parser.parse(xml)
         assertEquals(1230, result.episodes[1].durationSeconds) // 00:20:30
     }
+
+    @Test fun `parses podcast transcript tag url`() {
+        val xml = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>Test Podcast</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Episode 1</title>
+      <enclosure url="https://example.com/ep1.mp3" type="audio/mpeg" length="12345"/>
+      <pubDate>Mon, 01 Jan 2024 00:00:00 +0000</pubDate>
+      <itunes:duration>300</itunes:duration>
+      <podcast:transcript url="https://example.com/ep1-2024-01-01.transcript.json" type="application/json"/>
+    </item>
+  </channel>
+</rss>"""
+        val feed = RssParser().parse(xml)
+        assertEquals("https://example.com/ep1-2024-01-01.transcript.json", feed.episodes[0].transcriptUrl)
+    }
+
+    @Test fun `transcriptUrl is null when tag absent`() {
+        val xml = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>Test Podcast</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Episode 1</title>
+      <enclosure url="https://example.com/ep1.mp3" type="audio/mpeg" length="12345"/>
+      <pubDate>Mon, 01 Jan 2024 00:00:00 +0000</pubDate>
+      <itunes:duration>300</itunes:duration>
+    </item>
+  </channel>
+</rss>"""
+        val feed = RssParser().parse(xml)
+        assertNull(feed.episodes[0].transcriptUrl)
+    }
 }
