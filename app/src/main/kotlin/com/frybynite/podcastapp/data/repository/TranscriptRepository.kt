@@ -19,6 +19,10 @@ class TranscriptRepository(
 
     private val adapter by lazy { moshi.adapter(TranscriptResponse::class.java) }
 
+    fun deleteCache(transcriptUrl: String) {
+        File(transcriptsDir, "${transcriptUrl.hashCode().toLong() and 0xFFFFFFFFL}.json").delete()
+    }
+
     suspend fun fetchTranscript(transcriptUrl: String): List<TranscriptSegment> {
         val cacheFile = File(transcriptsDir, "${transcriptUrl.hashCode().toLong() and 0xFFFFFFFFL}.json")
         if (cacheFile.exists()) {

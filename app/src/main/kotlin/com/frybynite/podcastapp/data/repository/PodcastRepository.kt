@@ -27,7 +27,8 @@ class PodcastRepository @Inject constructor(
     private val podcastDao: PodcastDao,
     private val episodeDao: EpisodeDao,
     private val workManager: WorkManager,
-    private val cacheStorage: CacheStorage
+    private val cacheStorage: CacheStorage,
+    private val transcriptRepository: TranscriptRepository
 ) {
     val podcasts: Flow<List<Podcast>> = podcastDao.getAll().map { list ->
         list.map { it.toDomain() }
@@ -89,6 +90,7 @@ class PodcastRepository @Inject constructor(
         val podcastTitle = podcastDao.getByUrl(entity.podcastFeedUrl)?.title ?: return
         cacheStorage.episodeDir(entity.podcastFeedUrl, podcastTitle, audioUrl, entity.title)
             .deleteRecursively()
+        entity.transcriptUrl?.let { transcriptRepository.deleteCache(it) }
         episodeDao.updateDownloadStatus(audioUrl, null, "NONE")
     }
 }
