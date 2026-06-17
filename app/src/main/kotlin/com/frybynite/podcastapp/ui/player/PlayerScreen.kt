@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
+import com.frybynite.podcastapp.domain.model.TranscriptSegment
 import com.frybynite.podcastapp.ui.common.AutoSizeText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -553,36 +554,14 @@ fun PlayerScreen(
                             val chapterSegs = segmentsForChapter(
                                 transcriptSegments, chapterStartSec, nextChapterStartSec
                             )
-                            chapterSegs.forEachIndexed { localIdx, segment ->
-                                val globalIdx = segmentIndexMap[segment] ?: -1
-                                val isActive = globalIdx == activeSegmentIndex
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { vm.seekToSegment(segment) }
-                                        .background(
-                                            color = if (isActive) MaterialTheme.colorScheme.primaryContainer
-                                                    else Color.Transparent
-                                        )
-                                        .padding(
-                                            start = 64.dp, end = 12.dp,
-                                            top = 6.dp, bottom = 6.dp
-                                        )
-                                ) {
-                                    Text(
-                                        text = segment.text,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer
-                                                else MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                if (localIdx < chapterSegs.lastIndex) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(start = 64.dp),
-                                        color = MaterialTheme.colorScheme.outlineVariant
-                                    )
-                                }
-                            }
+                            val firstGlobalIdx = if (chapterSegs.isEmpty()) -1
+                                else segmentIndexMap[chapterSegs.first()] ?: -1
+                            ChapterTranscriptRows(
+                                chapterSegs = chapterSegs,
+                                firstGlobalIdx = firstGlobalIdx,
+                                activeSegmentIndex = activeSegmentIndex,
+                                onSeek = { vm.seekToSegment(it) }
+                            )
                         }
                     }
                     if (deepDiveState is DeepDiveState.Playing && deepDiveChapterIndex == idx) {
@@ -820,6 +799,41 @@ internal fun formatSleepTimer(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return if (m > 0) "%d:%02d".format(m, s) else "${s}s"
+}
+
+@Composable
+private fun ChapterTranscriptRows(
+    chapterSegs: List<TranscriptSegment>,
+    firstGlobalIdx: Int,
+    activeSegmentIndex: Int,
+    onSeek: (TranscriptSegment) -> Unit
+) {
+    chapterSegs.forEachIndexed { localIdx, segment ->
+        val isActive = firstGlobalIdx >= 0 && (firstGlobalIdx + localIdx) == activeSegmentIndex
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onSeek(segment) }
+                .background(
+                    color = if (isActive) MaterialTheme.colorScheme.primaryContainer
+                            else Color.Transparent
+                )
+                .padding(start = 64.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
+        ) {
+            Text(
+                text = segment.text,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurface
+            )
+        }
+        if (localIdx < chapterSegs.lastIndex) {
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 64.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+    }
 }
 
 private fun formatMs(ms: Long): String {
