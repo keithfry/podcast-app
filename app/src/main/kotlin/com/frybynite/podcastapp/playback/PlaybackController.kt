@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.net.Uri
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -80,15 +81,19 @@ class PlaybackController @Inject constructor(
                 pending to ctrl
             }.collectLatest { (pending, ctrl) ->
                 episodeDao.getByAudioUrlFlow(pending).collect { entity ->
-                    if (entity?.downloadStatus == "DONE" && entity.downloadPath != null) {
-                        _pendingAutoPlayUrl.value = null
-                        val item = MediaItem.Builder()
-                            .setMediaId(entity.audioUrl)
-                            .setUri(Uri.fromFile(File(entity.downloadPath)))
-                            .build()
-                        ctrl.setMediaItem(item)
-                        ctrl.prepare()
-                        ctrl.play()
+                    when {
+                        entity?.downloadStatus == "DONE" && entity.downloadPath != null -> {
+                            _pendingAutoPlayUrl.value = null
+                            val item = MediaItem.Builder()
+                                .setMediaId(entity.audioUrl)
+                                .setUri(Uri.fromFile(File(entity.downloadPath)))
+                                .setMediaMetadata(MediaMetadata.Builder().setTitle(entity.title).build())
+                                .build()
+                            ctrl.setMediaItem(item)
+                            ctrl.prepare()
+                            ctrl.play()
+                        }
+                        entity?.downloadStatus == "NONE" -> _pendingAutoPlayUrl.value = null
                     }
                 }
             }
@@ -102,6 +107,7 @@ class PlaybackController @Inject constructor(
                 val item = MediaItem.Builder()
                     .setMediaId(episode.audioUrl)
                     .setUri(Uri.fromFile(File(path)))
+                    .setMediaMetadata(MediaMetadata.Builder().setTitle(episode.title).build())
                     .build()
                 _controller.value?.setMediaItem(item)
                 _controller.value?.prepare()
