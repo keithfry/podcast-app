@@ -5,10 +5,12 @@ import android.content.Context
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.frybynite.podcastapp.data.db.dao.EpisodeDao
+import com.frybynite.podcastapp.data.preferences.SpeedPreferences
 import com.frybynite.podcastapp.data.repository.ChapterRepository
 import com.frybynite.podcastapp.data.repository.PodcastRepository
 import com.frybynite.podcastapp.domain.model.DownloadStatus
@@ -34,7 +36,8 @@ class PlaybackController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val episodeDao: EpisodeDao,
     private val podcastRepo: PodcastRepository,
-    private val chapterRepo: ChapterRepository
+    private val chapterRepo: ChapterRepository,
+    private val speedPrefs: SpeedPreferences,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -89,6 +92,7 @@ class PlaybackController @Inject constructor(
                                 .setUri(Uri.fromFile(File(entity.downloadPath)))
                                 .setMediaMetadata(MediaMetadata.Builder().setTitle(entity.title).build())
                                 .build()
+                            ctrl.applySpeed()
                             ctrl.setMediaItem(item)
                             ctrl.prepare()
                             ctrl.play()
@@ -109,9 +113,12 @@ class PlaybackController @Inject constructor(
                     .setUri(Uri.fromFile(File(path)))
                     .setMediaMetadata(MediaMetadata.Builder().setTitle(episode.title).build())
                     .build()
-                _controller.value?.setMediaItem(item)
-                _controller.value?.prepare()
-                _controller.value?.play()
+                _controller.value?.let { c ->
+                    c.applySpeed()
+                    c.setMediaItem(item)
+                    c.prepare()
+                    c.play()
+                }
             }
             DownloadStatus.DOWNLOADING, DownloadStatus.QUEUED -> {
                 _pendingAutoPlayUrl.value = episode.audioUrl
@@ -126,4 +133,8 @@ class PlaybackController @Inject constructor(
 
     fun pause() { _controller.value?.pause() }
     fun resume() { _controller.value?.play() }
+
+    private fun MediaController.applySpeed() {
+        setPlaybackParameters(PlaybackParameters(speedPrefs.speed))
+    }
 }
