@@ -7,6 +7,7 @@ import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.preferences.EpisodeListPreferences
 import com.frybynite.podcastapp.data.repository.PodcastRepository
 import com.frybynite.podcastapp.domain.model.Episode
+import com.frybynite.podcastapp.playback.PlaybackController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +22,7 @@ class EpisodeListViewModel @Inject constructor(
     private val repo: PodcastRepository,
     private val podcastDao: PodcastDao,
     private val episodeListPrefs: EpisodeListPreferences,
+    private val playbackController: PlaybackController,
     savedState: SavedStateHandle
 ) : ViewModel() {
 
@@ -31,7 +33,6 @@ class EpisodeListViewModel @Inject constructor(
     private val _showHeard = MutableStateFlow(episodeListPrefs.getShowHeard(feedUrl))
     val showHeard: StateFlow<Boolean> = _showHeard.asStateFlow()
 
-    // All episodes — screen controls visibility per-row with AnimatedVisibility
     val episodes: StateFlow<List<Episode>> = repo.episodesForPodcast(feedUrl)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -41,14 +42,17 @@ class EpisodeListViewModel @Inject constructor(
     private val _podcastImageUrl = MutableStateFlow<String?>(null)
     val podcastImageUrl: StateFlow<String?> = _podcastImageUrl.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    val currentlyPlayingUrl: StateFlow<String?> = playbackController.currentlyPlayingUrl
+    val isPlaying: StateFlow<Boolean> = playbackController.isPlaying
+
     init {
         viewModelScope.launch {
             _podcastImageUrl.value = podcastDao.getByUrl(feedUrl)?.imageUrl
         }
     }
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     fun refresh() {
         viewModelScope.launch {
@@ -64,8 +68,13 @@ class EpisodeListViewModel @Inject constructor(
         episodeListPrefs.setShowHeard(feedUrl, next)
     }
 
-    fun downloadEpisode(audioUrl: String) {
-        repo.downloadEpisode(audioUrl)
+    fun onPlayPause(episode: Episode) {
+        if (playbackController.currentlyPlayingUrl.value == episode.audioUrl) {
+            if (playbackController.isPlaying.value) playbackController.pause()
+            else playbackController.resume()
+        } else {
+            playbackController.play(episode)
+        }
     }
 
     fun setEpisodeHeard(audioUrl: String, isHeard: Boolean) {

@@ -82,7 +82,7 @@ Composite primary key: `(episodeAudioUrl, chapterUrl)`
 | DAO | Table | Key operations |
 |-----|-------|----------------|
 | `PodcastDao` | `podcasts` | `getAll(): Flow`, `getByUrl()`, `upsert()`, `delete()` |
-| `EpisodeDao` | `episodes` | `getForPodcast(): Flow`, `getByAudioUrl()`, `upsertAll()`, `updateDownloadStatus()`, `updateLastPosition()`, `markHeard()` |
+| `EpisodeDao` | `episodes` | `getForPodcast(): Flow`, `getByAudioUrl()`, `getByAudioUrlFlow(): Flow`, `upsertAll()`, `updateDownloadStatus()`, `updateLastPosition()`, `markHeard()` |
 | `ChapterDao` | `chapters` | `getForEpisode(): Flow`, `countForEpisode()`, `replaceChaptersForEpisode()` (transaction) |
 | `DeepDiveDao` | `deep_dives` | `get()`, `upsert()`, `flowForEpisode()`, `deleteForEpisode()` |
 

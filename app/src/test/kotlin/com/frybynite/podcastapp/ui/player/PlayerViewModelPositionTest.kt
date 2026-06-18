@@ -10,6 +10,7 @@ import com.frybynite.podcastapp.data.repository.TranscriptRepository
 import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
 import com.frybynite.podcastapp.deepdive.TextSummarizer
+import com.frybynite.podcastapp.playback.PlaybackController
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,7 +41,8 @@ class PlayerViewModelPositionTest {
             podcastRepo = mockk(relaxed = true),
             deepDiveDao = mockk(relaxed = true),
             modelDownloadManager = mockk(relaxed = true),
-            transcriptRepo = mockk(relaxed = true)
+            transcriptRepo = mockk(relaxed = true),
+            playbackController = mockk(relaxed = true)
         )
         assertEquals(0L, vm.currentPositionMs.value)
     }
@@ -57,7 +59,8 @@ class PlayerViewModelPositionTest {
             podcastRepo = mockk(relaxed = true),
             deepDiveDao = mockk(relaxed = true),
             modelDownloadManager = mockk(relaxed = true),
-            transcriptRepo = mockk(relaxed = true)
+            transcriptRepo = mockk(relaxed = true),
+            playbackController = mockk(relaxed = true)
         )
         assertEquals(0L, vm.durationMs.value)
     }

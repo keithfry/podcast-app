@@ -17,8 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -62,6 +62,8 @@ fun EpisodeListScreen(
     val podcastImageUrl by vm.podcastImageUrl.collectAsStateWithLifecycle()
     val showHeard by vm.showHeard.collectAsStateWithLifecycle()
     val downloadProgress by vm.downloadProgress.collectAsStateWithLifecycle()
+    val currentlyPlayingUrl by vm.currentlyPlayingUrl.collectAsStateWithLifecycle()
+    val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
     val pullState = rememberPullToRefreshState()
     val context = LocalContext.current
     val isAutomotive = context.packageManager.hasSystemFeature("android.hardware.type.automotive")
@@ -138,8 +140,10 @@ fun EpisodeListScreen(
                                 episode = episode,
                                 fallbackImageUrl = podcastImageUrl,
                                 downloadProgress = downloadProgress[episode.audioUrl],
+                                isCurrentlyPlaying = currentlyPlayingUrl == episode.audioUrl,
+                                isPlayingActive = isPlaying,
                                 onClick = { onEpisodeClick(episode.audioUrl) },
-                                onDownload = { vm.downloadEpisode(episode.audioUrl) },
+                                onPlayPause = { vm.onPlayPause(episode) },
                                 onToggleHeard = { vm.setEpisodeHeard(episode.audioUrl, !episode.isHeard) }
                             )
                             HorizontalDivider()
@@ -160,8 +164,10 @@ internal fun EpisodeRow(
     episode: Episode,
     fallbackImageUrl: String? = null,
     downloadProgress: Float? = null,
+    isCurrentlyPlaying: Boolean = false,
+    isPlayingActive: Boolean = false,
     onClick: () -> Unit,
-    onDownload: () -> Unit,
+    onPlayPause: () -> Unit,
     onToggleHeard: () -> Unit = {}
 ) {
     val revealWidth = 80.dp
@@ -250,19 +256,20 @@ internal fun EpisodeRow(
                 )
             }
             if (!episode.isHeard) {
-                when (episode.downloadStatus) {
-                    DownloadStatus.NONE -> IconButton(onClick = onDownload) {
-                        Icon(Icons.Filled.Download, "Download")
-                    }
-                    DownloadStatus.DONE -> Icon(
-                        Icons.Filled.DownloadDone, "Downloaded",
-                        modifier = Modifier.padding(12.dp)
-                    )
-                    else -> CircularProgressIndicator(
+                val isDownloadingOrQueued = episode.downloadStatus == DownloadStatus.DOWNLOADING ||
+                        episode.downloadStatus == DownloadStatus.QUEUED
+                when {
+                    isDownloadingOrQueued -> CircularProgressIndicator(
                         progress = { (downloadProgress ?: 0f).coerceAtLeast(0.05f) },
                         modifier = Modifier.size(48.dp).padding(end = 12.dp),
                         strokeWidth = 2.dp
                     )
+                    isCurrentlyPlaying && isPlayingActive -> IconButton(onClick = onPlayPause) {
+                        Icon(Icons.Filled.Pause, contentDescription = "Pause")
+                    }
+                    else -> IconButton(onClick = onPlayPause) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
+                    }
                 }
             }
         }

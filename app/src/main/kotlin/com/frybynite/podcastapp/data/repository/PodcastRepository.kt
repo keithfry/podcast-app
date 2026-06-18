@@ -70,6 +70,10 @@ class PodcastRepository @Inject constructor(
         )
     }
 
+    fun cancelDownload(audioUrl: String) {
+        workManager.cancelUniqueWork("download_$audioUrl")
+    }
+
     suspend fun markEpisodeHeard(audioUrl: String) {
         episodeDao.markHeard(audioUrl)
         cleanupEpisodeFiles(audioUrl)
