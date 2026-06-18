@@ -68,7 +68,7 @@ class PlaybackService : MediaLibraryService() {
     @Volatile private var switchingPlayers = false
     private lateinit var mediaLibrarySession: MediaLibrarySession
 
-    private var chapters: List<Chapter> = emptyList()
+    @Volatile private var chapters: List<Chapter> = emptyList()
 
     private val castSessionListener = object : SessionManagerListener<CastSession> {
         override fun onSessionStarted(session: CastSession, sessionId: String) {

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -83,22 +84,22 @@ class PlaybackController @Inject constructor(
             combine(_pendingAutoPlayUrl.filterNotNull(), _controller.filterNotNull()) { pending, ctrl ->
                 pending to ctrl
             }.collectLatest { (pending, ctrl) ->
-                episodeDao.getByAudioUrlFlow(pending).collect { entity ->
-                    when {
-                        entity?.downloadStatus == "DONE" && entity.downloadPath != null -> {
-                            _pendingAutoPlayUrl.value = null
-                            val item = MediaItem.Builder()
-                                .setMediaId(entity.audioUrl)
-                                .setUri(Uri.fromFile(File(entity.downloadPath)))
-                                .setMediaMetadata(MediaMetadata.Builder().setTitle(entity.title).build())
-                                .build()
-                            ctrl.applySpeed()
-                            ctrl.setMediaItem(item)
-                            ctrl.prepare()
-                            ctrl.play()
-                        }
-                        entity?.downloadStatus == "NONE" -> _pendingAutoPlayUrl.value = null
-                    }
+                val entity = episodeDao.getByAudioUrlFlow(pending).first { entity ->
+                    entity == null ||
+                        (entity.downloadStatus == "DONE" && entity.downloadPath != null) ||
+                        entity.downloadStatus == "NONE"
+                }
+                _pendingAutoPlayUrl.value = null
+                if (entity?.downloadStatus == "DONE" && entity.downloadPath != null) {
+                    val item = MediaItem.Builder()
+                        .setMediaId(entity.audioUrl)
+                        .setUri(Uri.fromFile(File(entity.downloadPath)))
+                        .setMediaMetadata(MediaMetadata.Builder().setTitle(entity.title).build())
+                        .build()
+                    ctrl.applySpeed()
+                    ctrl.setMediaItem(item)
+                    ctrl.prepare()
+                    ctrl.play()
                 }
             }
         }
