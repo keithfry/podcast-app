@@ -139,7 +139,7 @@ fun EpisodeListScreen(
                                 fallbackImageUrl = podcastImageUrl,
                                 downloadProgress = downloadProgress[episode.audioUrl],
                                 onClick = { onEpisodeClick(episode.audioUrl) },
-                                onDownload = { vm.downloadEpisode(episode.audioUrl) },
+                                onDownload = { vm.onPlayPause(episode) },
                                 onToggleHeard = { vm.setEpisodeHeard(episode.audioUrl, !episode.isHeard) }
                             )
                             HorizontalDivider()
