@@ -339,12 +339,20 @@ class PlayerViewModel @Inject constructor(
                 chapterRepo.chaptersForEpisode(entity.audioUrl).collect { list ->
                     Log.d(TAG, "loadMetadata: chapters updated count=${list.size}")
                     _chapters.value = list
-                    val pos = currentEpisode?.lastPositionMs ?: 0L
+                    val pos = ctrl?.currentPosition
+                        ?.takeIf { it > 0L && ctrl?.currentMediaItem?.mediaId == audioUrl }
+                        ?: currentEpisode?.lastPositionMs
+                        ?: 0L
                     if (list.isNotEmpty()) {
                         val idx = list.indexOfLast { it.startTimeMs <= pos }
                         if (idx >= 0) _currentChapterIndex.value = idx
                     }
                 }
+            }
+            // Sync state if episode already playing (e.g. started from episode list)
+            if (ctrl?.currentMediaItem?.mediaId == audioUrl && ctrl?.currentPosition ?: 0L > 0L) {
+                episodeLoaded = true
+                _isPlaying.value = ctrl?.isPlaying ?: false
             }
         }
     }
