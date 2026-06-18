@@ -224,7 +224,7 @@ fun PlayerScreen(
                                 onDismissRequest = { showOverflow = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Transcript") },
+                                    text = { Text(if (showTranscript) "Hide Transcript" else "Show Transcript") },
                                     leadingIcon = { Icon(Icons.Filled.Article, null) },
                                     onClick = {
                                         vm.toggleTranscript()
