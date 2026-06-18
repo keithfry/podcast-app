@@ -12,6 +12,9 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE audioUrl = :audioUrl")
     suspend fun getByAudioUrl(audioUrl: String): EpisodeEntity?
 
+    @Query("SELECT * FROM episodes WHERE audioUrl = :audioUrl")
+    fun getByAudioUrlFlow(audioUrl: String): Flow<EpisodeEntity?>
+
     // Used only in tests — replaces the full row including local state.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(episodes: List<EpisodeEntity>)
