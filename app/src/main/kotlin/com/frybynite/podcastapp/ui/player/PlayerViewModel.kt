@@ -94,6 +94,9 @@ class PlayerViewModel @Inject constructor(
     val sleepTimerSeconds: StateFlow<Int?> = _sleepTimerSeconds.asStateFlow()
     private var sleepTimerJob: Job? = null
 
+    private val _isLiked = MutableStateFlow(false)
+    val isLiked: StateFlow<Boolean> = _isLiked.asStateFlow()
+
     private var chaptersJob: Job? = null
     private var positionSaveJob: Job? = null
     private var currentEpisode: Episode? = null
@@ -288,6 +291,7 @@ class PlayerViewModel @Inject constructor(
         currentEpisode = null
         episodeLoaded = false
         heardMarked = false
+        _isLiked.value = false
         _chapters.value = emptyList()
         _currentPositionMs.value = 0L
         _durationMs.value = 0L
@@ -324,6 +328,7 @@ class PlayerViewModel @Inject constructor(
             }
             val episode = entity.toDomain()
             currentEpisode = episode
+            _isLiked.value = episode.isLiked
             _hasTranscript.value = episode.transcriptUrl != null
             if (_showTranscript.value && episode.transcriptUrl != null && _transcriptSegments.value.isEmpty()) {
                 loadTranscript(episode.transcriptUrl)
@@ -358,6 +363,13 @@ class PlayerViewModel @Inject constructor(
                 _isPlaying.value = ctrl?.isPlaying ?: false
             }
         }
+    }
+
+    fun toggleLike() {
+        val ep = currentEpisode ?: return
+        val newValue = !_isLiked.value
+        _isLiked.value = newValue
+        viewModelScope.launch { episodeDao.updateIsLiked(ep.audioUrl, newValue) }
     }
 
     fun togglePlayPause() {

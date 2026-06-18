@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -89,6 +90,7 @@ fun PlayerScreen(
     val transcriptSegments by vm.transcriptSegments.collectAsStateWithLifecycle()
     val activeSegmentIndex by vm.activeSegmentIndex.collectAsStateWithLifecycle()
     val transcriptLoading by vm.transcriptLoading.collectAsStateWithLifecycle()
+    val isLiked by vm.isLiked.collectAsStateWithLifecycle()
     var showSleepSheet by remember { mutableStateOf(false) }
     val currentChapter = chapters.getOrNull(currentIdx)
     var showSpeedSheet by remember { mutableStateOf(false) }
@@ -350,6 +352,13 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
+                TextButton(onClick = { showSpeedSheet = true }) {
+                    Text(
+                        "${"%.1f".format(playbackSpeed)}×",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 IconButton(onClick = {
                     if (deepDiveState is DeepDiveState.Playing) vm.controller?.seekTo(0)
                     else vm.prevChapter()
@@ -378,11 +387,10 @@ fun PlayerScreen(
                 }) {
                     Icon(Icons.Filled.SkipNext, "Next chapter", Modifier.size(40.dp))
                 }
-                TextButton(onClick = { showSpeedSheet = true }) {
-                    Text(
-                        "${"%.1f".format(playbackSpeed)}×",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                IconButton(onClick = { vm.toggleLike() }) {
+                    Icon(
+                        if (isLiked) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
+                        contentDescription = if (isLiked) "Unlike" else "Like"
                     )
                 }
             }

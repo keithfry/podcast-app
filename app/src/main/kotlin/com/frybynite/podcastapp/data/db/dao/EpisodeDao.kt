@@ -63,4 +63,7 @@ interface EpisodeDao {
 
     @Query("UPDATE episodes SET isHeard = 0 WHERE audioUrl = :audioUrl")
     suspend fun markUnheard(audioUrl: String)
+
+    @Query("UPDATE episodes SET isLiked = :isLiked WHERE audioUrl = :audioUrl")
+    suspend fun updateIsLiked(audioUrl: String, isLiked: Boolean)
 }

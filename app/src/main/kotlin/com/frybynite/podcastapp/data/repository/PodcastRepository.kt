@@ -110,7 +110,7 @@ fun EpisodeEntity.toDomain() = Episode(
     pubDate = pubDate, durationSeconds = durationSeconds, chaptersUrl = chaptersUrl,
     transcriptUrl = transcriptUrl, imageUrl = imageUrl, downloadPath = downloadPath,
     downloadStatus = DownloadStatus.valueOf(downloadStatus), lastPositionMs = lastPositionMs,
-    isHeard = isHeard
+    isHeard = isHeard, isLiked = isLiked
 )
 fun Episode.toEntity(feedUrl: String) = EpisodeEntity(
     audioUrl = audioUrl, podcastFeedUrl = feedUrl, title = title, pubDate = pubDate,

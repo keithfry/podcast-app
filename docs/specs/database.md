@@ -1,7 +1,7 @@
 # Database Specification
 
 Room database (`PodcastDatabase`), SQLite via Android Room.  
-Current version: **6**  
+Current version: **7**  
 Package: `com.frybynite.podcastapp.data.db`
 
 ---
@@ -42,6 +42,7 @@ Index: `podcastFeedUrl`
 | `downloadStatus` | TEXT | NOT NULL | `"NONE"` | Enum: `NONE`, `QUEUED`, `DOWNLOADING`, `DONE` |
 | `lastPositionMs` | INTEGER | NOT NULL | `0` | Playback resume position |
 | `isHeard` | INTEGER | NOT NULL | `0` | 1 when episode has been listened to |
+| `isLiked` | INTEGER | NOT NULL | `0` | 1 when user has liked the episode |
 
 ---
 
@@ -82,7 +83,7 @@ Composite primary key: `(episodeAudioUrl, chapterUrl)`
 | DAO | Table | Key operations |
 |-----|-------|----------------|
 | `PodcastDao` | `podcasts` | `getAll(): Flow`, `getByUrl()`, `upsert()`, `delete()` |
-| `EpisodeDao` | `episodes` | `getForPodcast(): Flow`, `getByAudioUrl()`, `getByAudioUrlFlow(): Flow`, `upsertAll()`, `updateDownloadStatus()`, `updateLastPosition()`, `markHeard()` |
+| `EpisodeDao` | `episodes` | `getForPodcast(): Flow`, `getByAudioUrl()`, `getByAudioUrlFlow(): Flow`, `upsertAll()`, `updateDownloadStatus()`, `updateLastPosition()`, `markHeard()`, `updateIsLiked()` |
 | `ChapterDao` | `chapters` | `getForEpisode(): Flow`, `countForEpisode()`, `replaceChaptersForEpisode()` (transaction) |
 | `DeepDiveDao` | `deep_dives` | `get()`, `upsert()`, `flowForEpisode()`, `deleteForEpisode()` |
 
@@ -98,3 +99,4 @@ Composite primary key: `(episodeAudioUrl, chapterUrl)`
 | 4 | Added `imageUrl` to `episodes` (per-episode `itunes:image` artwork) |
 | 5 | Added `isHeard` to `episodes`; auto-set at 95% playback or manual mark |
 | 6 | Added `transcriptUrl` to `episodes`; URL for pre-generated sentence-level transcript JSON |
+| 7 | Added `isLiked` to `episodes`; toggled from the player screen thumbs-up button |

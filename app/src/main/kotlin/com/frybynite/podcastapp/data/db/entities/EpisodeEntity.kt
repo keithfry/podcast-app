@@ -17,5 +17,6 @@ data class EpisodeEntity(
     val downloadPath: String?,
     val downloadStatus: String = "NONE",
     val lastPositionMs: Long = 0L,
-    val isHeard: Boolean = false
+    val isHeard: Boolean = false,
+    val isLiked: Boolean = false
 )
