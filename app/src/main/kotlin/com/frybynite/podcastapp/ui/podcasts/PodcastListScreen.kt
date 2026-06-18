@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -92,20 +93,56 @@ private fun PodcastRow(podcast: Podcast, onClick: () -> Unit) {
     }
 }
 
+private val QUICK_FEEDS_ROW1 = listOf(
+    "Raging Moderates" to "https://api.substack.com/feed/podcast/7157411/s/338591/private/3f666b6a-9d88-4054-82e4-1c167744b3aa.rss",
+    "AI Daily" to "https://keithfry.github.io/web-pages/techradar/AI/podcast.rss",
+)
+private val QUICK_FEEDS_ROW2 = listOf(
+    "Robotics Daily" to "https://keithfry.github.io/web-pages/techradar/Robotics/podcast.rss",
+)
+
+private val chipColors @Composable get() = FilterChipDefaults.filterChipColors(
+    containerColor = Color(0xFFD6EAF8),
+    selectedContainerColor = Color(0xFF5DADE2),
+)
+
 @Composable
 private fun AddPodcastDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
-    var url by remember { mutableStateOf("https://keithfry.github.io/web-pages/techradar/AI/podcast.xml") }
+    var url by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Podcast") },
         text = {
-            OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
-                label = { Text("RSS Feed URL") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QUICK_FEEDS_ROW1.forEach { (label, feedUrl) ->
+                        FilterChip(
+                            selected = url == feedUrl,
+                            onClick = { url = feedUrl },
+                            label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                            colors = chipColors,
+                        )
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QUICK_FEEDS_ROW2.forEach { (label, feedUrl) ->
+                        FilterChip(
+                            selected = url == feedUrl,
+                            onClick = { url = feedUrl },
+                            label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                            colors = chipColors,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text("RSS Feed URL") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         confirmButton = {
             TextButton(

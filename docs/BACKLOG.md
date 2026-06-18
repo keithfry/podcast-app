@@ -35,6 +35,22 @@
 
 - **Transcript: no-chapter episode support** — episodes with a transcript URL but no `chaptersUrl` show the transcript toggle button but render nothing (the `chapters.forEachIndexed` loop doesn't execute). Fix: when `chapters` is empty and `showTranscript` is true, render all transcript segments directly in the `LazyColumn` without chapter grouping.
 
+## Player Screen UX
+
+- **Overflow menu for player screen icons** — when transcript, sleep timer, and Chromecast icons are all visible on the player screen, move sleep and transcript into a three-dots overflow menu, leaving only the Chromecast icon at top level. When Chromecast is unavailable, evaluate whether sleep/transcript still need the overflow or can remain top-level.
+
+## Episode List UX
+
+- **Play icon as default episode action** — replace the current default icon on the right of each episode row with a play icon. Behavior:
+  - Tap play on a downloaded episode → play immediately.
+  - Tap play on an undownloaded episode → download then play automatically when complete.
+  - If a second play-download is triggered before the first finishes, cancel the first download (or deprioritize it) and treat the newly tapped episode as the one to play when its download completes.
+  - In-progress download should show visual feedback (e.g. progress ring replacing the play icon for that row).
+
+## Podcast Discovery
+
+- **Podcast search via iTunes and Podcast Index** — search for new podcasts by keyword from within the app. Query both iTunes Search API (`itunes.apple.com/search?media=podcast&term=...`, no auth required) and Podcast Index API (requires free API key) in parallel, merge and deduplicate results by feed URL, and display them in a search UI. Tapping a result should subscribe the user to that podcast (save feed URL to Room and trigger an initial episode fetch).
+
 ## Phase 2
 
 - **Always-on wake word** — Picovoice Porcupine or Vosk integration for hands-free activation without tapping the mic FAB.

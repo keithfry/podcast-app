@@ -30,10 +30,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.future
 import android.util.Log
 import androidx.media3.cast.CastPlayer
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.SessionManagerListener
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import javax.inject.Inject
 
 private const val TAG = "PlaybackSvc"
@@ -53,6 +57,7 @@ class PlaybackService : MediaLibraryService() {
 
     @Inject lateinit var chapterRepo: ChapterRepository
     @Inject lateinit var podcastRepo: PodcastRepository
+    @Inject lateinit var okHttpClient: OkHttpClient
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var chaptersJob: Job? = null
@@ -223,7 +228,8 @@ class PlaybackService : MediaLibraryService() {
             mediaItems: List<MediaItem>
         ): ListenableFuture<List<MediaItem>> =
             Futures.immediateFuture(mediaItems.map { item ->
-                if (item.localConfiguration?.uri != null) item
+                val localUri = item.localConfiguration?.uri
+                if (localUri != null) item
                 else item.buildUpon().setUri(item.mediaId).build()
             })
     }
@@ -231,7 +237,12 @@ class PlaybackService : MediaLibraryService() {
     override fun onCreate() {
         super.onCreate()
         Log.i(TAG, "onCreate: starting PlaybackService")
+        val dataSourceFactory = DefaultDataSource.Factory(
+            this,
+            OkHttpDataSource.Factory(okHttpClient)
+        )
         player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
