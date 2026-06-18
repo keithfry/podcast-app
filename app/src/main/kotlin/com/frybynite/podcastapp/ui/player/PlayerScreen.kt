@@ -214,18 +214,50 @@ fun PlayerScreen(
                         )
                     }
                     if (hasTranscript) {
-                        IconButton(onClick = { vm.toggleTranscript() }) {
-                            Icon(Icons.Filled.Article, "Transcript")
+                        var showOverflow by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { showOverflow = true }) {
+                                Icon(Icons.Filled.MoreVert, "More options")
+                            }
+                            DropdownMenu(
+                                expanded = showOverflow,
+                                onDismissRequest = { showOverflow = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Transcript") },
+                                    leadingIcon = { Icon(Icons.Filled.Article, null) },
+                                    onClick = {
+                                        vm.toggleTranscript()
+                                        showOverflow = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (sleepTimerSeconds != null)
+                                                "Sleep · ${formatSleepTimer(sleepTimerSeconds!!)}"
+                                            else
+                                                "Sleep"
+                                        )
+                                    },
+                                    leadingIcon = { Icon(Icons.Filled.Bedtime, null) },
+                                    onClick = {
+                                        showSleepSheet = true
+                                        showOverflow = false
+                                    }
+                                )
+                            }
                         }
-                    }
-                    IconButton(onClick = { showSleepSheet = true }) {
-                        if (sleepTimerSeconds != null) {
-                            Text(
-                                formatSleepTimer(sleepTimerSeconds!!),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        } else {
-                            Icon(Icons.Filled.Bedtime, "Sleep timer")
+                    } else {
+                        IconButton(onClick = { showSleepSheet = true }) {
+                            if (sleepTimerSeconds != null) {
+                                Text(
+                                    formatSleepTimer(sleepTimerSeconds!!),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            } else {
+                                Icon(Icons.Filled.Bedtime, "Sleep timer")
+                            }
                         }
                     }
                 }
