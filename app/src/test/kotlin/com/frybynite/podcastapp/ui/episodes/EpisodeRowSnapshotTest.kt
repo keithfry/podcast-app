@@ -23,21 +23,21 @@ class EpisodeRowSnapshotTest {
         downloadStatus = DownloadStatus.NONE
     )
 
-    @Test fun `episode row not downloaded shows download icon`() {
+    @Test fun `episode row not downloaded shows play icon`() {
         paparazzi.snapshot {
             PodcastAppTheme {
-                EpisodeRow(episode = episode, onClick = {}, onDownload = {})
+                EpisodeRow(episode = episode, onClick = {}, onPlayPause = {})
             }
         }
     }
 
-    @Test fun `episode row downloaded shows done icon`() {
+    @Test fun `episode row downloaded shows play icon`() {
         paparazzi.snapshot {
             PodcastAppTheme {
                 EpisodeRow(
                     episode = episode.copy(downloadStatus = DownloadStatus.DONE),
                     onClick = {},
-                    onDownload = {}
+                    onPlayPause = {}
                 )
             }
         }
@@ -48,8 +48,23 @@ class EpisodeRowSnapshotTest {
             PodcastAppTheme {
                 EpisodeRow(
                     episode = episode.copy(downloadStatus = DownloadStatus.DOWNLOADING),
+                    downloadProgress = 0.4f,
                     onClick = {},
-                    onDownload = {}
+                    onPlayPause = {}
+                )
+            }
+        }
+    }
+
+    @Test fun `episode row currently playing shows pause icon`() {
+        paparazzi.snapshot {
+            PodcastAppTheme {
+                EpisodeRow(
+                    episode = episode.copy(downloadStatus = DownloadStatus.DONE),
+                    isCurrentlyPlaying = true,
+                    isPlayingActive = true,
+                    onClick = {},
+                    onPlayPause = {}
                 )
             }
         }
@@ -63,7 +78,7 @@ class EpisodeRowSnapshotTest {
                         title = "A Very Long Episode Title That Describes The Contents Of This Particular Episode In Great Detail"
                     ),
                     onClick = {},
-                    onDownload = {}
+                    onPlayPause = {}
                 )
             }
         }
