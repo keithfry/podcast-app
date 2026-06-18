@@ -348,25 +348,30 @@ fun PlayerScreen(
             }
             Spacer(Modifier.height(4.dp))
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
-                TextButton(onClick = { showSpeedSheet = true }) {
-                    Text(
-                        "${"%.1f".format(playbackSpeed)}×",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                IconButton(onClick = {
-                    if (deepDiveState is DeepDiveState.Playing) vm.controller?.seekTo(0)
-                    else vm.prevChapter()
-                }) {
-                    Icon(Icons.Filled.SkipPrevious, "Previous chapter", Modifier.size(40.dp))
-                }
-                IconButton(onClick = { vm.seekBack10s() }) {
-                    SeekIcon(seconds = 10, isForward = false)
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { showSpeedSheet = true }) {
+                        Text(
+                            "${"%.1f".format(playbackSpeed)}×",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    IconButton(onClick = {
+                        if (deepDiveState is DeepDiveState.Playing) vm.controller?.seekTo(0)
+                        else vm.prevChapter()
+                    }) {
+                        Icon(Icons.Filled.SkipPrevious, "Previous chapter", Modifier.size(40.dp))
+                    }
+                    IconButton(onClick = { vm.seekBack10s() }) {
+                        SeekIcon(seconds = 10, isForward = false)
+                    }
                 }
                 IconButton(
                     onClick = { vm.togglePlayPause() },
@@ -378,20 +383,27 @@ fun PlayerScreen(
                         Modifier.size(56.dp)
                     )
                 }
-                IconButton(onClick = { vm.seekForward30s() }) {
-                    SeekIcon(seconds = 30, isForward = true)
-                }
-                IconButton(onClick = {
-                    if (deepDiveState is DeepDiveState.Playing) vm.skipDeepDive()
-                    else vm.nextChapter()
-                }) {
-                    Icon(Icons.Filled.SkipNext, "Next chapter", Modifier.size(40.dp))
-                }
-                IconButton(onClick = { vm.toggleLike() }) {
-                    Icon(
-                        if (isLiked) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
-                        contentDescription = if (isLiked) "Unlike" else "Like"
-                    )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { vm.seekForward30s() }) {
+                        SeekIcon(seconds = 30, isForward = true)
+                    }
+                    IconButton(onClick = {
+                        if (deepDiveState is DeepDiveState.Playing) vm.skipDeepDive()
+                        else vm.nextChapter()
+                    }) {
+                        Icon(Icons.Filled.SkipNext, "Next chapter", Modifier.size(40.dp))
+                    }
+                    IconButton(onClick = { vm.toggleLike() }) {
+                        Icon(
+                            if (isLiked) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
+                            contentDescription = if (isLiked) "Unlike" else "Like",
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
                 }
             }
             currentChapter?.url?.let { url ->
