@@ -41,11 +41,21 @@
 
 ## Episode List UX
 
+- **Play/pause icon circle styling** — play and pause icons on the episode list row each have a circle border styled to convey download state:
+  - **Not downloaded:** play icon with a dashed circle border (primary color).
+  - **Downloaded / ready:** play icon with a solid circle border (primary color).
+  - **Playing (pause shown):** pause icon with a solid circle border (primary color).
+  - Circle size matches the existing `CircularProgressIndicator` shown while downloading.
+
 - **Play icon as default episode action** — replace the current default icon on the right of each episode row with a play icon. Behavior:
   - Tap play on a downloaded episode → play immediately.
   - Tap play on an undownloaded episode → download then play automatically when complete.
   - If a second play-download is triggered before the first finishes, cancel the first download (or deprioritize it) and treat the newly tapped episode as the one to play when its download completes.
-  - In-progress download should show visual feedback (e.g. progress ring replacing the play icon for that row).
+  - Visual states for the icon:
+    - **Not downloaded:** play icon with a dashed circle border.
+    - **Downloading (in progress):** dashed circle animates into a filling progress arc around the play icon.
+    - **Downloaded / ready:** play icon with a solid circle border.
+    - **Playing (pause shown):** pause icon with a solid circle border.
 
 ## Podcast Discovery
 

@@ -22,7 +22,11 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -258,17 +262,55 @@ internal fun EpisodeRow(
             if (!episode.isHeard) {
                 val isDownloadingOrQueued = episode.downloadStatus == DownloadStatus.DOWNLOADING ||
                         episode.downloadStatus == DownloadStatus.QUEUED
+                val circleColor = MaterialTheme.colorScheme.primary
+                val strokeWidthPx = with(LocalDensity.current) { 2.dp.toPx() }
                 when {
                     isDownloadingOrQueued -> CircularProgressIndicator(
                         progress = { (downloadProgress ?: 0f).coerceAtLeast(0.05f) },
                         modifier = Modifier.size(48.dp).padding(end = 12.dp),
                         strokeWidth = 2.dp
                     )
-                    isCurrentlyPlaying && isPlayingActive -> IconButton(onClick = onPlayPause) {
-                        Icon(Icons.Filled.Pause, contentDescription = "Pause")
+                    isCurrentlyPlaying && isPlayingActive -> Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .padding(end = 12.dp)
+                            .drawBehind {
+                                drawCircle(
+                                    color = circleColor,
+                                    radius = size.minDimension / 2 - strokeWidthPx / 2,
+                                    style = Stroke(width = strokeWidthPx)
+                                )
+                            }
+                            .clip(CircleShape)
+                            .clickable(onClick = onPlayPause),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Pause, contentDescription = "Pause", tint = circleColor)
                     }
-                    else -> IconButton(onClick = onPlayPause) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
+                    else -> {
+                        val isDownloaded = episode.downloadStatus == DownloadStatus.DONE
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .padding(end = 12.dp)
+                                .drawBehind {
+                                    drawCircle(
+                                        color = circleColor,
+                                        radius = size.minDimension / 2 - strokeWidthPx / 2,
+                                        style = Stroke(
+                                            width = strokeWidthPx,
+                                            pathEffect = if (!isDownloaded)
+                                                PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f)
+                                            else null
+                                        )
+                                    )
+                                }
+                                .clip(CircleShape)
+                                .clickable(onClick = onPlayPause),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = circleColor)
+                        }
                     }
                 }
             }
