@@ -13,6 +13,7 @@ import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
 import com.frybynite.podcastapp.deepdive.ModelDownloadState
 import com.frybynite.podcastapp.deepdive.TextSummarizer
+import com.frybynite.podcastapp.playback.PlaybackController
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -67,7 +68,8 @@ class PlayerViewModelTest {
             deepDiveOrchestrator = mockk(relaxed = true),
             summarizer = mockk(relaxed = true),
             modelDownloadManager = modelDownloadManager,
-            transcriptRepo = mockk(relaxed = true)
+            transcriptRepo = mockk(relaxed = true),
+            playbackController = mockk(relaxed = true)
         )
     }
 
