@@ -403,30 +403,27 @@ fun PlayerScreen(
                             }, "Share link"
                         ))
                     }) { Text("Share") }
-                    if (sleepTimerSeconds != null) {
+                    val seconds = sleepTimerSeconds
+                    if (seconds != null) {
                         OutlinedButton(onClick = { showSleepSheet = true }) {
-                            Icon(
-                                Icons.Filled.Bedtime,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Filled.Bedtime, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(formatSleepTimer(sleepTimerSeconds!!))
+                            Text(formatSleepTimer(seconds))
                         }
                     }
                 }
             } ?: run {
-                if (sleepTimerSeconds != null) {
+                val seconds = sleepTimerSeconds
+                if (seconds != null) {
                     Spacer(Modifier.height(8.dp))
-                    Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         OutlinedButton(onClick = { showSleepSheet = true }) {
-                            Icon(
-                                Icons.Filled.Bedtime,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Filled.Bedtime, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(formatSleepTimer(sleepTimerSeconds!!))
+                            Text(formatSleepTimer(seconds))
                         }
                     }
                 }
