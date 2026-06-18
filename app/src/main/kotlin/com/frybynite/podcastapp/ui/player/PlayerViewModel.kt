@@ -516,13 +516,21 @@ class PlayerViewModel @Inject constructor(
             _deepDiveState.value = DeepDiveState.ModelRequired
             return
         }
-        val currentMediaId = ctrl?.currentMediaItem?.mediaId ?: return
+        val currentMediaId = ctrl?.currentMediaItem?.mediaId
+            ?: currentEpisode?.audioUrl
+            ?: return
         // Only capture a new resume position when playing the actual episode (not TTS, not during
         // the exit-tone window where deepDiveState is still Playing but item is the resume item).
         val inDeepDive = currentMediaId.startsWith("tts://") || _deepDiveState.value == DeepDiveState.Playing
         if (!inDeepDive) {
-            deepDiveResumePositionMs = ctrl?.currentPosition ?: return
-            deepDiveResumeEpisodeUri = currentMediaId
+            // If episode not yet loaded in the controller, load it now so deep dive can resume it.
+            if (ctrl?.currentMediaItem == null) {
+                currentEpisode?.let { playEpisode(it, it.lastPositionMs) }
+            }
+            deepDiveResumePositionMs = currentEpisode?.lastPositionMs
+                ?: ctrl?.currentPosition
+                ?: 0L
+            deepDiveResumeEpisodeUri = currentEpisode?.audioUrl ?: currentMediaId
         }
         if (deepDiveResumeEpisodeUri == null) return
         _deepDiveChapterIndex.value = sourceChapterIndex ?: _currentChapterIndex.value
