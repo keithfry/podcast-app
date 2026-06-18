@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import java.io.File
@@ -75,7 +76,9 @@ class PlaybackController @Inject constructor(
         }, { it.run() })
 
         scope.launch {
-            _pendingAutoPlayUrl.filterNotNull().collectLatest { pending ->
+            combine(_pendingAutoPlayUrl.filterNotNull(), _controller.filterNotNull()) { pending, ctrl ->
+                pending to ctrl
+            }.collectLatest { (pending, ctrl) ->
                 episodeDao.getByAudioUrlFlow(pending).collect { entity ->
                     if (entity?.downloadStatus == "DONE" && entity.downloadPath != null) {
                         _pendingAutoPlayUrl.value = null
@@ -83,9 +86,9 @@ class PlaybackController @Inject constructor(
                             .setMediaId(entity.audioUrl)
                             .setUri(Uri.fromFile(File(entity.downloadPath)))
                             .build()
-                        _controller.value?.setMediaItem(item)
-                        _controller.value?.prepare()
-                        _controller.value?.play()
+                        ctrl.setMediaItem(item)
+                        ctrl.prepare()
+                        ctrl.play()
                     }
                 }
             }
