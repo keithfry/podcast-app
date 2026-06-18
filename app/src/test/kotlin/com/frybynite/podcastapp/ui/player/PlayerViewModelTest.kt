@@ -69,7 +69,11 @@ class PlayerViewModelTest {
             summarizer = mockk(relaxed = true),
             modelDownloadManager = modelDownloadManager,
             transcriptRepo = mockk(relaxed = true),
-            playbackController = mockk(relaxed = true)
+            playbackController = mockk(relaxed = true) {
+                every { controller } returns MutableStateFlow(null)
+                every { currentlyPlayingUrl } returns MutableStateFlow(null)
+                every { isPlaying } returns MutableStateFlow(false)
+            }
         )
     }
 

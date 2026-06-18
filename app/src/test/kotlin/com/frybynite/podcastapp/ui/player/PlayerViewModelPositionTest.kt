@@ -11,7 +11,9 @@ import com.frybynite.podcastapp.deepdive.DeepDiveOrchestrator
 import com.frybynite.podcastapp.deepdive.ModelDownloadManager
 import com.frybynite.podcastapp.deepdive.TextSummarizer
 import com.frybynite.podcastapp.playback.PlaybackController
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -42,7 +44,11 @@ class PlayerViewModelPositionTest {
             deepDiveDao = mockk(relaxed = true),
             modelDownloadManager = mockk(relaxed = true),
             transcriptRepo = mockk(relaxed = true),
-            playbackController = mockk(relaxed = true)
+            playbackController = mockk(relaxed = true) {
+                every { controller } returns MutableStateFlow(null)
+                every { currentlyPlayingUrl } returns MutableStateFlow(null)
+                every { isPlaying } returns MutableStateFlow(false)
+            }
         )
         assertEquals(0L, vm.currentPositionMs.value)
     }
@@ -60,7 +66,11 @@ class PlayerViewModelPositionTest {
             deepDiveDao = mockk(relaxed = true),
             modelDownloadManager = mockk(relaxed = true),
             transcriptRepo = mockk(relaxed = true),
-            playbackController = mockk(relaxed = true)
+            playbackController = mockk(relaxed = true) {
+                every { controller } returns MutableStateFlow(null)
+                every { currentlyPlayingUrl } returns MutableStateFlow(null)
+                every { isPlaying } returns MutableStateFlow(false)
+            }
         )
         assertEquals(0L, vm.durationMs.value)
     }

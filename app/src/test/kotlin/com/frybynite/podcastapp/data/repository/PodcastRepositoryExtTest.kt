@@ -52,7 +52,7 @@ class PodcastRepositoryExtTest {
 
         assertEquals(1, server.requestCount)
         coVerify { podcastDao.upsert(any()) }
-        coVerify { episodeDao.upsertAll(any()) }
+        coVerify { episodeDao.upsertFromFeed(any()) }
     }
 
     @Test fun `refreshPodcast updates existing podcast title`() = runTest {

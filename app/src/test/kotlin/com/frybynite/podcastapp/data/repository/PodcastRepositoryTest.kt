@@ -60,7 +60,7 @@ class PodcastRepositoryTest {
         repo.addPodcast(url)
 
         val slot = slot<List<EpisodeEntity>>()
-        coVerify { episodeDao.upsertAll(capture(slot)) }
+        coVerify { episodeDao.upsertFromFeed(capture(slot)) }
         assertEquals(1, slot.captured.size)
         assertEquals("Episode 1", slot.captured[0].title)
     }
