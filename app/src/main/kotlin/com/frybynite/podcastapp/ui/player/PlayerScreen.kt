@@ -200,7 +200,6 @@ fun PlayerScreen(
                     }
                 },
                 actions = {
-                    var showOverflow by remember { mutableStateOf(false) }
                     if (!isAutomotive) {
                         AndroidView(
                             factory = { ctx ->
@@ -215,6 +214,7 @@ fun PlayerScreen(
                         )
                     }
                     if (hasTranscript) {
+                        var showOverflow by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { showOverflow = true }) {
                                 Icon(Icons.Filled.MoreVert, "More options")
@@ -232,14 +232,7 @@ fun PlayerScreen(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (sleepTimerSeconds != null)
-                                                "Sleep · ${formatSleepTimer(sleepTimerSeconds!!)}"
-                                            else
-                                                "Sleep"
-                                        )
-                                    },
+                                    text = { Text("Sleep") },
                                     leadingIcon = { Icon(Icons.Filled.Bedtime, null) },
                                     onClick = {
                                         showSleepSheet = true
@@ -250,14 +243,7 @@ fun PlayerScreen(
                         }
                     } else {
                         IconButton(onClick = { showSleepSheet = true }) {
-                            if (sleepTimerSeconds != null) {
-                                Text(
-                                    formatSleepTimer(sleepTimerSeconds!!),
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            } else {
-                                Icon(Icons.Filled.Bedtime, "Sleep timer")
-                            }
+                            Icon(Icons.Filled.Bedtime, "Sleep timer")
                         }
                     }
                 }
@@ -417,6 +403,32 @@ fun PlayerScreen(
                             }, "Share link"
                         ))
                     }) { Text("Share") }
+                    if (sleepTimerSeconds != null) {
+                        OutlinedButton(onClick = { showSleepSheet = true }) {
+                            Icon(
+                                Icons.Filled.Bedtime,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(formatSleepTimer(sleepTimerSeconds!!))
+                        }
+                    }
+                }
+            } ?: run {
+                if (sleepTimerSeconds != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        OutlinedButton(onClick = { showSleepSheet = true }) {
+                            Icon(
+                                Icons.Filled.Bedtime,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(formatSleepTimer(sleepTimerSeconds!!))
+                        }
+                    }
                 }
             }
         }

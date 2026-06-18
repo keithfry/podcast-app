@@ -37,7 +37,7 @@
 
 ## Player Screen UX
 
-- **Overflow menu for player screen icons** — when transcript, sleep timer, and Chromecast icons are all visible on the player screen, move sleep and transcript into a three-dots overflow menu, leaving only the Chromecast icon at top level. When Chromecast is unavailable, evaluate whether sleep/transcript still need the overflow or can remain top-level.
+- ~~**Overflow menu for player screen icons** — when transcript, sleep timer, and Chromecast icons are all visible on the player screen, move sleep and transcript into a three-dots overflow menu, leaving only the Chromecast icon at top level. When Chromecast is unavailable, evaluate whether sleep/transcript still need the overflow or can remain top-level.~~
 
 ## Episode List UX
 
