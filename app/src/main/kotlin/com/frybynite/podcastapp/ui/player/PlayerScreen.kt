@@ -200,6 +200,7 @@ fun PlayerScreen(
                     }
                 },
                 actions = {
+                    var showOverflow by remember { mutableStateOf(false) }
                     if (!isAutomotive) {
                         AndroidView(
                             factory = { ctx ->
@@ -214,7 +215,6 @@ fun PlayerScreen(
                         )
                     }
                     if (hasTranscript) {
-                        var showOverflow by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { showOverflow = true }) {
                                 Icon(Icons.Filled.MoreVert, "More options")
