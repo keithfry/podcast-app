@@ -297,7 +297,7 @@ class PlayerViewModel @Inject constructor(
         transcriptJob = null
         _transcriptSegments.value = emptyList()
         _activeSegmentIndex.value = -1
-        _showTranscript.value = false
+        _showTranscript.value = transcriptVisible(audioUrl)
         _hasTranscript.value = false
         _transcriptLoading.value = false
         viewModelScope.launch {
@@ -325,6 +325,9 @@ class PlayerViewModel @Inject constructor(
             val episode = entity.toDomain()
             currentEpisode = episode
             _hasTranscript.value = episode.transcriptUrl != null
+            if (_showTranscript.value && episode.transcriptUrl != null && _transcriptSegments.value.isEmpty()) {
+                loadTranscript(episode.transcriptUrl)
+            }
             episodeLoaded = false
             // Seed position and duration from stored data so UI shows correct state before play
             _currentPositionMs.value = episode.lastPositionMs
@@ -608,12 +611,23 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun toggleTranscript() {
-        val url = currentEpisode?.transcriptUrl ?: return
+        val episode = currentEpisode ?: return
+        val url = episode.transcriptUrl ?: return
         val next = !_showTranscript.value
         _showTranscript.value = next
+        saveTranscriptVisible(episode.audioUrl, next)
         if (next && _transcriptSegments.value.isEmpty()) {
             loadTranscript(url)
         }
+    }
+
+    private fun transcriptVisible(audioUrl: String): Boolean =
+        context.getSharedPreferences("transcript_prefs", android.content.Context.MODE_PRIVATE)
+            .getBoolean(audioUrl, false)
+
+    private fun saveTranscriptVisible(audioUrl: String, visible: Boolean) {
+        context.getSharedPreferences("transcript_prefs", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean(audioUrl, visible).apply()
     }
 
     private fun loadTranscript(url: String) {
