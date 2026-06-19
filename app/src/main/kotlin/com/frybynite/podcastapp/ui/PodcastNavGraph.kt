@@ -1,12 +1,15 @@
 package com.frybynite.podcastapp.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
@@ -14,12 +17,11 @@ import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,93 +58,99 @@ fun PodcastNavGraph(
     var playerAudioUrl by remember { mutableStateOf<String?>(null) }
     var selectedTab by remember { mutableStateOf(AppTab.Podcasts) }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val libraryNav = rememberNavController()
 
-    Scaffold(
-        bottomBar = {
-            Column {
-                MiniPlayerBar(
-                    title = currentTitle,
-                    isPlaying = isPlaying,
-                    visible = showMiniPlayer,
-                    onPlayPause = { if (isPlaying) vm.pause() else vm.resume() },
-                    onExpand = {
-                        playerAudioUrl = currentlyPlayingUrl
-                        appState.openPlayer()
-                    },
-                )
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = selectedTab == AppTab.Podcasts,
-                        onClick = { selectedTab = AppTab.Podcasts },
-                        icon = { Icon(Icons.Filled.Headphones, contentDescription = "Podcasts") },
-                        label = { Text("Podcasts") },
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                Column {
+                    MiniPlayerBar(
+                        title = currentTitle,
+                        isPlaying = isPlaying,
+                        visible = showMiniPlayer,
+                        onPlayPause = { if (isPlaying) vm.pause() else vm.resume() },
+                        onExpand = {
+                            playerAudioUrl = currentlyPlayingUrl
+                            appState.openPlayer()
+                        },
                     )
-                    NavigationBarItem(
-                        selected = selectedTab == AppTab.Discover,
-                        onClick = { selectedTab = AppTab.Discover },
-                        icon = { Icon(Icons.Filled.Explore, contentDescription = "Discover") },
-                        label = { Text("Discover") },
-                    )
-                }
-            }
-        },
-        contentWindowInsets = WindowInsets(0),
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
-            when (selectedTab) {
-                AppTab.Podcasts -> NavHost(navController = libraryNav, startDestination = "podcasts") {
-                    composable("podcasts") {
-                        PodcastListScreen(onPodcastClick = { feedUrl ->
-                            libraryNav.navigate("episodes/${URLEncoder.encode(feedUrl, "UTF-8")}")
-                        })
-                    }
-                    composable(
-                        "episodes/{feedUrl}",
-                        arguments = listOf(navArgument("feedUrl") { type = NavType.StringType }),
-                    ) {
-                        EpisodeListScreen(
-                            onBack = { libraryNav.popBackStack() },
-                            onEpisodeClick = { audioUrl ->
-                                playerAudioUrl = audioUrl
-                                appState.openPlayer()
-                            },
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = selectedTab == AppTab.Podcasts,
+                            onClick = { selectedTab = AppTab.Podcasts },
+                            icon = { Icon(Icons.Filled.Headphones, contentDescription = "Podcasts") },
+                            label = { Text("Podcasts") },
+                        )
+                        NavigationBarItem(
+                            selected = selectedTab == AppTab.Discover,
+                            onClick = { selectedTab = AppTab.Discover },
+                            icon = { Icon(Icons.Filled.Explore, contentDescription = "Discover") },
+                            label = { Text("Discover") },
                         )
                     }
                 }
-                AppTab.Discover -> Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .wrapContentSize(Alignment.Center),
-                ) {
-                    Text(
-                        text = "Add Discover Feature Here",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+            },
+            contentWindowInsets = WindowInsets(0),
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            ) {
+                when (selectedTab) {
+                    AppTab.Podcasts -> NavHost(navController = libraryNav, startDestination = "podcasts") {
+                        composable("podcasts") {
+                            PodcastListScreen(onPodcastClick = { feedUrl ->
+                                libraryNav.navigate("episodes/${URLEncoder.encode(feedUrl, "UTF-8")}")
+                            })
+                        }
+                        composable(
+                            "episodes/{feedUrl}",
+                            arguments = listOf(navArgument("feedUrl") { type = NavType.StringType }),
+                        ) {
+                            EpisodeListScreen(
+                                onBack = { libraryNav.popBackStack() },
+                                onEpisodeClick = { audioUrl ->
+                                    playerAudioUrl = audioUrl
+                                    appState.openPlayer()
+                                },
+                            )
+                        }
+                    }
+                    AppTab.Discover -> Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .wrapContentSize(Alignment.Center),
+                    ) {
+                        Text(
+                            text = "Add Discover Feature Here",
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
             }
         }
-    }
 
-    if (isPlayerSheetOpen) {
+        // Player overlay — lives in the same layout context so it always fills full screen
+        // regardless of orientation. Slides up/down to open/close.
         val url = playerAudioUrl ?: currentlyPlayingUrl
-        if (url != null) {
-            ModalBottomSheet(
-                onDismissRequest = { appState.closePlayer() },
-                sheetState = sheetState,
-                dragHandle = null,
-                windowInsets = WindowInsets.statusBars,
-                sheetMaxWidth = 2000.dp,
+        AnimatedVisibility(
+            visible = isPlayerSheetOpen && url != null,
+            enter = slideInVertically { it },
+            exit = slideOutVertically { it },
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.statusBars),
             ) {
-                PlayerScreen(
-                    audioUrl = url,
-                    onDismiss = { appState.closePlayer() },
-                )
+                if (url != null) {
+                    PlayerScreen(
+                        audioUrl = url,
+                        onDismiss = { appState.closePlayer() },
+                    )
+                }
             }
         }
     }
