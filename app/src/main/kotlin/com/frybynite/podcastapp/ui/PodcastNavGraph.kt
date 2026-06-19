@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -20,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,6 +52,7 @@ fun PodcastNavGraph(
     val isPlayerSheetOpen by appState.isPlayerSheetOpen.collectAsStateWithLifecycle()
 
     var playerAudioUrl by remember { mutableStateOf<String?>(null) }
+    var selectedTab by remember { mutableStateOf(AppTab.Podcasts) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val libraryNav = rememberNavController()
@@ -67,10 +72,16 @@ fun PodcastNavGraph(
                 )
                 NavigationBar {
                     NavigationBarItem(
-                        selected = true,
-                        onClick = {},
-                        icon = { Icon(Icons.Filled.LibraryMusic, contentDescription = "Library") },
-                        label = { Text("Library") },
+                        selected = selectedTab == AppTab.Podcasts,
+                        onClick = { selectedTab = AppTab.Podcasts },
+                        icon = { Icon(Icons.Filled.Headphones, contentDescription = "Podcasts") },
+                        label = { Text("Podcasts") },
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == AppTab.Discover,
+                        onClick = { selectedTab = AppTab.Discover },
+                        icon = { Icon(Icons.Filled.Explore, contentDescription = "Discover") },
+                        label = { Text("Discover") },
                     )
                 }
             }
@@ -82,22 +93,34 @@ fun PodcastNavGraph(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            NavHost(navController = libraryNav, startDestination = "podcasts") {
-                composable("podcasts") {
-                    PodcastListScreen(onPodcastClick = { feedUrl ->
-                        libraryNav.navigate("episodes/${URLEncoder.encode(feedUrl, "UTF-8")}")
-                    })
+            when (selectedTab) {
+                AppTab.Podcasts -> NavHost(navController = libraryNav, startDestination = "podcasts") {
+                    composable("podcasts") {
+                        PodcastListScreen(onPodcastClick = { feedUrl ->
+                            libraryNav.navigate("episodes/${URLEncoder.encode(feedUrl, "UTF-8")}")
+                        })
+                    }
+                    composable(
+                        "episodes/{feedUrl}",
+                        arguments = listOf(navArgument("feedUrl") { type = NavType.StringType }),
+                    ) {
+                        EpisodeListScreen(
+                            onBack = { libraryNav.popBackStack() },
+                            onEpisodeClick = { audioUrl ->
+                                playerAudioUrl = audioUrl
+                                appState.openPlayer()
+                            },
+                        )
+                    }
                 }
-                composable(
-                    "episodes/{feedUrl}",
-                    arguments = listOf(navArgument("feedUrl") { type = NavType.StringType }),
+                AppTab.Discover -> Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentSize(Alignment.Center),
                 ) {
-                    EpisodeListScreen(
-                        onBack = { libraryNav.popBackStack() },
-                        onEpisodeClick = { audioUrl ->
-                            playerAudioUrl = audioUrl
-                            appState.openPlayer()
-                        },
+                    Text(
+                        text = "Add Discover Feature Here",
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
