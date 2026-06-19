@@ -52,6 +52,7 @@ import coil.compose.AsyncImage
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.content.res.Configuration
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.graphicsLayer
@@ -195,10 +196,24 @@ fun PlayerScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { AutoSizeText(episodeTitle ?: podcastTitle ?: "Playing") },
+                title = {},
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    TextButton(
+                        onClick = onBack,
+                        contentPadding = PaddingValues(start = 8.dp, end = 16.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = podcastTitle ?: "Back",
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 },
                 actions = {
@@ -321,6 +336,35 @@ fun PlayerScreen(
                 }
             }
             Spacer(Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val epTitle = episodeTitle
+                val podTitle = podcastTitle
+                if (epTitle != null) {
+                    Text(
+                        text = epTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                if (podTitle != null) {
+                    Text(
+                        text = podTitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -356,13 +400,6 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = { showSpeedSheet = true }) {
-                        Text(
-                            "${"%.1f".format(playbackSpeed)}×",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                     IconButton(onClick = {
                         if (deepDiveState is DeepDiveState.Playing) vm.controller?.seekTo(0)
                         else vm.prevChapter()
@@ -397,54 +434,83 @@ fun PlayerScreen(
                     }) {
                         Icon(Icons.Filled.SkipNext, "Next chapter", Modifier.size(40.dp))
                     }
-                    IconButton(onClick = { vm.toggleLike() }) {
-                        Icon(
-                            if (isLiked) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
-                            contentDescription = if (isLiked) "Unlike" else "Like",
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
                 }
             }
-            currentChapter?.url?.let { url ->
-                Spacer(Modifier.height(8.dp))
+            val chapterUrl = currentChapter?.url
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = { showSpeedSheet = true }) {
+                    Text(
+                        "${"%.1f".format(playbackSpeed)}×",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                IconButton(
+                    onClick = { chapterUrl?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) } },
+                    enabled = chapterUrl != null
+                ) {
+                    Icon(
+                        Icons.Filled.Link,
+                        contentDescription = "Open link",
+                        modifier = Modifier.size(26.dp),
+                        tint = LocalContentColor.current.copy(alpha = if (chapterUrl != null) 1f else 0.38f)
+                    )
+                }
+                if (!isAutomotive) IconButton(
+                    onClick = {
+                        chapterUrl?.let { url ->
+                            context.startActivity(Intent.createChooser(
+                                Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, url)
+                                }, "Share link"
+                            ))
+                        }
+                    },
+                    enabled = chapterUrl != null
+                ) {
+                    Icon(
+                        Icons.Filled.Share,
+                        contentDescription = "Share link",
+                        modifier = Modifier.size(26.dp),
+                        tint = LocalContentColor.current.copy(alpha = if (chapterUrl != null) 1f else 0.38f)
+                    )
+                }
+                IconButton(
+                    onClick = { vm.moreAboutThis(chapterUrl, currentIdx) },
+                    enabled = chapterUrl != null
+                ) {
+                    Icon(
+                        Icons.Filled.PlayCircle,
+                        contentDescription = "More about this",
+                        modifier = Modifier.size(26.dp),
+                        tint = LocalContentColor.current.copy(alpha = if (chapterUrl != null) 1f else 0.38f)
+                    )
+                }
+                IconButton(onClick = { vm.toggleLike() }) {
+                    Icon(
+                        if (isLiked) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
+                        contentDescription = if (isLiked) "Unlike" else "Like",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+            val seconds = sleepTimerSeconds
+            if (seconds != null) {
+                Spacer(Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedButton(onClick = {
-                        CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(url))
-                    }) { Text("Open") }
-                    if (!isAutomotive) OutlinedButton(onClick = {
-                        context.startActivity(Intent.createChooser(
-                            Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, url)
-                            }, "Share link"
-                        ))
-                    }) { Text("Share") }
-                    val seconds = sleepTimerSeconds
-                    if (seconds != null) {
-                        OutlinedButton(onClick = { showSleepSheet = true }) {
-                            Icon(Icons.Filled.Bedtime, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(formatSleepTimer(seconds))
-                        }
-                    }
-                }
-            } ?: run {
-                val seconds = sleepTimerSeconds
-                if (seconds != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(onClick = { showSleepSheet = true }) {
-                            Icon(Icons.Filled.Bedtime, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(formatSleepTimer(seconds))
-                        }
+                    OutlinedButton(onClick = { showSleepSheet = true }) {
+                        Icon(Icons.Filled.Bedtime, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(formatSleepTimer(seconds))
                     }
                 }
             }
