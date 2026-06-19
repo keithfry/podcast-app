@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material3.*
@@ -65,7 +65,7 @@ import androidx.mediarouter.media.MediaRouteSelector
 @Composable
 fun PlayerScreen(
     audioUrl: String,
-    onBack: () -> Unit,
+    onDismiss: () -> Unit,
     vm: PlayerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -197,8 +197,8 @@ fun PlayerScreen(
             TopAppBar(
                 title = { AutoSizeText(episodeTitle ?: podcastTitle ?: "Playing") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.KeyboardArrowDown, "Close player")
                     }
                 },
                 actions = {
