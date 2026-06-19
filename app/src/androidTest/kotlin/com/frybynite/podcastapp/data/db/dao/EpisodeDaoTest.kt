@@ -117,4 +117,56 @@ class EpisodeDaoTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test fun updateIsLiked_persistsTrueValue() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3")))
+        dao.updateIsLiked("https://ep1.mp3", true)
+        assertEquals(true, dao.getByAudioUrl("https://ep1.mp3")?.isLiked)
+    }
+
+    @Test fun updateIsLiked_persistsFalseAfterTrue() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3")))
+        dao.updateIsLiked("https://ep1.mp3", true)
+        dao.updateIsLiked("https://ep1.mp3", false)
+        assertEquals(false, dao.getByAudioUrl("https://ep1.mp3")?.isLiked)
+    }
+
+    @Test fun markHeard_setsIsHeardTrue() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3")))
+        dao.markHeard("https://ep1.mp3")
+        assertEquals(true, dao.getByAudioUrl("https://ep1.mp3")?.isHeard)
+    }
+
+    @Test fun markUnheard_setsIsHeardFalseAfterMarkHeard() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3")))
+        dao.markHeard("https://ep1.mp3")
+        dao.markUnheard("https://ep1.mp3")
+        assertEquals(false, dao.getByAudioUrl("https://ep1.mp3")?.isHeard)
+    }
+
+    @Test fun upsertFromFeed_preservesIsLiked() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3").copy(isLiked = true)))
+        // Simulate feed refresh: entity from feed has isLiked defaulting to false
+        dao.upsertFromFeed(listOf(episode("https://ep1.mp3")))
+        assertEquals(true, dao.getByAudioUrl("https://ep1.mp3")?.isLiked)
+    }
+
+    @Test fun upsertFromFeed_preservesLastPosition() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3").copy(lastPositionMs = 42_000L)))
+        dao.upsertFromFeed(listOf(episode("https://ep1.mp3")))
+        assertEquals(42_000L, dao.getByAudioUrl("https://ep1.mp3")?.lastPositionMs)
+    }
+
+    @Test fun upsertFromFeed_preservesIsHeard() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3")))
+        dao.markHeard("https://ep1.mp3")
+        dao.upsertFromFeed(listOf(episode("https://ep1.mp3")))
+        assertEquals(true, dao.getByAudioUrl("https://ep1.mp3")?.isHeard)
+    }
+
+    @Test fun upsertFromFeed_updatesTitle() = runTest {
+        dao.upsertAll(listOf(episode("https://ep1.mp3").copy(title = "Old Title")))
+        dao.upsertFromFeed(listOf(episode("https://ep1.mp3").copy(title = "New Title")))
+        assertEquals("New Title", dao.getByAudioUrl("https://ep1.mp3")?.title)
+    }
 }
