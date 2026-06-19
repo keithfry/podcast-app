@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -137,7 +137,7 @@ fun PodcastNavGraph(
                 sheetState = sheetState,
                 dragHandle = null,
                 windowInsets = WindowInsets.statusBars,
-                sheetMaxWidth = Dp.Unspecified,
+                sheetMaxWidth = 2000.dp,
             ) {
                 PlayerScreen(
                     audioUrl = url,
