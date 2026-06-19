@@ -48,6 +48,9 @@ class PlaybackController @Inject constructor(
     private val _currentlyPlayingUrl = MutableStateFlow<String?>(null)
     val currentlyPlayingUrl: StateFlow<String?> = _currentlyPlayingUrl.asStateFlow()
 
+    private val _currentTitle = MutableStateFlow<String?>(null)
+    val currentTitle: StateFlow<String?> = _currentTitle.asStateFlow()
+
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
@@ -62,12 +65,14 @@ class PlaybackController @Inject constructor(
                 _controller.value = ctrl
                 _isPlaying.value = ctrl.isPlaying
                 _currentlyPlayingUrl.value = ctrl.currentMediaItem?.mediaId
+                _currentTitle.value = ctrl.currentMediaItem?.mediaMetadata?.title?.toString()
                 ctrl.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(playing: Boolean) {
                         _isPlaying.value = playing
                     }
                     override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
                         _currentlyPlayingUrl.value = item?.mediaId
+                        _currentTitle.value = item?.mediaMetadata?.title?.toString()
                         val audioUrl = item?.mediaId ?: return
                         scope.launch {
                             val entity = episodeDao.getByAudioUrl(audioUrl) ?: return@launch
