@@ -57,6 +57,10 @@
     - **Downloaded / ready:** play icon with a solid circle border.
     - **Playing (pause shown):** pause icon with a solid circle border.
 
+## Podcast List UX
+
+- **Unlistened episode count badge** — show a filled circle with a number on each podcast row indicating how many episodes have not been listened to (`isHeard == false`). Use a small chip similar to notification badges. Hide the badge when count is zero.
+
 ## Podcast Discovery
 
 - **Podcast search via iTunes and Podcast Index** — search for new podcasts by keyword from within the app. Query both iTunes Search API (`itunes.apple.com/search?media=podcast&term=...`, no auth required) and Podcast Index API (requires free API key) in parallel, merge and deduplicate results by feed URL, and display them in a search UI. Tapping a result should subscribe the user to that podcast (save feed URL to Room and trigger an initial episode fetch).
