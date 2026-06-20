@@ -36,6 +36,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.frybynite.podcastapp.ui.discover.DiscoverScreen
+import com.frybynite.podcastapp.ui.discover.DiscoverViewModel
+import com.frybynite.podcastapp.ui.discover.PodcastDetailScreen
 import com.frybynite.podcastapp.ui.episodes.EpisodeListScreen
 import com.frybynite.podcastapp.ui.player.MiniPlayerBar
 import com.frybynite.podcastapp.ui.player.PlayerScreen
@@ -119,15 +122,30 @@ fun PodcastNavGraph(
                             )
                         }
                     }
-                    AppTab.Discover -> Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .wrapContentSize(Alignment.Center),
-                    ) {
-                        Text(
-                            text = "Add Discover Feature Here",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
+                    AppTab.Discover -> {
+                        val discoverNav = rememberNavController()
+                        NavHost(navController = discoverNav, startDestination = "search") {
+                            composable("search") {
+                                val vm: DiscoverViewModel = hiltViewModel()
+                                DiscoverScreen(
+                                    vm = vm,
+                                    onResultClick = { result ->
+                                        vm.selectResult(result)
+                                        discoverNav.navigate("detail")
+                                    },
+                                )
+                            }
+                            composable("detail") {
+                                val vm: DiscoverViewModel = hiltViewModel(
+                                    remember(discoverNav) { discoverNav.getBackStackEntry("search") }
+                                )
+                                PodcastDetailScreen(
+                                    vm = vm,
+                                    onBack = { discoverNav.popBackStack() },
+                                    onSubscribeSuccess = { discoverNav.popBackStack() },
+                                )
+                            }
+                        }
                     }
                 }
             }
