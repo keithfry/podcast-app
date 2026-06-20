@@ -45,8 +45,12 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideSearchRepository(searchApi: SearchApi, podcastDao: PodcastDao): SearchRepository =
-        SearchRepository(searchApi, podcastDao)
+    fun provideSearchRepository(
+        searchApi: SearchApi,
+        podcastDao: PodcastDao,
+        feedApi: FeedApi,
+        rssParser: RssParser,
+    ): SearchRepository = SearchRepository(searchApi, podcastDao, feedApi, rssParser)
 
     @Provides
     @Singleton

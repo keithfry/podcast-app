@@ -46,6 +46,9 @@ class DiscoverViewModel @Inject constructor(
     private val _subscribeState = MutableStateFlow<SubscribeState>(SubscribeState.Idle)
     val subscribeState: StateFlow<SubscribeState> = _subscribeState.asStateFlow()
 
+    private val _detailDescription = MutableStateFlow<String?>(null)
+    val detailDescription: StateFlow<String?> = _detailDescription.asStateFlow()
+
     private var searchJob: Job? = null
 
     fun onQueryChanged(query: String) {
@@ -74,6 +77,12 @@ class DiscoverViewModel @Inject constructor(
     fun selectResult(result: PodcastSearchResult) {
         _selectedResult.value = result
         _subscribeState.value = SubscribeState.Idle
+        _detailDescription.value = result.description.takeIf { !it.isNullOrBlank() }
+        viewModelScope.launch {
+            _detailDescription.value = searchRepository.fetchFeedDescription(result.feedUrl)
+                ?.takeIf { it.isNotBlank() }
+                ?: result.description
+        }
     }
 
     fun subscribe(feedUrl: String) {

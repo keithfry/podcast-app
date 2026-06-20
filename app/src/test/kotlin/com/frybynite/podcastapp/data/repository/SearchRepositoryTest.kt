@@ -1,6 +1,8 @@
 package com.frybynite.podcastapp.data.repository
 
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
+import com.frybynite.podcastapp.data.network.FeedApi
+import com.frybynite.podcastapp.data.network.RssParser
 import com.frybynite.podcastapp.data.network.SearchApi
 import com.frybynite.podcastapp.domain.model.PodcastSearchResult
 import io.mockk.coEvery
@@ -15,7 +17,9 @@ class SearchRepositoryTest {
 
     private val api = mockk<SearchApi>()
     private val dao = mockk<PodcastDao>()
-    private val repo = SearchRepository(api, dao)
+    private val feedApi = mockk<FeedApi>(relaxed = true)
+    private val rssParser = mockk<RssParser>(relaxed = true)
+    private val repo = SearchRepository(api, dao, feedApi, rssParser)
 
     private fun result(feedUrl: String, title: String = feedUrl) = PodcastSearchResult(
         feedUrl = feedUrl, title = title, author = "", artworkUrl = null, description = null

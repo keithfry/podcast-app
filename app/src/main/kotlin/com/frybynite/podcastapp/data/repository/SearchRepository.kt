@@ -1,6 +1,8 @@
 package com.frybynite.podcastapp.data.repository
 
 import com.frybynite.podcastapp.data.db.dao.PodcastDao
+import com.frybynite.podcastapp.data.network.FeedApi
+import com.frybynite.podcastapp.data.network.RssParser
 import com.frybynite.podcastapp.data.network.SearchApi
 import com.frybynite.podcastapp.domain.model.PodcastSearchResult
 import kotlinx.coroutines.async
@@ -9,6 +11,8 @@ import kotlinx.coroutines.coroutineScope
 class SearchRepository(
     private val searchApi: SearchApi,
     private val podcastDao: PodcastDao,
+    private val feedApi: FeedApi,
+    private val rssParser: RssParser,
 ) {
 
     suspend fun search(query: String): List<PodcastSearchResult> = coroutineScope {
@@ -41,6 +45,10 @@ class SearchRepository(
         }
         return seen.values.toList()
     }
+
+    suspend fun fetchFeedDescription(feedUrl: String): String? = runCatching {
+        rssParser.parseChannelDescription(feedApi.fetchXml(feedUrl))
+    }.getOrNull()
 
     internal fun normalizeUrl(url: String): String =
         url.lowercase()
