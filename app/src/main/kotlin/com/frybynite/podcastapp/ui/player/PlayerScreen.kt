@@ -195,110 +195,96 @@ fun PlayerScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.KeyboardArrowDown, "Close player")
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val chapterListState = rememberLazyListState()
+
+    LaunchedEffect(currentIdx, showTranscript) {
+        if (chapters.isNotEmpty() && snapHoverIdx == null && !showTranscript)
+            chapterListState.animateScrollToItem(currentIdx)
+    }
+    LaunchedEffect(snapHoverIdx) {
+        val idx = snapHoverIdx ?: return@LaunchedEffect
+        if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
+    }
+    LaunchedEffect(activeSegmentIndex, showTranscript) {
+        if (!showTranscript || activeSegmentIndex < 0 || transcriptSegments.isEmpty()) return@LaunchedEffect
+        val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex) ?: return@LaunchedEffect
+        val chapterIdx = chapters.indexOfLast { it.startTimeMs / 1000f <= activeSeg.startTimeSec }
+        if (chapterIdx < 0) return@LaunchedEffect
+        val chapterStartSec = chapters[chapterIdx].startTimeMs / 1000f
+        val nextChapterStartSec = chapters.getOrNull(chapterIdx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
+        val sentences = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
+        val localIdx = sentences.indexOf(activeSeg)
+        if (localIdx >= 0) chapterListState.animateScrollToItem(chapterIdx + 1 + localIdx)
+    }
+
+    // Icons that appear top-left/top-right alongside artwork top edge
+    val topBarIcons: @Composable () -> Unit = {
+        IconButton(onClick = onDismiss) {
+            Icon(Icons.Filled.KeyboardArrowDown, "Close player")
+        }
+    }
+    val topBarActions: @Composable () -> Unit = {
+        if (!isAutomotive) {
+            AndroidView(
+                factory = { ctx ->
+                    MediaRouteButton(ctx).apply {
+                        val selector = MediaRouteSelector.Builder()
+                            .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+                            .build()
+                        routeSelector = selector
                     }
                 },
-                actions = {
-                    if (!isAutomotive) {
-                        AndroidView(
-                            factory = { ctx ->
-                                MediaRouteButton(ctx).apply {
-                                    val selector = MediaRouteSelector.Builder()
-                                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-                                        .build()
-                                    routeSelector = selector
-                                }
-                            },
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
-                    if (hasTranscript) {
-                        var showOverflow by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { showOverflow = true }) {
-                                Icon(Icons.Filled.MoreVert, "More options")
-                            }
-                            DropdownMenu(
-                                expanded = showOverflow,
-                                onDismissRequest = { showOverflow = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(if (showTranscript) "Hide Transcript" else "Show Transcript") },
-                                    leadingIcon = { Icon(Icons.Filled.Article, null) },
-                                    onClick = {
-                                        vm.toggleTranscript()
-                                        showOverflow = false
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Sleep") },
-                                    leadingIcon = { Icon(Icons.Filled.Bedtime, null) },
-                                    onClick = {
-                                        showSleepSheet = true
-                                        showOverflow = false
-                                    }
-                                )
-                            }
-                        }
-                    } else {
-                        IconButton(onClick = { showSleepSheet = true }) {
-                            Icon(Icons.Filled.Bedtime, "Sleep timer")
-                        }
-                    }
-                }
+                modifier = Modifier.size(48.dp)
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                voiceLauncher.launch(
-                    Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(
-                            android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                            android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                        )
-                    }
-                )
-            }) {
-                Icon(Icons.Filled.Mic, "Voice command")
+        }
+        if (hasTranscript) {
+            var showOverflow by remember { mutableStateOf(false) }
+            Box {
+                IconButton(onClick = { showOverflow = true }) {
+                    Icon(Icons.Filled.MoreVert, "More options")
+                }
+                DropdownMenu(
+                    expanded = showOverflow,
+                    onDismissRequest = { showOverflow = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(if (showTranscript) "Hide Transcript" else "Show Transcript") },
+                        leadingIcon = { Icon(Icons.Filled.Article, null) },
+                        onClick = {
+                            vm.toggleTranscript()
+                            showOverflow = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Sleep") },
+                        leadingIcon = { Icon(Icons.Filled.Bedtime, null) },
+                        onClick = {
+                            showSleepSheet = true
+                            showOverflow = false
+                        }
+                    )
+                }
+            }
+        } else {
+            IconButton(onClick = { showSleepSheet = true }) {
+                Icon(Icons.Filled.Bedtime, "Sleep timer")
             }
         }
-    ) { padding ->
-        val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val chapterListState = rememberLazyListState()
+    }
 
-        LaunchedEffect(currentIdx, showTranscript) {
-            if (chapters.isNotEmpty() && snapHoverIdx == null && !showTranscript)
-                chapterListState.animateScrollToItem(currentIdx)
-        }
-        LaunchedEffect(snapHoverIdx) {
-            val idx = snapHoverIdx ?: return@LaunchedEffect
-            if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
-        }
-        LaunchedEffect(activeSegmentIndex, showTranscript) {
-            if (!showTranscript || activeSegmentIndex < 0 || transcriptSegments.isEmpty()) return@LaunchedEffect
-            val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex) ?: return@LaunchedEffect
-            val chapterIdx = chapters.indexOfLast { it.startTimeMs / 1000f <= activeSeg.startTimeSec }
-            if (chapterIdx < 0) return@LaunchedEffect
-            val chapterStartSec = chapters[chapterIdx].startTimeMs / 1000f
-            val nextChapterStartSec = chapters.getOrNull(chapterIdx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
-            val sentences = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
-            val localIdx = sentences.indexOf(activeSeg)
-            if (localIdx >= 0) chapterListState.animateScrollToItem(chapterIdx + 1 + localIdx)
-        }
-
-        // Reusable content blocks
-        val artworkAndControls: @Composable ColumnScope.(artworkSize: Int) -> Unit = { artworkSize ->
-            Spacer(Modifier.height(8.dp))
+    // Reusable content blocks
+    val artworkAndControls: @Composable ColumnScope.(artworkSize: Int) -> Unit = { artworkSize ->
+        // Artwork with dismiss/cast/sleep icons top-aligned at same row
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp)
+        ) {
             Box(
                 modifier = Modifier
                     .size(artworkSize.dp)
+                    .align(Alignment.TopCenter)
                     .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
@@ -324,6 +310,11 @@ fun PlayerScreen(
                     )
                 }
             }
+            // Dismiss — top-left, aligned with artwork top
+            Box(modifier = Modifier.align(Alignment.TopStart)) { topBarIcons() }
+            // Cast + sleep — top-right, aligned with artwork top
+            Row(modifier = Modifier.align(Alignment.TopEnd)) { topBarActions() }
+        }
             Spacer(Modifier.height(12.dp))
             Column(
                 modifier = Modifier
@@ -726,21 +717,21 @@ fun PlayerScreen(
             }
         }
 
+    Box(modifier = Modifier.fillMaxSize()) {
         if (isLandscape) {
-            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Row(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
                 Column(
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) { artworkAndControls(100) }
                 VerticalDivider()
                 Column(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier.weight(1f).fillMaxHeight()
                 ) { chapterList() }
             }
         } else {
             Column(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier.fillMaxSize().navigationBarsPadding(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 artworkAndControls(160)
@@ -748,6 +739,30 @@ fun PlayerScreen(
                 chapterList()
             }
         }
+
+        FloatingActionButton(
+            onClick = {
+                voiceLauncher.launch(
+                    Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(
+                            android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                        )
+                    }
+                )
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .navigationBarsPadding()
+        ) {
+            Icon(Icons.Filled.Mic, "Voice command")
+        }
+
+        SnackbarHost(
+            snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+        )
 
         if (deepDiveState is DeepDiveState.Loading) {
             val step = (deepDiveState as DeepDiveState.Loading).step
@@ -799,7 +814,10 @@ fun PlayerScreen(
                 delay(3000)
                 vm.dismissDeepDiveError()
             }
-            Box(Modifier.fillMaxSize().padding(padding).padding(bottom = 80.dp), contentAlignment = Alignment.BottomCenter) {
+            Box(
+                Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 80.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
                 Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.errorContainer) {
                     Text(
                         text = (deepDiveState as DeepDiveState.Error).message,
@@ -812,7 +830,10 @@ fun PlayerScreen(
 
         if (modelDownloadState is com.frybynite.podcastapp.deepdive.ModelDownloadState.Downloading) {
             val progress = (modelDownloadState as com.frybynite.podcastapp.deepdive.ModelDownloadState.Downloading).progress
-            Box(Modifier.fillMaxSize().padding(padding).padding(bottom = 80.dp), contentAlignment = Alignment.BottomCenter) {
+            Box(
+                Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 80.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
                 Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 4.dp) {
                     Column(Modifier.padding(16.dp).fillMaxWidth(0.8f)) {
                         Text("Downloading model: ${(progress * 100).toInt()}%")
