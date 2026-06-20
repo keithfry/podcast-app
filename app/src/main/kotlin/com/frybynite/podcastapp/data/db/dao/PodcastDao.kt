@@ -12,6 +12,9 @@ interface PodcastDao {
     @Query("SELECT * FROM podcasts WHERE feedUrl = :feedUrl")
     suspend fun getByUrl(feedUrl: String): PodcastEntity?
 
+    @Query("SELECT COUNT(*) > 0 FROM podcasts WHERE feedUrl = :feedUrl")
+    suspend fun existsByUrl(feedUrl: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(podcast: PodcastEntity)
 
