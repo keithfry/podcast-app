@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
 class DiscoverViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val searchRepo = mockk<SearchRepository>()
+    private val searchRepo = mockk<SearchRepository>(relaxed = true)
     private val podcastRepo = mockk<PodcastRepository>()
 
     private fun makeVm() = DiscoverViewModel(searchRepo, podcastRepo)
