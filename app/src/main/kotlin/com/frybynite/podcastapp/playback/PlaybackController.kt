@@ -32,6 +32,9 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val PREFS_NAME = "playback_state"
+private const val PREF_LAST_URL = "last_url"
+
 @Singleton
 class PlaybackController @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -41,6 +44,7 @@ class PlaybackController @Inject constructor(
     private val speedPrefs: SpeedPreferences,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _controller = MutableStateFlow<MediaController?>(null)
     val controller: StateFlow<MediaController?> = _controller.asStateFlow()
@@ -57,6 +61,14 @@ class PlaybackController @Inject constructor(
     private val _pendingAutoPlayUrl = MutableStateFlow<String?>(null)
 
     init {
+        // Restore last-playing episode on cold start so mini player reappears
+        prefs.getString(PREF_LAST_URL, null)?.let { savedUrl ->
+            _currentlyPlayingUrl.value = savedUrl
+            scope.launch {
+                _currentTitle.value = episodeDao.getByAudioUrl(savedUrl)?.title
+            }
+        }
+
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         val future = MediaController.Builder(context, token).buildAsync()
         future.addListener({
@@ -64,20 +76,29 @@ class PlaybackController @Inject constructor(
                 val ctrl = future.get()
                 _controller.value = ctrl
                 _isPlaying.value = ctrl.isPlaying
-                _currentlyPlayingUrl.value = ctrl.currentMediaItem?.mediaId
-                _currentTitle.value = ctrl.currentMediaItem?.mediaMetadata?.title?.toString()
+                // If controller already has an item (service survived), prefer it over prefs
+                ctrl.currentMediaItem?.let { item ->
+                    _currentlyPlayingUrl.value = item.mediaId
+                    _currentTitle.value = item.mediaMetadata.title?.toString()
+                }
                 ctrl.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(playing: Boolean) {
                         _isPlaying.value = playing
                     }
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        if (playbackState == Player.STATE_ENDED) {
+                            clearCurrentEpisode()
+                        }
+                    }
                     override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
-                        _currentlyPlayingUrl.value = item?.mediaId
-                        _currentTitle.value = item?.mediaMetadata?.title?.toString()
-                        val audioUrl = item?.mediaId ?: return
+                        if (item == null) return
+                        _currentlyPlayingUrl.value = item.mediaId
+                        _currentTitle.value = item.mediaMetadata.title?.toString()
+                        saveCurrentUrl(item.mediaId)
                         scope.launch {
-                            val entity = episodeDao.getByAudioUrl(audioUrl) ?: return@launch
+                            val entity = episodeDao.getByAudioUrl(item.mediaId) ?: return@launch
                             entity.chaptersUrl?.let { url ->
-                                chapterRepo.fetchAndCacheChapters(audioUrl, url)
+                                chapterRepo.fetchAndCacheChapters(item.mediaId, url)
                             }
                         }
                     }
@@ -138,7 +159,40 @@ class PlaybackController @Inject constructor(
     }
 
     fun pause() { _controller.value?.pause() }
-    fun resume() { _controller.value?.play() }
+
+    fun resume() {
+        val ctrl = _controller.value ?: return
+        if (ctrl.currentMediaItem != null) {
+            ctrl.play()
+            return
+        }
+        // Cold-start resume: load saved episode at saved position
+        val savedUrl = _currentlyPlayingUrl.value ?: return
+        scope.launch {
+            val entity = episodeDao.getByAudioUrl(savedUrl) ?: return@launch
+            val uri = entity.downloadPath?.let { Uri.fromFile(File(it)) }
+                ?: Uri.parse(entity.audioUrl)
+            val item = MediaItem.Builder()
+                .setMediaId(entity.audioUrl)
+                .setUri(uri)
+                .setMediaMetadata(MediaMetadata.Builder().setTitle(entity.title).build())
+                .build()
+            ctrl.applySpeed()
+            ctrl.setMediaItem(item, entity.lastPositionMs)
+            ctrl.prepare()
+            ctrl.play()
+        }
+    }
+
+    private fun saveCurrentUrl(url: String) {
+        prefs.edit().putString(PREF_LAST_URL, url).apply()
+    }
+
+    private fun clearCurrentEpisode() {
+        _currentlyPlayingUrl.value = null
+        _currentTitle.value = null
+        prefs.edit().remove(PREF_LAST_URL).apply()
+    }
 
     private fun MediaController.applySpeed() {
         setPlaybackParameters(PlaybackParameters(speedPrefs.speed))

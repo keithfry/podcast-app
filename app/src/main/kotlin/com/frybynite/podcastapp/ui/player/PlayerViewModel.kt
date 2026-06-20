@@ -301,7 +301,7 @@ class PlayerViewModel @Inject constructor(
         transcriptJob = null
         _transcriptSegments.value = emptyList()
         _activeSegmentIndex.value = -1
-        _showTranscript.value = transcriptVisible(audioUrl)
+        _showTranscript.value = transcriptVisible()
         _hasTranscript.value = false
         _transcriptLoading.value = false
         viewModelScope.launch {
@@ -635,19 +635,19 @@ class PlayerViewModel @Inject constructor(
         val url = episode.transcriptUrl ?: return
         val next = !_showTranscript.value
         _showTranscript.value = next
-        saveTranscriptVisible(episode.audioUrl, next)
+        saveTranscriptVisible(next)
         if (next && _transcriptSegments.value.isEmpty()) {
             loadTranscript(url)
         }
     }
 
-    private fun transcriptVisible(audioUrl: String): Boolean =
+    private fun transcriptVisible(): Boolean =
         context.getSharedPreferences("transcript_prefs", android.content.Context.MODE_PRIVATE)
-            .getBoolean(audioUrl, false)
+            .getBoolean("global", false)
 
-    private fun saveTranscriptVisible(audioUrl: String, visible: Boolean) {
+    private fun saveTranscriptVisible(visible: Boolean) {
         context.getSharedPreferences("transcript_prefs", android.content.Context.MODE_PRIVATE)
-            .edit().putBoolean(audioUrl, visible).apply()
+            .edit().putBoolean("global", visible).apply()
     }
 
     private fun loadTranscript(url: String) {

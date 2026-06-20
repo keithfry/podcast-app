@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.core.content.ContextCompat
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
@@ -115,6 +116,8 @@ fun PlayerScreen(
     LaunchedEffect(audioUrl) {
         vm.connect(audioUrl)
     }
+
+    BackHandler { onDismiss() }
 
     if (showSleepSheet) {
         SleepTimerBottomSheet(

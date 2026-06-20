@@ -49,6 +49,7 @@ fun PodcastNavGraph(
 ) {
     val currentlyPlayingUrl by vm.currentlyPlayingUrl.collectAsStateWithLifecycle()
     val currentTitle by vm.currentTitle.collectAsStateWithLifecycle()
+    val currentArtworkUrl by vm.currentArtworkUrl.collectAsStateWithLifecycle()
     val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
 
     val appState = remember { AppState(currentlyPlayingUrl = vm.currentlyPlayingUrl) }
@@ -66,6 +67,7 @@ fun PodcastNavGraph(
                 Column {
                     MiniPlayerBar(
                         title = currentTitle,
+                        artworkUrl = currentArtworkUrl,
                         isPlaying = isPlaying,
                         visible = showMiniPlayer,
                         onPlayPause = { if (isPlaying) vm.pause() else vm.resume() },
