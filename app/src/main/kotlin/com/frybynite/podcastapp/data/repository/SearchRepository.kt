@@ -12,13 +12,20 @@ class SearchRepository(
 ) {
 
     suspend fun search(query: String): List<PodcastSearchResult> = coroutineScope {
-        val itunesDeferred = async {
-            runCatching { searchApi.searchItunes(query) }.getOrElse { emptyList() }
+        val itunesResult = async { runCatching { searchApi.searchItunes(query) } }
+        val piResult = async { runCatching { searchApi.searchPodcastIndex(query) } }
+
+        val itunes = itunesResult.await()
+        val pi = piResult.await()
+
+        if (itunes.isFailure && pi.isFailure) {
+            throw Exception("Both search APIs failed")
         }
-        val piDeferred = async {
-            runCatching { searchApi.searchPodcastIndex(query) }.getOrElse { emptyList() }
-        }
-        val merged = merge(itunesDeferred.await(), piDeferred.await())
+
+        val merged = merge(
+            itunes.getOrElse { emptyList() },
+            pi.getOrElse { emptyList() }
+        )
         merged.map { it.copy(isSubscribed = podcastDao.existsByUrl(it.feedUrl)) }
     }
 

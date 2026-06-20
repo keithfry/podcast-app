@@ -42,14 +42,21 @@ class SearchRepositoryTest {
         assertEquals(2, results.size)
     }
 
-    @Test fun `returns empty list when both APIs fail`() = runTest {
+    @Test fun `throws when both APIs fail`() = runTest {
         coEvery { api.searchItunes(any()) } throws Exception("network error")
         coEvery { api.searchPodcastIndex(any()) } throws Exception("network error")
+
+        val ex = runCatching { repo.search("test") }
+        assertTrue(ex.isFailure)
+    }
+
+    @Test fun `does not throw when only one API fails`() = runTest {
+        coEvery { api.searchItunes(any()) } throws Exception("network error")
+        coEvery { api.searchPodcastIndex(any()) } returns listOf(result("https://pi.example.com/feed"))
         coEvery { dao.existsByUrl(any()) } returns false
 
         val results = repo.search("test")
-
-        assertTrue(results.isEmpty())
+        assertEquals(1, results.size)
     }
 
     @Test fun `isSubscribed populated from DAO`() = runTest {
