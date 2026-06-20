@@ -28,6 +28,8 @@ android {
         buildConfigField("String", "HF_TOKEN", "\"${localProperties["HF_TOKEN"] ?: ""}\"")
         buildConfigField("String", "MODAL_TTS_URL", "\"${localProperties["MODAL_TTS_URL"] ?: ""}\"")
         buildConfigField("String", "CAST_APP_ID", "\"${localProperties["CAST_APP_ID"] ?: ""}\"")
+        buildConfigField("String", "PODCAST_INDEX_KEY", "\"${localProperties["PODCAST_INDEX_KEY"] ?: ""}\"")
+        buildConfigField("String", "PODCAST_INDEX_SECRET", "\"${localProperties["PODCAST_INDEX_SECRET"] ?: ""}\"")
     }
 
     buildTypes {

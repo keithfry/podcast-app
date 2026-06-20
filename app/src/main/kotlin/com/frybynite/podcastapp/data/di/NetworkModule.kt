@@ -1,8 +1,12 @@
 package com.frybynite.podcastapp.data.di
 
 import android.content.Context
+import com.frybynite.podcastapp.BuildConfig
+import com.frybynite.podcastapp.data.db.dao.PodcastDao
 import com.frybynite.podcastapp.data.network.FeedApi
 import com.frybynite.podcastapp.data.network.RssParser
+import com.frybynite.podcastapp.data.network.SearchApi
+import com.frybynite.podcastapp.data.repository.SearchRepository
 import com.frybynite.podcastapp.data.repository.TranscriptRepository
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -29,6 +33,24 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideFeedApi(okHttp: OkHttpClient, moshi: Moshi): FeedApi = FeedApi(okHttp, moshi)
+
+    @Provides
+    @Singleton
+    fun provideSearchApi(okHttp: OkHttpClient, moshi: Moshi): SearchApi = SearchApi(
+        client = okHttp,
+        moshi = moshi,
+        podcastIndexKey = BuildConfig.PODCAST_INDEX_KEY,
+        podcastIndexSecret = BuildConfig.PODCAST_INDEX_SECRET,
+    )
+
+    @Provides
+    @Singleton
+    fun provideSearchRepository(
+        searchApi: SearchApi,
+        podcastDao: PodcastDao,
+        feedApi: FeedApi,
+        rssParser: RssParser,
+    ): SearchRepository = SearchRepository(searchApi, podcastDao, feedApi, rssParser)
 
     @Provides
     @Singleton

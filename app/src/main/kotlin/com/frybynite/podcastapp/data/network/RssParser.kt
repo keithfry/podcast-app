@@ -111,6 +111,37 @@ class RssParser {
         )
     }
 
+    fun parseChannelDescription(xml: String): String? {
+        val factory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
+        val parser = factory.newPullParser()
+        parser.setInput(StringReader(xml))
+
+        var description: String? = null
+        var summary: String? = null
+        var inChannel = false
+        var currentText = ""
+
+        var event = parser.eventType
+        while (event != XmlPullParser.END_DOCUMENT) {
+            when (event) {
+                XmlPullParser.START_TAG -> {
+                    currentText = ""
+                    when {
+                        parser.name == "channel" -> inChannel = true
+                        parser.name == "item" -> return summary?.takeIf { it.isNotBlank() } ?: description?.takeIf { it.isNotBlank() }
+                    }
+                }
+                XmlPullParser.TEXT -> currentText += (parser.text ?: "")
+                XmlPullParser.END_TAG -> when {
+                    inChannel && parser.name == "description" -> description = currentText.trim()
+                    inChannel && parser.namespace == NS_ITUNES && parser.name == "summary" -> summary = currentText.trim()
+                }
+            }
+            event = parser.next()
+        }
+        return summary?.takeIf { it.isNotBlank() } ?: description?.takeIf { it.isNotBlank() }
+    }
+
     private fun parseDuration(s: String): Int {
         val parts = s.trim().split(":").map { it.toIntOrNull() ?: 0 }
         return when (parts.size) {
