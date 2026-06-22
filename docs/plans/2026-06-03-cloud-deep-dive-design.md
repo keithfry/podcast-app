@@ -28,14 +28,14 @@ object OpenClDetector {
 ```
 
 ### `GroqTextSummarizer` (new)
-- File: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/GroqTextSummarizer.kt`
+- File: `app/src/main/kotlin/com/frybynite/podlore/deepdive/GroqTextSummarizer.kt`
 - POST to `https://api.groq.com/openai/v1/chat/completions`
 - Model: `llama-3.1-8b-instant`
 - Same prompt logic as `GemmaTextSummarizer` (with `existingSummary` context)
 - API key: `BuildConfig.GROQ_API_KEY` (from `local.properties`)
 
 ### `KokoroTtsSynthesizer` (new)
-- File: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/KokoroTtsSynthesizer.kt`
+- File: `app/src/main/kotlin/com/frybynite/podlore/deepdive/KokoroTtsSynthesizer.kt`
 - POST to `https://api-inference.huggingface.co/models/hexgrad/Kokoro-82M`
 - Header: `Authorization: Bearer <HF_TOKEN>`
 - Body: `{"inputs": "<text>", "parameters": {"voice": "af_sky"}}`

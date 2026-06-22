@@ -77,7 +77,7 @@ Reset to `null` when entering each new `<item>`. Pass `transcriptUrl = epTranscr
 ### 5. New `domain/model/TranscriptSegment.kt`
 
 ```kotlin
-package com.frybynite.podcastapp.domain.model
+package com.frybynite.podlore.domain.model
 
 data class TranscriptSegment(
     val startMs: Long,

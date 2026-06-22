@@ -14,41 +14,41 @@
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `app/src/main/kotlin/com/frybynite/podcastapp/domain/model/TranscriptSegment.kt` | Create | Domain model: `startTimeSec`, `endTimeSec`, `text` |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponse.kt` | Create | Moshi DTOs + `toSegments()` conversion |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/network/FeedApi.kt` | Modify | Add `fetchTranscript(url)` method |
-| `app/src/main/kotlin/com/frybynite/podcastapp/domain/model/Episode.kt` | Modify | Add `transcriptUrl: String?` field |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/db/entities/EpisodeEntity.kt` | Modify | Add `transcriptUrl: String?` column |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt` | Modify | Add `MIGRATION_5_6` (ALTER TABLE episodes ADD COLUMN transcriptUrl) |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt` | Modify | Bump version to 6 |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/repository/PodcastRepository.kt` | Modify | Add `transcriptUrl` to `toDomain()` / `toEntity()` |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/network/RssParser.kt` | Modify | Parse `<podcast:transcript url="...">` tag |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepository.kt` | Create | Fetch transcript JSON, cache to `filesDir/transcripts/` |
-| `app/src/main/kotlin/com/frybynite/podcastapp/data/di/NetworkModule.kt` | Modify | Provide `TranscriptRepository` singleton |
-| `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt` | Modify | Add transcript StateFlows, `toggleTranscript()`, `seekToSegment()`, active segment update |
-| `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt` | Create | `ModalBottomSheet` composable: segment list, highlight, auto-scroll, tap-to-seek |
-| `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt` | Modify | Collect transcript state, add toggle button to TopAppBar, show `TranscriptPanel` |
+| `app/src/main/kotlin/com/frybynite/podlore/domain/model/TranscriptSegment.kt` | Create | Domain model: `startTimeSec`, `endTimeSec`, `text` |
+| `app/src/main/kotlin/com/frybynite/podlore/data/network/TranscriptResponse.kt` | Create | Moshi DTOs + `toSegments()` conversion |
+| `app/src/main/kotlin/com/frybynite/podlore/data/network/FeedApi.kt` | Modify | Add `fetchTranscript(url)` method |
+| `app/src/main/kotlin/com/frybynite/podlore/domain/model/Episode.kt` | Modify | Add `transcriptUrl: String?` field |
+| `app/src/main/kotlin/com/frybynite/podlore/data/db/entities/EpisodeEntity.kt` | Modify | Add `transcriptUrl: String?` column |
+| `app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt` | Modify | Add `MIGRATION_5_6` (ALTER TABLE episodes ADD COLUMN transcriptUrl) |
+| `app/src/main/kotlin/com/frybynite/podlore/data/db/PodcastDatabase.kt` | Modify | Bump version to 6 |
+| `app/src/main/kotlin/com/frybynite/podlore/data/repository/PodcastRepository.kt` | Modify | Add `transcriptUrl` to `toDomain()` / `toEntity()` |
+| `app/src/main/kotlin/com/frybynite/podlore/data/network/RssParser.kt` | Modify | Parse `<podcast:transcript url="...">` tag |
+| `app/src/main/kotlin/com/frybynite/podlore/data/repository/TranscriptRepository.kt` | Create | Fetch transcript JSON, cache to `filesDir/transcripts/` |
+| `app/src/main/kotlin/com/frybynite/podlore/data/di/NetworkModule.kt` | Modify | Provide `TranscriptRepository` singleton |
+| `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt` | Modify | Add transcript StateFlows, `toggleTranscript()`, `seekToSegment()`, active segment update |
+| `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt` | Create | `ModalBottomSheet` composable: segment list, highlight, auto-scroll, tap-to-seek |
+| `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt` | Modify | Collect transcript state, add toggle button to TopAppBar, show `TranscriptPanel` |
 | `docs/specs/database.md` | Modify | Document v6 migration and `transcriptUrl` column |
-| `app/src/test/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponseTest.kt` | Create | Moshi parsing + toSegments tests |
-| `app/src/test/kotlin/com/frybynite/podcastapp/data/network/RssParserTest.kt` | Modify | Add transcript URL parsing test |
-| `app/src/test/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepositoryTest.kt` | Create | Fetch, cache-hit, cache-miss tests via MockWebServer |
+| `app/src/test/kotlin/com/frybynite/podlore/data/network/TranscriptResponseTest.kt` | Create | Moshi parsing + toSegments tests |
+| `app/src/test/kotlin/com/frybynite/podlore/data/network/RssParserTest.kt` | Modify | Add transcript URL parsing test |
+| `app/src/test/kotlin/com/frybynite/podlore/data/repository/TranscriptRepositoryTest.kt` | Create | Fetch, cache-hit, cache-miss tests via MockWebServer |
 
 ---
 
 ## Task 1: TranscriptSegment domain model + TranscriptResponse + FeedApi
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/domain/model/TranscriptSegment.kt`
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponse.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/network/FeedApi.kt`
-- Create: `app/src/test/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponseTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/domain/model/TranscriptSegment.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/network/TranscriptResponse.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/network/FeedApi.kt`
+- Create: `app/src/test/kotlin/com/frybynite/podlore/data/network/TranscriptResponseTest.kt`
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponseTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/data/network/TranscriptResponseTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.data.network
+package com.frybynite.podlore.data.network
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -104,17 +104,17 @@ class TranscriptResponseTest {
 - [ ] **Step 2: Run tests to confirm they fail**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.network.TranscriptResponseTest" 2>&1 | tail -20
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.network.TranscriptResponseTest" 2>&1 | tail -20
 ```
 
 Expected: compilation error — `TranscriptResponse` not found.
 
 - [ ] **Step 3: Create `TranscriptSegment` domain model**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/domain/model/TranscriptSegment.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/domain/model/TranscriptSegment.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.domain.model
+package com.frybynite.podlore.domain.model
 
 data class TranscriptSegment(
     val startTimeSec: Float,
@@ -125,12 +125,12 @@ data class TranscriptSegment(
 
 - [ ] **Step 4: Create `TranscriptResponse`**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponse.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/data/network/TranscriptResponse.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.data.network
+package com.frybynite.podlore.data.network
 
-import com.frybynite.podcastapp.domain.model.TranscriptSegment
+import com.frybynite.podlore.domain.model.TranscriptSegment
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -153,7 +153,7 @@ fun TranscriptResponse.toSegments(): List<TranscriptSegment> =
 
 - [ ] **Step 5: Add `fetchTranscript` to `FeedApi`**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/data/network/FeedApi.kt`, add after the `fetchChapters` method:
+In `app/src/main/kotlin/com/frybynite/podlore/data/network/FeedApi.kt`, add after the `fetchChapters` method:
 
 ```kotlin
     suspend fun fetchTranscript(url: String): TranscriptResponse = withContext(Dispatchers.IO) {
@@ -170,7 +170,7 @@ In `app/src/main/kotlin/com/frybynite/podcastapp/data/network/FeedApi.kt`, add a
 - [ ] **Step 6: Run tests to confirm they pass**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.network.TranscriptResponseTest" 2>&1 | tail -20
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.network.TranscriptResponseTest" 2>&1 | tail -20
 ```
 
 Expected: `BUILD SUCCESSFUL`, all 5 tests pass.
@@ -178,10 +178,10 @@ Expected: `BUILD SUCCESSFUL`, all 5 tests pass.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/domain/model/TranscriptSegment.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponse.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/network/FeedApi.kt
-git add app/src/test/kotlin/com/frybynite/podcastapp/data/network/TranscriptResponseTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/domain/model/TranscriptSegment.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/network/TranscriptResponse.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/network/FeedApi.kt
+git add app/src/test/kotlin/com/frybynite/podlore/data/network/TranscriptResponseTest.kt
 git commit -m "feat: add TranscriptSegment domain model, TranscriptResponse DTOs, FeedApi.fetchTranscript"
 ```
 
@@ -190,16 +190,16 @@ git commit -m "feat: add TranscriptSegment domain model, TranscriptResponse DTOs
 ## Task 2: Add `transcriptUrl` to Episode + DB migration
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/domain/model/Episode.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/entities/EpisodeEntity.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/repository/PodcastRepository.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/domain/model/Episode.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/db/entities/EpisodeEntity.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/db/PodcastDatabase.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/repository/PodcastRepository.kt`
 - Modify: `docs/specs/database.md`
 
 - [ ] **Step 1: Add `transcriptUrl` to `Episode`**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/domain/model/Episode.kt`, add the field after `chaptersUrl`:
+In `app/src/main/kotlin/com/frybynite/podlore/domain/model/Episode.kt`, add the field after `chaptersUrl`:
 
 ```kotlin
 data class Episode(
@@ -220,7 +220,7 @@ data class Episode(
 
 - [ ] **Step 2: Add `transcriptUrl` to `EpisodeEntity`**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/data/db/entities/EpisodeEntity.kt`, add the field after `chaptersUrl`:
+In `app/src/main/kotlin/com/frybynite/podlore/data/db/entities/EpisodeEntity.kt`, add the field after `chaptersUrl`:
 
 ```kotlin
 @Entity(tableName = "episodes", indices = [Index(value = ["podcastFeedUrl"])])
@@ -242,7 +242,7 @@ data class EpisodeEntity(
 
 - [ ] **Step 3: Add `MIGRATION_5_6` and update `DatabaseModule`**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt`, add after `MIGRATION_4_5`:
+In `app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt`, add after `MIGRATION_4_5`:
 
 ```kotlin
 val MIGRATION_5_6 = object : Migration(5, 6) {
@@ -262,7 +262,7 @@ Then update the `provideDatabase` method's `addMigrations` call:
 
 - [ ] **Step 4: Bump `PodcastDatabase` version to 6**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt`, change:
+In `app/src/main/kotlin/com/frybynite/podlore/data/db/PodcastDatabase.kt`, change:
 
 ```kotlin
 @Database(
@@ -274,7 +274,7 @@ In `app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt`, ch
 
 - [ ] **Step 5: Update `toDomain()` and `toEntity()` in `PodcastRepository`**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/data/repository/PodcastRepository.kt`, update the mapping functions:
+In `app/src/main/kotlin/com/frybynite/podlore/data/repository/PodcastRepository.kt`, update the mapping functions:
 
 ```kotlin
 fun EpisodeEntity.toDomain() = Episode(
@@ -321,11 +321,11 @@ Expected: `BUILD SUCCESSFUL`.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/domain/model/Episode.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/db/entities/EpisodeEntity.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/repository/PodcastRepository.kt
+git add app/src/main/kotlin/com/frybynite/podlore/domain/model/Episode.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/db/entities/EpisodeEntity.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/db/PodcastDatabase.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/repository/PodcastRepository.kt
 git add docs/specs/database.md
 git commit -m "feat: add transcriptUrl to Episode/EpisodeEntity, DB migration v5->v6"
 ```
@@ -335,12 +335,12 @@ git commit -m "feat: add transcriptUrl to Episode/EpisodeEntity, DB migration v5
 ## Task 3: Parse `<podcast:transcript>` in RSS feed
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/network/RssParser.kt`
-- Modify: `app/src/test/kotlin/com/frybynite/podcastapp/data/network/RssParserTest.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/network/RssParser.kt`
+- Modify: `app/src/test/kotlin/com/frybynite/podlore/data/network/RssParserTest.kt`
 
 - [ ] **Step 1: Write the failing test**
 
-Open `app/src/test/kotlin/com/frybynite/podcastapp/data/network/RssParserTest.kt`. Add this test at the end of the existing test class:
+Open `app/src/test/kotlin/com/frybynite/podlore/data/network/RssParserTest.kt`. Add this test at the end of the existing test class:
 
 ```kotlin
     @Test fun `parses podcast transcript tag url`() {
@@ -390,14 +390,14 @@ Make sure `assertNull` is imported: `import kotlin.test.assertNull`
 - [ ] **Step 2: Run test to confirm it fails**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.network.RssParserTest" 2>&1 | tail -20
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.network.RssParserTest" 2>&1 | tail -20
 ```
 
 Expected: FAIL — `transcriptUrl` returns `null` when tag is present.
 
 - [ ] **Step 3: Update `RssParser` to parse the transcript tag**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/data/network/RssParser.kt`:
+In `app/src/main/kotlin/com/frybynite/podlore/data/network/RssParser.kt`:
 
 In the `parse()` function, add `var epTranscriptUrl: String? = null` alongside the other episode variables (line ~42). Add it to the reset block inside `parser.name == "item"` START_TAG handling (line ~55):
 
@@ -440,7 +440,7 @@ In the END_TAG `parser.name == "item"` block, add `transcriptUrl = epTranscriptU
 - [ ] **Step 4: Run tests to confirm they pass**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.network.RssParserTest" 2>&1 | tail -20
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.network.RssParserTest" 2>&1 | tail -20
 ```
 
 Expected: `BUILD SUCCESSFUL`, all tests pass.
@@ -448,8 +448,8 @@ Expected: `BUILD SUCCESSFUL`, all tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/network/RssParser.kt
-git add app/src/test/kotlin/com/frybynite/podcastapp/data/network/RssParserTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/network/RssParser.kt
+git add app/src/test/kotlin/com/frybynite/podlore/data/network/RssParserTest.kt
 git commit -m "feat: parse podcast:transcript tag from RSS feed into Episode.transcriptUrl"
 ```
 
@@ -458,20 +458,20 @@ git commit -m "feat: parse podcast:transcript tag from RSS feed into Episode.tra
 ## Task 4: TranscriptRepository
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepository.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/di/NetworkModule.kt`
-- Create: `app/src/test/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepositoryTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/repository/TranscriptRepository.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/di/NetworkModule.kt`
+- Create: `app/src/test/kotlin/com/frybynite/podlore/data/repository/TranscriptRepositoryTest.kt`
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepositoryTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/data/repository/TranscriptRepositoryTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.data.repository
+package com.frybynite.podlore.data.repository
 
-import com.frybynite.podcastapp.data.network.FeedApi
-import com.frybynite.podcastapp.data.network.TranscriptResponse
-import com.frybynite.podcastapp.data.network.TranscriptSegmentDto
+import com.frybynite.podlore.data.network.FeedApi
+import com.frybynite.podlore.data.network.TranscriptResponse
+import com.frybynite.podlore.data.network.TranscriptSegmentDto
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.mockk.coEvery
@@ -564,23 +564,23 @@ class TranscriptRepositoryTest {
 - [ ] **Step 2: Run tests to confirm they fail**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.repository.TranscriptRepositoryTest" 2>&1 | tail -20
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.repository.TranscriptRepositoryTest" 2>&1 | tail -20
 ```
 
 Expected: compilation error — `TranscriptRepository` not found.
 
 - [ ] **Step 3: Create `TranscriptRepository`**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepository.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/data/repository/TranscriptRepository.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.data.repository
+package com.frybynite.podlore.data.repository
 
 import android.util.Log
-import com.frybynite.podcastapp.data.network.FeedApi
-import com.frybynite.podcastapp.data.network.TranscriptResponse
-import com.frybynite.podcastapp.data.network.toSegments
-import com.frybynite.podcastapp.domain.model.TranscriptSegment
+import com.frybynite.podlore.data.network.FeedApi
+import com.frybynite.podlore.data.network.TranscriptResponse
+import com.frybynite.podlore.data.network.toSegments
+import com.frybynite.podlore.domain.model.TranscriptSegment
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -614,11 +614,11 @@ class TranscriptRepository(
 
 - [ ] **Step 4: Wire `TranscriptRepository` in `NetworkModule`**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/data/di/NetworkModule.kt`, add these imports at the top:
+In `app/src/main/kotlin/com/frybynite/podlore/data/di/NetworkModule.kt`, add these imports at the top:
 
 ```kotlin
 import android.content.Context
-import com.frybynite.podcastapp.data.repository.TranscriptRepository
+import com.frybynite.podlore.data.repository.TranscriptRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 ```
@@ -638,7 +638,7 @@ Then add at the end of the `NetworkModule` object:
 - [ ] **Step 5: Run tests to confirm they pass**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.repository.TranscriptRepositoryTest" 2>&1 | tail -20
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.repository.TranscriptRepositoryTest" 2>&1 | tail -20
 ```
 
 Expected: `BUILD SUCCESSFUL`, all 4 tests pass.
@@ -654,9 +654,9 @@ Expected: `BUILD SUCCESSFUL`.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepository.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/di/NetworkModule.kt
-git add app/src/test/kotlin/com/frybynite/podcastapp/data/repository/TranscriptRepositoryTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/repository/TranscriptRepository.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/di/NetworkModule.kt
+git add app/src/test/kotlin/com/frybynite/podlore/data/repository/TranscriptRepositoryTest.kt
 git commit -m "feat: add TranscriptRepository with disk-based JSON caching"
 ```
 
@@ -665,7 +665,7 @@ git commit -m "feat: add TranscriptRepository with disk-based JSON caching"
 ## Task 5: PlayerViewModel transcript state
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 - [ ] **Step 1: Add transcript StateFlows and jobs**
 
@@ -693,8 +693,8 @@ In `PlayerViewModel.kt`, after the `cachedDeepDiveJob` declaration (around line 
 Add the import at the top of the file:
 
 ```kotlin
-import com.frybynite.podcastapp.data.repository.TranscriptRepository
-import com.frybynite.podcastapp.domain.model.TranscriptSegment
+import com.frybynite.podlore.data.repository.TranscriptRepository
+import com.frybynite.podlore.domain.model.TranscriptSegment
 ```
 
 - [ ] **Step 2: Inject `TranscriptRepository` into the ViewModel constructor**
@@ -708,8 +708,8 @@ class PlayerViewModel @Inject constructor(
     private val chapterRepo: ChapterRepository,
     private val episodeDao: EpisodeDao,
     private val podcastDao: PodcastDao,
-    private val podcastRepo: com.frybynite.podcastapp.data.repository.PodcastRepository,
-    private val deepDiveDao: com.frybynite.podcastapp.data.db.dao.DeepDiveDao,
+    private val podcastRepo: com.frybynite.podlore.data.repository.PodcastRepository,
+    private val deepDiveDao: com.frybynite.podlore.data.db.dao.DeepDiveDao,
     private val speedPrefs: SpeedPreferences,
     private val deepDiveOrchestrator: DeepDiveOrchestrator,
     private val summarizer: TextSummarizer,
@@ -791,7 +791,7 @@ Expected: `BUILD SUCCESSFUL`.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt
 git commit -m "feat: add transcript state, toggleTranscript, seekToSegment, active segment tracking to PlayerViewModel"
 ```
 
@@ -800,15 +800,15 @@ git commit -m "feat: add transcript state, toggleTranscript, seekToSegment, acti
 ## Task 6: TranscriptPanel composable + PlayerScreen integration
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`
 
 - [ ] **Step 1: Create `TranscriptPanel`**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -823,7 +823,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.frybynite.podcastapp.domain.model.TranscriptSegment
+import com.frybynite.podlore.domain.model.TranscriptSegment
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -885,7 +885,7 @@ fun TranscriptPanel(
 
 - [ ] **Step 2: Collect transcript state in `PlayerScreen`**
 
-In `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt`, after the existing `collectAsStateWithLifecycle` calls (around line 83), add:
+In `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`, after the existing `collectAsStateWithLifecycle` calls (around line 83), add:
 
 ```kotlin
     val hasTranscript by vm.hasTranscript.collectAsStateWithLifecycle()
@@ -948,8 +948,8 @@ Expected: `BUILD SUCCESSFUL`, no test failures.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
 git commit -m "feat: add TranscriptPanel bottom sheet and toggle button to PlayerScreen"
 ```
 

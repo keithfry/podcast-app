@@ -17,13 +17,13 @@
 | Modify | `gradle/libs.versions.toml` | Add cast, mediarouter, play-services-cast versions + entries |
 | Modify | `app/build.gradle.kts` | Add dependencies + `CAST_APP_ID` BuildConfig field |
 | Modify | `local.properties` | Add `CAST_APP_ID=CC1AD845` (dev default) |
-| Create | `app/src/main/kotlin/com/frybynite/podcastapp/cast/CastOptionsProvider.kt` | Cast SDK entry point |
+| Create | `app/src/main/kotlin/com/frybynite/podlore/cast/CastOptionsProvider.kt` | Cast SDK entry point |
 | Modify | `app/src/main/AndroidManifest.xml` | Declare `CastOptionsProvider` meta-data |
-| Modify | `app/src/main/kotlin/com/frybynite/podcastapp/PodcastApplication.kt` | Init `CastContext` on main thread |
-| Modify | `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt` | Dual-player, `SessionManagerListener`, `MediaInfo` builder |
-| Modify | `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt` | `isCasting: StateFlow<Boolean>` |
-| Modify | `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt` | `MediaRouteButton`, cast badge, AAOS guard |
-| Modify | `app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListScreen.kt` | `MediaRouteButton` in toolbar |
+| Modify | `app/src/main/kotlin/com/frybynite/podlore/PodcastApplication.kt` | Init `CastContext` on main thread |
+| Modify | `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt` | Dual-player, `SessionManagerListener`, `MediaInfo` builder |
+| Modify | `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt` | `isCasting: StateFlow<Boolean>` |
+| Modify | `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt` | `MediaRouteButton`, cast badge, AAOS guard |
+| Modify | `app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListScreen.kt` | `MediaRouteButton` in toolbar |
 
 ---
 
@@ -92,18 +92,18 @@ git commit -m "build: add media3-cast, mediarouter, cast-framework dependencies"
 ### Task 2: CastOptionsProvider and manifest declaration
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/cast/CastOptionsProvider.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/cast/CastOptionsProvider.kt`
 - Modify: `app/src/main/AndroidManifest.xml`
 
 - [ ] **Step 1: Create `CastOptionsProvider.kt`**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/cast/CastOptionsProvider.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/cast/CastOptionsProvider.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.cast
+package com.frybynite.podlore.cast
 
 import android.content.Context
-import com.frybynite.podcastapp.BuildConfig
+import com.frybynite.podlore.BuildConfig
 import com.google.android.gms.cast.framework.CastOptions
 import com.google.android.gms.cast.framework.OptionsProvider
 import com.google.android.gms.cast.framework.SessionProvider
@@ -131,7 +131,7 @@ Inside `<application>`, add after the existing `<meta-data>` for `com.google.and
 ```xml
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-            android:value="com.frybynite.podcastapp.cast.CastOptionsProvider" />
+            android:value="com.frybynite.podlore.cast.CastOptionsProvider" />
 ```
 
 - [ ] **Step 3: Build**
@@ -145,7 +145,7 @@ Expected: BUILD SUCCESSFUL.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/cast/CastOptionsProvider.kt app/src/main/AndroidManifest.xml
+git add app/src/main/kotlin/com/frybynite/podlore/cast/CastOptionsProvider.kt app/src/main/AndroidManifest.xml
 git commit -m "feat: add CastOptionsProvider and manifest declaration"
 ```
 
@@ -154,7 +154,7 @@ git commit -m "feat: add CastOptionsProvider and manifest declaration"
 ### Task 3: Initialize CastContext in PodcastApplication
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/PodcastApplication.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/PodcastApplication.kt`
 
 `CastContext` must be initialized on the main thread before any Cast API is used. `PodcastApplication.onCreate()` is the right place.
 
@@ -163,7 +163,7 @@ git commit -m "feat: add CastOptionsProvider and manifest declaration"
 Replace the entire file content:
 
 ```kotlin
-package com.frybynite.podcastapp
+package com.frybynite.podlore
 
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
@@ -199,7 +199,7 @@ Expected: BUILD SUCCESSFUL.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/PodcastApplication.kt
+git add app/src/main/kotlin/com/frybynite/podlore/PodcastApplication.kt
 git commit -m "feat: initialize CastContext in PodcastApplication"
 ```
 
@@ -210,7 +210,7 @@ git commit -m "feat: initialize CastContext in PodcastApplication"
 This is the core of the integration. `PlaybackService` gains a `CastPlayer`, a `SessionManagerListener`, and a helper to build `MediaInfo` for the Cast receiver.
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt`
 
 Read the current file before editing — it is large and has been modified by previous tasks.
 
@@ -278,7 +278,7 @@ private fun switchToPlayer(newPlayer: androidx.media3.common.Player) {
         .setSessionActivity(
             android.app.PendingIntent.getActivity(
                 this, 0,
-                android.content.Intent(this, com.frybynite.podcastapp.MainActivity::class.java),
+                android.content.Intent(this, com.frybynite.podlore.MainActivity::class.java),
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
         )
@@ -388,7 +388,7 @@ Expected: BUILD SUCCESSFUL, no unresolved references.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt
+git add app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt
 git commit -m "feat: add CastPlayer dual-player setup to PlaybackService"
 ```
 
@@ -397,7 +397,7 @@ git commit -m "feat: add CastPlayer dual-player setup to PlaybackService"
 ### Task 5: isCasting StateFlow in PlayerViewModel
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 - [ ] **Step 1: Add `isCasting` StateFlow**
 
@@ -474,7 +474,7 @@ Expected: BUILD SUCCESSFUL.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt
 git commit -m "feat: add isCasting StateFlow to PlayerViewModel"
 ```
 
@@ -483,7 +483,7 @@ git commit -m "feat: add isCasting StateFlow to PlayerViewModel"
 ### Task 6: MediaRouteButton and cast badge in PlayerScreen
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`
 
 - [ ] **Step 1: Add imports**
 
@@ -558,7 +558,7 @@ Expected: BUILD SUCCESSFUL.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
 git commit -m "feat: add MediaRouteButton and cast badge to PlayerScreen"
 ```
 
@@ -567,7 +567,7 @@ git commit -m "feat: add MediaRouteButton and cast badge to PlayerScreen"
 ### Task 7: MediaRouteButton in EpisodeListScreen
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListScreen.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListScreen.kt`
 
 - [ ] **Step 1: Add imports**
 
@@ -627,7 +627,7 @@ Expected: BUILD SUCCESSFUL.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListScreen.kt
 git commit -m "feat: add MediaRouteButton to EpisodeListScreen toolbar"
 ```
 

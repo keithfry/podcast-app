@@ -54,6 +54,6 @@ echo "Installing on $TV_SERIAL..."
 adb -s "$TV_SERIAL" install -r "$APK"
 
 echo "Launching..."
-adb -s "$TV_SERIAL" shell am start -n "com.frybynite.podcastapp/.MainActivity"
+adb -s "$TV_SERIAL" shell am start -n "com.frybynite.podlore/.MainActivity"
 
 echo "Done."

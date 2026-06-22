@@ -21,7 +21,7 @@
 ### Task 1: Add `cancelDownload` to `PodcastRepository`
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/repository/PodcastRepository.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/repository/PodcastRepository.kt`
 
 **Interfaces:**
 - Produces: `fun cancelDownload(audioUrl: String)` — cancels the unique work named `"download_$audioUrl"`
@@ -50,7 +50,7 @@ Expected: BUILD SUCCESSFUL, zero errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/repository/PodcastRepository.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/repository/PodcastRepository.kt
 git commit -m "feat: add cancelDownload to PodcastRepository"
 ```
 
@@ -59,7 +59,7 @@ git commit -m "feat: add cancelDownload to PodcastRepository"
 ### Task 2: Add MediaController and playback state to `EpisodeListViewModel`
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListViewModel.kt`
 
 **Interfaces:**
 - Consumes: `PodcastRepository.cancelDownload(audioUrl: String)` (Task 1), `PodcastRepository.downloadEpisode(audioUrl: String)` (already exists)
@@ -73,7 +73,7 @@ git commit -m "feat: add cancelDownload to PodcastRepository"
 Replace `EpisodeListViewModel.kt` with the following:
 
 ```kotlin
-package com.frybynite.podcastapp.ui.episodes
+package com.frybynite.podlore.ui.episodes
 
 import android.content.ComponentName
 import android.content.Context
@@ -85,12 +85,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.frybynite.podcastapp.data.db.dao.PodcastDao
-import com.frybynite.podcastapp.data.preferences.EpisodeListPreferences
-import com.frybynite.podcastapp.data.repository.PodcastRepository
-import com.frybynite.podcastapp.domain.model.DownloadStatus
-import com.frybynite.podcastapp.domain.model.Episode
-import com.frybynite.podcastapp.service.PlaybackService
+import com.frybynite.podlore.data.db.dao.PodcastDao
+import com.frybynite.podlore.data.preferences.EpisodeListPreferences
+import com.frybynite.podlore.data.repository.PodcastRepository
+import com.frybynite.podlore.domain.model.DownloadStatus
+import com.frybynite.podlore.domain.model.Episode
+import com.frybynite.podlore.service.PlaybackService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -252,7 +252,7 @@ Expected: BUILD SUCCESSFUL, zero errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListViewModel.kt
 git commit -m "feat: add MediaController and onPlayPause to EpisodeListViewModel"
 ```
 
@@ -261,7 +261,7 @@ git commit -m "feat: add MediaController and onPlayPause to EpisodeListViewModel
 ### Task 3: Update `EpisodeRow` and `EpisodeListScreen` with play/pause icon
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListScreen.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListScreen.kt`
 
 **Interfaces:**
 - Consumes:
@@ -357,7 +357,7 @@ Expected: BUILD SUCCESSFUL, zero errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListScreen.kt
 git commit -m "feat: replace download icon with play/pause in EpisodeRow"
 ```
 

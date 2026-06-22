@@ -10,7 +10,7 @@ Replace the per-ViewModel `MediaController` pattern with a single `@Singleton Pl
 
 ## New Component: PlaybackController
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/playback/PlaybackController.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/playback/PlaybackController.kt`
 
 ```kotlin
 @Singleton
@@ -96,7 +96,7 @@ object PlaybackModule {
 
 ## PlayerViewModel migration
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 ### Remove
 - `var controller: MediaController?` field and private setter
@@ -119,7 +119,7 @@ All `controller.seekTo()`, `controller.setPlaybackParameters()`, `controller.sen
 
 ## EpisodeListViewModel migration
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListViewModel.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListViewModel.kt`
 
 ### Remove
 - `@ApplicationContext context` constructor param

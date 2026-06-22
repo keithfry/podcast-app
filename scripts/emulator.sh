@@ -63,6 +63,6 @@ echo "Installing on $EMULATOR_SERIAL..."
 adb -s "$EMULATOR_SERIAL" install -r "$APK"
 
 echo "Launching..."
-adb -s "$EMULATOR_SERIAL" shell am start -n "com.podcastapp/.MainActivity"
+adb -s "$EMULATOR_SERIAL" shell am start -n "com.frybynite.podlore/.MainActivity"
 
 echo "Done."

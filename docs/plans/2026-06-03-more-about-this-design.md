@@ -60,15 +60,15 @@ git commit -m "build: add MediaPipe tasks-genai, Jsoup, and mockk dependencies"
 ### Task 2: Add VoiceCommand.MORE_ABOUT_THIS
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/VoiceCommandHandler.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/ui/player/VoiceCommandHandlerTest.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/VoiceCommandHandler.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/ui/player/VoiceCommandHandlerTest.kt`
 
 **Step 1: Write failing tests**
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/ui/player/VoiceCommandHandlerTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/ui/player/VoiceCommandHandlerTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -96,7 +96,7 @@ Expected: FAILED — `MORE_ABOUT_THIS` not found in enum
 Replace `VoiceCommandHandler.kt` with:
 
 ```kotlin
-package com.frybynite.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
 enum class VoiceCommand {
     NEXT_CHAPTER, PREV_CHAPTER, SEEK_FORWARD, SEEK_BACK,
@@ -126,8 +126,8 @@ Expected: BUILD SUCCESSFUL, 8 tests passed
 **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/VoiceCommandHandler.kt \
-        app/src/test/kotlin/com/frybynite/podcastapp/ui/player/VoiceCommandHandlerTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/VoiceCommandHandler.kt \
+        app/src/test/kotlin/com/frybynite/podlore/ui/player/VoiceCommandHandlerTest.kt
 git commit -m "feat: add VoiceCommand.MORE_ABOUT_THIS with phrase matching"
 ```
 
@@ -136,17 +136,17 @@ git commit -m "feat: add VoiceCommand.MORE_ABOUT_THIS with phrase matching"
 ### Task 3: UrlContentFetcher
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/UrlContentFetcher.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/UrlContentFetcherTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/UrlContentFetcher.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/deepdive/UrlContentFetcherTest.kt`
 
 **Step 1: Write failing tests**
 
 `MockWebServer` is already in test deps (`okhttp.mockwebserver`).
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/UrlContentFetcherTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/deepdive/UrlContentFetcherTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -206,10 +206,10 @@ Expected: FAILED — class not found
 
 **Step 3: Implement**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/UrlContentFetcher.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/deepdive/UrlContentFetcher.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -239,8 +239,8 @@ Expected: BUILD SUCCESSFUL
 **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/UrlContentFetcher.kt \
-        app/src/test/kotlin/com/frybynite/podcastapp/deepdive/UrlContentFetcherTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/UrlContentFetcher.kt \
+        app/src/test/kotlin/com/frybynite/podlore/deepdive/UrlContentFetcherTest.kt
 git commit -m "feat: add UrlContentFetcher — fetch and extract article text via Jsoup"
 ```
 
@@ -249,17 +249,17 @@ git commit -m "feat: add UrlContentFetcher — fetch and extract article text vi
 ### Task 4: TextSummarizer interface + GemmaTextSummarizer + ModelDownloadManager
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/TextSummarizer.kt`
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/GemmaTextSummarizer.kt`
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/ModelDownloadManager.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/TextSummarizerContractTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/TextSummarizer.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/GemmaTextSummarizer.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/ModelDownloadManager.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/deepdive/TextSummarizerContractTest.kt`
 
 **Step 1: Write failing test (interface contract)**
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/TextSummarizerContractTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/deepdive/TextSummarizerContractTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import org.junit.Test
 import kotlin.test.assertTrue
@@ -286,10 +286,10 @@ Expected: FAILED — interface not found
 
 **Step 2: Implement TextSummarizer interface**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/TextSummarizer.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/deepdive/TextSummarizer.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 interface TextSummarizer {
     fun isModelAvailable(): Boolean
@@ -304,10 +304,10 @@ Expected: BUILD SUCCESSFUL
 
 **Step 4: Implement GemmaTextSummarizer**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/GemmaTextSummarizer.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/deepdive/GemmaTextSummarizer.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.content.Context
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
@@ -353,10 +353,10 @@ Summary:"""
 
 **Step 5: Implement ModelDownloadManager**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/ModelDownloadManager.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/deepdive/ModelDownloadManager.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -429,8 +429,8 @@ Expected: BUILD SUCCESSFUL
 **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/ \
-        app/src/test/kotlin/com/frybynite/podcastapp/deepdive/TextSummarizerContractTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/ \
+        app/src/test/kotlin/com/frybynite/podlore/deepdive/TextSummarizerContractTest.kt
 git commit -m "feat: TextSummarizer interface, GemmaTextSummarizer, ModelDownloadManager"
 ```
 
@@ -439,16 +439,16 @@ git commit -m "feat: TextSummarizer interface, GemmaTextSummarizer, ModelDownloa
 ### Task 5: TtsSynthesizer
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/TtsSynthesizer.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/TtsSynthesizer.kt`
 
 No unit test — Android TTS engine requires device/emulator. Covered by end-to-end test in Task 11.
 
 **Step 1: Implement**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/TtsSynthesizer.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/deepdive/TtsSynthesizer.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.content.Context
 import android.os.Bundle
@@ -508,7 +508,7 @@ Expected: BUILD SUCCESSFUL
 **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/TtsSynthesizer.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/TtsSynthesizer.kt
 git commit -m "feat: TtsSynthesizer — Android TTS synthesizeToFile wrapper"
 ```
 
@@ -517,15 +517,15 @@ git commit -m "feat: TtsSynthesizer — Android TTS synthesizeToFile wrapper"
 ### Task 6: DeepDiveOrchestrator
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestrator.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestratorTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestrator.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestratorTest.kt`
 
 **Step 1: Write failing test**
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestratorTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestratorTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import io.mockk.coEvery
 import io.mockk.every
@@ -564,10 +564,10 @@ Expected: FAILED — class not found
 
 **Step 3: Implement**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestrator.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestrator.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -595,8 +595,8 @@ Expected: BUILD SUCCESSFUL
 **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestrator.kt \
-        app/src/test/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestratorTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestrator.kt \
+        app/src/test/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestratorTest.kt
 git commit -m "feat: DeepDiveOrchestrator — fetch → summarize → TTS pipeline"
 ```
 
@@ -605,12 +605,12 @@ git commit -m "feat: DeepDiveOrchestrator — fetch → summarize → TTS pipeli
 ### Task 7: Hilt module
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveModule.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveModule.kt`
 
 **Step 1: Implement**
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import dagger.Binds
 import dagger.Module
@@ -634,7 +634,7 @@ Expected: BUILD SUCCESSFUL
 **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveModule.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveModule.kt
 git commit -m "feat: Hilt module binding TextSummarizer to GemmaTextSummarizer"
 ```
 
@@ -643,7 +643,7 @@ git commit -m "feat: Hilt module binding TextSummarizer to GemmaTextSummarizer"
 ### Task 8: Fix PlaybackService.onAddMediaItems for local file URIs
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt`
 
 The current callback does `setUri(item.mediaId)` for every item. TTS items have `mediaId = "tts://<uuid>"` but the actual URI is a local `file://` path already set via `setUri()`. This fix preserves pre-set URIs.
 
@@ -679,7 +679,7 @@ Expected: BUILD SUCCESSFUL
 **Step 4: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt
+git add app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt
 git commit -m "fix: preserve existing URI in onAddMediaItems for local file items"
 ```
 
@@ -688,7 +688,7 @@ git commit -m "fix: preserve existing URI in onAddMediaItems for local file item
 ### Task 9: PlayerViewModel — DeepDiveState + moreAboutThis() + audio injection
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 **Step 1: Add DeepDiveState sealed class**
 
@@ -813,7 +813,7 @@ Expected: BUILD SUCCESSFUL
 **Step 8: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt
 git commit -m "feat: PlayerViewModel deep dive — moreAboutThis(), audio injection, TTS cleanup"
 ```
 
@@ -822,7 +822,7 @@ git commit -m "feat: PlayerViewModel deep dive — moreAboutThis(), audio inject
 ### Task 10: PlayerScreen — wire voice command + UI states
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`
 
 **Step 1: Collect new state flows**
 
@@ -916,7 +916,7 @@ Expected: BUILD SUCCESSFUL
 **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
 git commit -m "feat: wire MORE_ABOUT_THIS voice command and deep dive UI in PlayerScreen"
 ```
 

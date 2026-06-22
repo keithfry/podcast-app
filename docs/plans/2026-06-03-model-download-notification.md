@@ -13,14 +13,14 @@
 ### Task 1: DeepDiveRouter singleton
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveRouter.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveRouter.kt`
 
 No unit test — trivial singleton; integration tested implicitly in Task 4.
 
 **Step 1: Create the file**
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -46,7 +46,7 @@ Expected: `BUILD SUCCESSFUL`
 **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveRouter.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveRouter.kt
 git commit -m "feat: DeepDiveRouter singleton — SharedFlow for pending deep dive URL"
 ```
 
@@ -55,12 +55,12 @@ git commit -m "feat: DeepDiveRouter singleton — SharedFlow for pending deep di
 ### Task 2: NotificationHelper
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/NotificationHelper.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/NotificationHelper.kt`
 
 **Step 1: Create the file**
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -68,8 +68,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import com.frybynite.podcastapp.MainActivity
-import com.frybynite.podcastapp.R
+import com.frybynite.podlore.MainActivity
+import com.frybynite.podlore.R
 
 object NotificationHelper {
     const val EXTRA_DEEP_DIVE_URL = "deep_dive_url"
@@ -119,7 +119,7 @@ Expected: `BUILD SUCCESSFUL`
 **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/NotificationHelper.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/NotificationHelper.kt
 git commit -m "feat: NotificationHelper — channel creation and ready notification"
 ```
 
@@ -128,7 +128,7 @@ git commit -m "feat: NotificationHelper — channel creation and ready notificat
 ### Task 3: ModelDownloadManager — add pendingUrl + notify on Complete
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/ModelDownloadManager.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/deepdive/ModelDownloadManager.kt`
 
 **Step 1: Update `downloadModel` signature and add notification call**
 
@@ -186,7 +186,7 @@ Expected: FAIL — `PlayerViewModel.downloadModel()` still calls the old no-arg 
 **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/ModelDownloadManager.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/ModelDownloadManager.kt
 git commit -m "feat: ModelDownloadManager posts notification on download complete"
 ```
 
@@ -195,13 +195,13 @@ git commit -m "feat: ModelDownloadManager posts notification on download complet
 ### Task 4: PlayerViewModel — pendingDeepDiveUrl + collect DeepDiveRouter
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 **Step 1: Add import and pendingDeepDiveUrl field**
 
 Add to imports:
 ```kotlin
-import com.frybynite.podcastapp.deepdive.DeepDiveRouter
+import com.frybynite.podlore.deepdive.DeepDiveRouter
 import kotlinx.coroutines.flow.collectLatest
 ```
 
@@ -283,7 +283,7 @@ Expected: `BUILD SUCCESSFUL`
 **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt
 git commit -m "feat: PlayerViewModel saves pendingDeepDiveUrl, passes to download, collects DeepDiveRouter"
 ```
 
@@ -292,23 +292,23 @@ git commit -m "feat: PlayerViewModel saves pendingDeepDiveUrl, passes to downloa
 ### Task 5: MainActivity — handle onNewIntent and onCreate deep dive URL
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/MainActivity.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/MainActivity.kt`
 
 **Step 1: Update MainActivity**
 
 Replace the entire file:
 
 ```kotlin
-package com.frybynite.podcastapp
+package com.frybynite.podlore
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.frybynite.podcastapp.deepdive.DeepDiveRouter
-import com.frybynite.podcastapp.deepdive.NotificationHelper
-import com.frybynite.podcastapp.ui.PodcastNavGraph
-import com.frybynite.podcastapp.ui.theme.PodcastAppTheme
+import com.frybynite.podlore.deepdive.DeepDiveRouter
+import com.frybynite.podlore.deepdive.NotificationHelper
+import com.frybynite.podlore.ui.PodcastNavGraph
+import com.frybynite.podlore.ui.theme.PodcastAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -346,7 +346,7 @@ Expected: `BUILD SUCCESSFUL`
 **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/MainActivity.kt
+git add app/src/main/kotlin/com/frybynite/podlore/MainActivity.kt
 git commit -m "feat: MainActivity routes deep dive URL from notification intent to DeepDiveRouter"
 ```
 
@@ -355,7 +355,7 @@ git commit -m "feat: MainActivity routes deep dive URL from notification intent 
 ### Task 6: PlayerScreen — notification permission request + Snackbar fallback
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`
 
 **Step 1: Add imports**
 
@@ -396,7 +396,7 @@ After the existing `LaunchedEffect(isPlaying)` block, add:
 
 ```kotlin
 LaunchedEffect(modelDownloadState) {
-    if (modelDownloadState is com.frybynite.podcastapp.deepdive.ModelDownloadState.Complete
+    if (modelDownloadState is com.frybynite.podlore.deepdive.ModelDownloadState.Complete
         && !notificationPermissionGranted) {
         snackbarHostState.showSnackbar("AI model ready — try \"More about this\" again")
     }
@@ -444,6 +444,6 @@ Expected: `BUILD SUCCESSFUL`
 **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
 git commit -m "feat: request POST_NOTIFICATIONS on download, Snackbar fallback if denied"
 ```

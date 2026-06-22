@@ -13,14 +13,14 @@ Worktree: `worktrees/feat-more-about-this` (branch: `feat/more-about-this`)
 ### Task 4: TextSummarizer + GemmaTextSummarizer + ModelDownloadManager
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/TextSummarizer.kt`
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/GemmaTextSummarizer.kt`
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/ModelDownloadManager.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/TextSummarizerContractTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/TextSummarizer.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/GemmaTextSummarizer.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/ModelDownloadManager.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/deepdive/TextSummarizerContractTest.kt`
 
 TextSummarizer.kt:
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 interface TextSummarizer {
     fun isModelAvailable(): Boolean
@@ -30,7 +30,7 @@ interface TextSummarizer {
 
 TextSummarizerContractTest.kt:
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import org.junit.Test
 import kotlin.test.assertTrue
@@ -54,7 +54,7 @@ class TextSummarizerContractTest {
 
 GemmaTextSummarizer.kt:
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.content.Context
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
@@ -100,7 +100,7 @@ Summary:"""
 
 ModelDownloadManager.kt:
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -173,12 +173,12 @@ Commit message: `feat: TextSummarizer interface, GemmaTextSummarizer, ModelDownl
 
 ### Task 5: TtsSynthesizer
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/TtsSynthesizer.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/deepdive/TtsSynthesizer.kt`
 
 No unit test (requires Android TTS engine on device).
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.content.Context
 import android.os.Bundle
@@ -238,12 +238,12 @@ Commit: `feat: TtsSynthesizer — Android TTS synthesizeToFile wrapper`
 ### Task 6: DeepDiveOrchestrator
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestrator.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestratorTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestrator.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestratorTest.kt`
 
 DeepDiveOrchestratorTest.kt (write first, verify fails):
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import io.mockk.coEvery
 import io.mockk.every
@@ -277,7 +277,7 @@ class DeepDiveOrchestratorTest {
 
 DeepDiveOrchestrator.kt:
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -306,10 +306,10 @@ Commit: `feat: DeepDiveOrchestrator — fetch → summarize → TTS pipeline`
 
 ### Task 7: Hilt module
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveModule.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveModule.kt`
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import dagger.Binds
 import dagger.Module
@@ -332,7 +332,7 @@ Commit: `feat: Hilt module binding TextSummarizer to GemmaTextSummarizer`
 
 ### Task 8: Fix PlaybackService.onAddMediaItems
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt`
 
 Current onAddMediaItems blindly sets uri = mediaId. TTS items have a local file URI already set. Fix to preserve it:
 
@@ -355,7 +355,7 @@ Commit: `fix: preserve existing URI in onAddMediaItems for local file items`
 
 ### Task 9: PlayerViewModel — DeepDiveState + moreAboutThis() + audio injection
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 Add to constructor params:
 ```kotlin
@@ -465,7 +465,7 @@ Commit: `feat: PlayerViewModel deep dive — moreAboutThis(), audio injection, T
 
 ### Task 10: PlayerScreen wire-up
 
-**File:** `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt`
+**File:** `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`
 
 1. Add state collection:
 ```kotlin

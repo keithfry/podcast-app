@@ -13,7 +13,7 @@
 ### Task 1: Add imports + swap clickable → combinedClickable + DropdownMenu
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt:10,291-328`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt:10,291-328`
 
 No unit test — Compose UI change. Verify with `assembleDebug`.
 
@@ -120,6 +120,6 @@ Expected: `BUILD SUCCESSFUL`
 **Step 4: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
 git commit -m "feat: long-press chapter row shows context menu (open, share, more about this)"
 ```

@@ -21,7 +21,7 @@
 ### Task 1: Create worktree and add `getByAudioUrlFlow` to EpisodeDao
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/dao/EpisodeDao.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/db/dao/EpisodeDao.kt`
 
 **Interfaces:**
 - Produces: `fun getByAudioUrlFlow(audioUrl: String): Flow<EpisodeEntity?>` — Room `@Query` that emits a single episode row whenever it changes, or `null` if not found. Used by `PlaybackController` to observe download status for pending auto-play.
@@ -38,7 +38,7 @@ Expected: new directory `worktrees/global-playback-controller` checked out on br
 
 - [ ] **Step 2: Add `getByAudioUrlFlow` to EpisodeDao**
 
-Open `app/src/main/kotlin/com/frybynite/podcastapp/data/db/dao/EpisodeDao.kt`. After the existing `getByAudioUrl` suspend function (line 13), add:
+Open `app/src/main/kotlin/com/frybynite/podlore/data/db/dao/EpisodeDao.kt`. After the existing `getByAudioUrl` suspend function (line 13), add:
 
 ```kotlin
 @Query("SELECT * FROM episodes WHERE audioUrl = :audioUrl")
@@ -74,7 +74,7 @@ Expected: BUILD SUCCESSFUL, zero errors.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/db/dao/EpisodeDao.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/db/dao/EpisodeDao.kt
 git commit -m "feat: add getByAudioUrlFlow to EpisodeDao"
 ```
 
@@ -83,7 +83,7 @@ git commit -m "feat: add getByAudioUrlFlow to EpisodeDao"
 ### Task 2: Create PlaybackController
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/playback/PlaybackController.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/playback/PlaybackController.kt`
 
 **Interfaces:**
 - Consumes: `EpisodeDao.getByAudioUrlFlow(audioUrl)` (Task 1), `PodcastRepository.downloadEpisode()`, `PodcastRepository.cancelDownload()`, `ChapterRepository.fetchAndCacheChapters()`
@@ -97,10 +97,10 @@ git commit -m "feat: add getByAudioUrlFlow to EpisodeDao"
 
 - [ ] **Step 1: Create the file**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/playback/PlaybackController.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/playback/PlaybackController.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.playback
+package com.frybynite.podlore.playback
 
 import android.content.ComponentName
 import android.content.Context
@@ -109,12 +109,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.frybynite.podcastapp.data.db.dao.EpisodeDao
-import com.frybynite.podcastapp.data.repository.ChapterRepository
-import com.frybynite.podcastapp.data.repository.PodcastRepository
-import com.frybynite.podcastapp.domain.model.DownloadStatus
-import com.frybynite.podcastapp.domain.model.Episode
-import com.frybynite.podcastapp.service.PlaybackService
+import com.frybynite.podlore.data.db.dao.EpisodeDao
+import com.frybynite.podlore.data.repository.ChapterRepository
+import com.frybynite.podlore.data.repository.PodcastRepository
+import com.frybynite.podlore.domain.model.DownloadStatus
+import com.frybynite.podlore.domain.model.Episode
+import com.frybynite.podlore.service.PlaybackService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -233,7 +233,7 @@ Expected: BUILD SUCCESSFUL, zero errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/playback/PlaybackController.kt
+git add app/src/main/kotlin/com/frybynite/podlore/playback/PlaybackController.kt
 git commit -m "feat: add PlaybackController singleton"
 ```
 
@@ -242,7 +242,7 @@ git commit -m "feat: add PlaybackController singleton"
 ### Task 3: Migrate PlayerViewModel to use PlaybackController
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 **Interfaces:**
 - Consumes: `PlaybackController.controller: StateFlow<MediaController?>`, `PlaybackController.isPlaying: StateFlow<Boolean>` (Task 2)
@@ -254,7 +254,7 @@ In `PlayerViewModel.kt`:
 
 **Add import:**
 ```kotlin
-import com.frybynite.podcastapp.playback.PlaybackController
+import com.frybynite.podlore.playback.PlaybackController
 import kotlinx.coroutines.flow.filterNotNull
 ```
 
@@ -433,7 +433,7 @@ Expected: BUILD SUCCESSFUL, zero errors. Fix any remaining `controller?.` → `c
 - [ ] **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt
 git commit -m "feat: migrate PlayerViewModel to use PlaybackController"
 ```
 
@@ -442,7 +442,7 @@ git commit -m "feat: migrate PlayerViewModel to use PlaybackController"
 ### Task 4: Migrate EpisodeListViewModel to use PlaybackController
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListViewModel.kt`
 
 **Interfaces:**
 - Consumes: `PlaybackController.currentlyPlayingUrl`, `PlaybackController.isPlaying`, `PlaybackController.play()`, `PlaybackController.pause()`, `PlaybackController.resume()` (Task 2)
@@ -450,19 +450,19 @@ git commit -m "feat: migrate PlayerViewModel to use PlaybackController"
 
 - [ ] **Step 1: Replace the file**
 
-Replace `app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListViewModel.kt` with:
+Replace `app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListViewModel.kt` with:
 
 ```kotlin
-package com.frybynite.podcastapp.ui.episodes
+package com.frybynite.podlore.ui.episodes
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.frybynite.podcastapp.data.db.dao.PodcastDao
-import com.frybynite.podcastapp.data.preferences.EpisodeListPreferences
-import com.frybynite.podcastapp.data.repository.PodcastRepository
-import com.frybynite.podcastapp.domain.model.Episode
-import com.frybynite.podcastapp.playback.PlaybackController
+import com.frybynite.podlore.data.db.dao.PodcastDao
+import com.frybynite.podlore.data.preferences.EpisodeListPreferences
+import com.frybynite.podlore.data.repository.PodcastRepository
+import com.frybynite.podlore.domain.model.Episode
+import com.frybynite.podlore.playback.PlaybackController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -549,7 +549,7 @@ Expected: BUILD SUCCESSFUL, zero errors.
 - [ ] **Step 3: Run snapshot tests**
 
 ```bash
-./gradlew :app:verifyPaparazziDebug --tests "com.frybynite.podcastapp.ui.episodes.EpisodeRowSnapshotTest"
+./gradlew :app:verifyPaparazziDebug --tests "com.frybynite.podlore.ui.episodes.EpisodeRowSnapshotTest"
 ```
 
 Expected: BUILD SUCCESSFUL — snapshots match (EpisodeListViewModel changes don't affect rendering).
@@ -557,7 +557,7 @@ Expected: BUILD SUCCESSFUL — snapshots match (EpisodeListViewModel changes don
 - [ ] **Step 4: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/episodes/EpisodeListViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/episodes/EpisodeListViewModel.kt
 git commit -m "feat: migrate EpisodeListViewModel to use PlaybackController"
 ```
 

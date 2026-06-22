@@ -16,7 +16,7 @@
 |--------|------|---------|
 | Create | `app/src/main/res/xml/automotive_app_desc.xml` | Declares app as media app to Android Auto |
 | Modify | `app/src/main/AndroidManifest.xml` | Add Auto meta-data + AAOS `uses-feature` |
-| Modify | `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt` | Artwork on media items, content-style hints, recent root handling |
+| Modify | `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt` | Artwork on media items, content-style hints, recent root handling |
 
 ---
 
@@ -85,7 +85,7 @@ git commit -m "feat: declare Android Auto and AAOS media support in manifest"
 Android Auto displays podcast cover art and uses content-style hints to render lists vs. grids correctly. `Podcast.imageUrl` exists; episodes inherit their podcast's image.
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt`
 
 - [ ] **Step 1: Update `Podcast.toMediaItem()` to include artwork**
 
@@ -164,7 +164,7 @@ Expected: BUILD SUCCESSFUL, no unresolved references.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt
+git add app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt
 git commit -m "feat: add podcast artwork and content-style hints to Auto media items"
 ```
 
@@ -175,7 +175,7 @@ git commit -m "feat: add podcast artwork and content-style hints to Auto media i
 Android Auto requests the browse root with `LibraryParams.isRecent = true` to populate the "recently played" shelf on the home screen. Without this, the home screen shelf is empty.
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt`
 
 - [ ] **Step 1: Add a RECENT_ROOT constant**
 
@@ -261,7 +261,7 @@ Expected: BUILD SUCCESSFUL.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt
+git add app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt
 git commit -m "feat: return recent episodes for Android Auto home screen shelf"
 ```
 

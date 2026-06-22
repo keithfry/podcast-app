@@ -137,7 +137,7 @@ Declared in `AndroidManifest.xml`:
 ```xml
 <meta-data
     android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-    android:value="com.frybynite.podcastapp.cast.CastOptionsProvider" />
+    android:value="com.frybynite.podlore.cast.CastOptionsProvider" />
 ```
 
 ---

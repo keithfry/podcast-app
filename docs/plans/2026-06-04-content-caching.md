@@ -16,29 +16,29 @@
 
 ## File Structure
 
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/storage/CacheStorage.kt` — path math + slug/hash helpers.
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/entities/DeepDiveEntity.kt` — deep-dive cache row.
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/dao/DeepDiveDao.kt` — lookup/upsert.
-- Create: `app/src/test/kotlin/com/frybynite/podcastapp/data/storage/CacheStorageTest.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt` — add entity, bump version, migration.
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt` — provide `DeepDiveDao`, add migration, provide podcasts dir `File`.
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/download/DownloadWorker.kt` — write into hierarchy.
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestrator.kt` — cache check + persist + metadata.json caching.
-- Modify: `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestratorTest.kt` — new deps + cache-hit test.
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt` — pass chapter title, stop deleting cached files.
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/storage/CacheStorage.kt` — path math + slug/hash helpers.
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/db/entities/DeepDiveEntity.kt` — deep-dive cache row.
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/db/dao/DeepDiveDao.kt` — lookup/upsert.
+- Create: `app/src/test/kotlin/com/frybynite/podlore/data/storage/CacheStorageTest.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/db/PodcastDatabase.kt` — add entity, bump version, migration.
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt` — provide `DeepDiveDao`, add migration, provide podcasts dir `File`.
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/download/DownloadWorker.kt` — write into hierarchy.
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestrator.kt` — cache check + persist + metadata.json caching.
+- Modify: `app/src/test/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestratorTest.kt` — new deps + cache-hit test.
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt` — pass chapter title, stop deleting cached files.
 
 ---
 
 ### Task 1: CacheStorage path helper
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/storage/CacheStorage.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/data/storage/CacheStorageTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/storage/CacheStorage.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/data/storage/CacheStorageTest.kt`
 
 - [ ] **Step 1: Write the failing test**
 
 ```kotlin
-package com.frybynite.podcastapp.data.storage
+package com.frybynite.podlore.data.storage
 
 import org.junit.Rule
 import org.junit.Test
@@ -107,13 +107,13 @@ class CacheStorageTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.storage.CacheStorageTest"`
+Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.storage.CacheStorageTest"`
 Expected: FAIL — `CacheStorage` unresolved.
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```kotlin
-package com.frybynite.podcastapp.data.storage
+package com.frybynite.podlore.data.storage
 
 import java.io.File
 import java.security.MessageDigest
@@ -166,12 +166,12 @@ class CacheStorage @Inject constructor(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.data.storage.CacheStorageTest"`
+Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.data.storage.CacheStorageTest"`
 Expected: PASS (all 9).
 
 - [ ] **Step 5: Provide the podcasts dir via Hilt**
 
-Modify `app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt` — add inside the `object DatabaseModule`:
+Modify `app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt` — add inside the `object DatabaseModule`:
 
 ```kotlin
     @Provides
@@ -189,9 +189,9 @@ Expected: BUILD SUCCESSFUL.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/storage/CacheStorage.kt \
-        app/src/test/kotlin/com/frybynite/podcastapp/data/storage/CacheStorageTest.kt \
-        app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/storage/CacheStorage.kt \
+        app/src/test/kotlin/com/frybynite/podlore/data/storage/CacheStorageTest.kt \
+        app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt
 git commit -m "feat: CacheStorage path helper for hierarchical content cache"
 ```
 
@@ -200,15 +200,15 @@ git commit -m "feat: CacheStorage path helper for hierarchical content cache"
 ### Task 2: DeepDive Room table
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/entities/DeepDiveEntity.kt`
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/dao/DeepDiveDao.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt`
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/db/entities/DeepDiveEntity.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/data/db/dao/DeepDiveDao.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/db/PodcastDatabase.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt`
 
 - [ ] **Step 1: Create the entity**
 
 ```kotlin
-package com.frybynite.podcastapp.data.db.entities
+package com.frybynite.podlore.data.db.entities
 
 import androidx.room.Entity
 
@@ -225,13 +225,13 @@ data class DeepDiveEntity(
 - [ ] **Step 2: Create the DAO**
 
 ```kotlin
-package com.frybynite.podcastapp.data.db.dao
+package com.frybynite.podlore.data.db.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.frybynite.podcastapp.data.db.entities.DeepDiveEntity
+import com.frybynite.podlore.data.db.entities.DeepDiveEntity
 
 @Dao
 interface DeepDiveDao {
@@ -264,7 +264,7 @@ abstract class PodcastDatabase : RoomDatabase() {
 }
 ```
 
-Add the import: `import com.frybynite.podcastapp.data.db.entities.DeepDiveEntity` and `import com.frybynite.podcastapp.data.db.dao.DeepDiveDao`.
+Add the import: `import com.frybynite.podlore.data.db.entities.DeepDiveEntity` and `import com.frybynite.podlore.data.db.dao.DeepDiveDao`.
 
 - [ ] **Step 4: Wire migration + DAO provider in DatabaseModule**
 
@@ -308,10 +308,10 @@ Expected: BUILD SUCCESSFUL (Room generates the new DAO impl; the `CREATE TABLE` 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/db/entities/DeepDiveEntity.kt \
-        app/src/main/kotlin/com/frybynite/podcastapp/data/db/dao/DeepDiveDao.kt \
-        app/src/main/kotlin/com/frybynite/podcastapp/data/db/PodcastDatabase.kt \
-        app/src/main/kotlin/com/frybynite/podcastapp/data/di/DatabaseModule.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/db/entities/DeepDiveEntity.kt \
+        app/src/main/kotlin/com/frybynite/podlore/data/db/dao/DeepDiveDao.kt \
+        app/src/main/kotlin/com/frybynite/podlore/data/db/PodcastDatabase.kt \
+        app/src/main/kotlin/com/frybynite/podlore/data/di/DatabaseModule.kt
 git commit -m "feat: deep_dives Room table (v2 migration) for cached More-about-this"
 ```
 
@@ -320,21 +320,21 @@ git commit -m "feat: deep_dives Room table (v2 migration) for cached More-about-
 ### Task 3: DownloadWorker writes into the hierarchy
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/data/download/DownloadWorker.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/data/download/DownloadWorker.kt`
 
 - [ ] **Step 1: Inject podcastDao + CacheStorage and use them**
 
 Replace the constructor and `downloadToFile` so the file lands in the episode dir. Full new file:
 
 ```kotlin
-package com.frybynite.podcastapp.data.download
+package com.frybynite.podlore.data.download
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
-import com.frybynite.podcastapp.data.db.dao.EpisodeDao
-import com.frybynite.podcastapp.data.db.dao.PodcastDao
-import com.frybynite.podcastapp.data.storage.CacheStorage
+import com.frybynite.podlore.data.db.dao.EpisodeDao
+import com.frybynite.podlore.data.db.dao.PodcastDao
+import com.frybynite.podlore.data.storage.CacheStorage
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -407,7 +407,7 @@ Expected: BUILD SUCCESSFUL (Hilt injects `PodcastDao` + `CacheStorage` into the 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/data/download/DownloadWorker.kt
+git add app/src/main/kotlin/com/frybynite/podlore/data/download/DownloadWorker.kt
 git commit -m "feat: downloads write into per-episode cache directory"
 ```
 
@@ -416,21 +416,21 @@ git commit -m "feat: downloads write into per-episode cache directory"
 ### Task 4: DeepDiveOrchestrator caches metadata + reuses deep dives
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestrator.kt`
-- Test: `app/src/test/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestratorTest.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestrator.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestratorTest.kt`
 
 - [ ] **Step 1: Update the existing test for the new constructor + add a cache-hit test**
 
 Replace the test file with:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
-import com.frybynite.podcastapp.data.db.dao.DeepDiveDao
-import com.frybynite.podcastapp.data.db.dao.EpisodeDao
-import com.frybynite.podcastapp.data.db.dao.PodcastDao
-import com.frybynite.podcastapp.data.db.entities.DeepDiveEntity
-import com.frybynite.podcastapp.data.storage.CacheStorage
+import com.frybynite.podlore.data.db.dao.DeepDiveDao
+import com.frybynite.podlore.data.db.dao.EpisodeDao
+import com.frybynite.podlore.data.db.dao.PodcastDao
+import com.frybynite.podlore.data.db.entities.DeepDiveEntity
+import com.frybynite.podlore.data.storage.CacheStorage
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -486,7 +486,7 @@ class DeepDiveOrchestratorTest {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.deepdive.DeepDiveOrchestratorTest"`
+Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.deepdive.DeepDiveOrchestratorTest"`
 Expected: FAIL — constructor arity mismatch / `process` signature.
 
 - [ ] **Step 3: Rewrite the orchestrator**
@@ -494,15 +494,15 @@ Expected: FAIL — constructor arity mismatch / `process` signature.
 Full new file:
 
 ```kotlin
-package com.frybynite.podcastapp.deepdive
+package com.frybynite.podlore.deepdive
 
 import android.util.Log
-import com.frybynite.podcastapp.data.db.dao.DeepDiveDao
-import com.frybynite.podcastapp.data.db.dao.EpisodeDao
-import com.frybynite.podcastapp.data.db.dao.PodcastDao
-import com.frybynite.podcastapp.data.db.entities.DeepDiveEntity
-import com.frybynite.podcastapp.data.storage.CacheStorage
-import com.frybynite.podcastapp.ui.player.DeepDiveStep
+import com.frybynite.podlore.data.db.dao.DeepDiveDao
+import com.frybynite.podlore.data.db.dao.EpisodeDao
+import com.frybynite.podlore.data.db.dao.PodcastDao
+import com.frybynite.podlore.data.db.entities.DeepDiveEntity
+import com.frybynite.podlore.data.storage.CacheStorage
+import com.frybynite.podlore.ui.player.DeepDiveStep
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -604,14 +604,14 @@ class DeepDiveOrchestrator @Inject constructor(
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.deepdive.DeepDiveOrchestratorTest"`
+Run: `./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.deepdive.DeepDiveOrchestratorTest"`
 Expected: PASS (both tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestrator.kt \
-        app/src/test/kotlin/com/frybynite/podcastapp/deepdive/DeepDiveOrchestratorTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestrator.kt \
+        app/src/test/kotlin/com/frybynite/podlore/deepdive/DeepDiveOrchestratorTest.kt
 git commit -m "feat: reuse cached deep dives + cache episode metadata.json"
 ```
 
@@ -620,7 +620,7 @@ git commit -m "feat: reuse cached deep dives + cache episode metadata.json"
 ### Task 5: PlayerViewModel passes chapter title + stops deleting cached files
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
 
 - [ ] **Step 1: Pass the chapter title into process()**
 
@@ -665,7 +665,7 @@ Expected: PASS (no regressions; existing `PlayerViewModelPositionTest`, `Podcast
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerViewModel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt
 git commit -m "feat: persist cached deep dives; pass chapter title for cache naming"
 ```
 

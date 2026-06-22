@@ -64,7 +64,7 @@ Add two new StateFlows:
 
 ## New File
 
-`app/src/main/kotlin/com/podcastapp/ui/player/ChapterProgressBar.kt`
+`app/src/main/kotlin/com/frybynite/podlore/ui/player/ChapterProgressBar.kt`
 
 ## PlayerScreen Changes
 

@@ -16,8 +16,8 @@
 |------|--------|
 | `app/src/main/res/xml/automotive_app_desc.xml` | **Create** — Auto app descriptor |
 | `app/src/main/AndroidManifest.xml` | **Modify** — add two `<meta-data>` entries |
-| `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt` | **Modify** — artwork, search helper, `onAddMediaItems` |
-| `app/src/test/kotlin/com/frybynite/podcastapp/service/PlaybackServiceSearchTest.kt` | **Create** — unit tests for `findEpisodeForQuery` |
+| `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt` | **Modify** — artwork, search helper, `onAddMediaItems` |
+| `app/src/test/kotlin/com/frybynite/podlore/service/PlaybackServiceSearchTest.kt` | **Create** — unit tests for `findEpisodeForQuery` |
 | `docs/BACKLOG.md` | **Modify** — add `onSearch` follow-up |
 
 ---
@@ -110,7 +110,7 @@ git commit -m "feat: declare Android Auto media source in manifest"
 ## Task 3: Artwork on MediaItems
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt`
 
 Auto shows artwork prominently. Source: `Podcast.imageUrl` (already in `PodcastEntity`). Episodes inherit their podcast's image.
 
@@ -234,7 +234,7 @@ Expected: `BUILD SUCCESSFUL`
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt
+git add app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt
 git commit -m "feat: add podcast artwork to Auto MediaItems"
 ```
 
@@ -243,8 +243,8 @@ git commit -m "feat: add podcast artwork to Auto MediaItems"
 ## Task 4: Google Assistant Play-From-Search
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt`
-- Create: `app/src/test/kotlin/com/frybynite/podcastapp/service/PlaybackServiceSearchTest.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt`
+- Create: `app/src/test/kotlin/com/frybynite/podlore/service/PlaybackServiceSearchTest.kt`
 
 When the user says "Hey Google, play [query] on Podcast App", Auto delivers a `MediaItem` with `requestMetadata.searchQuery` set and no URI. `onAddMediaItems` needs to detect this case and resolve it to a real playable item.
 
@@ -252,14 +252,14 @@ The matching logic is extracted to a top-level `internal` function `findEpisodeF
 
 - [ ] **Step 1: Write the failing test**
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/service/PlaybackServiceSearchTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/service/PlaybackServiceSearchTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.service
+package com.frybynite.podlore.service
 
-import com.frybynite.podcastapp.domain.model.DownloadStatus
-import com.frybynite.podcastapp.domain.model.Episode
-import com.frybynite.podcastapp.domain.model.Podcast
+import com.frybynite.podlore.domain.model.DownloadStatus
+import com.frybynite.podlore.domain.model.Episode
+import com.frybynite.podlore.domain.model.Podcast
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -353,7 +353,7 @@ class PlaybackServiceSearchTest {
 - [ ] **Step 2: Run test to confirm it fails**
 
 ```bash
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.service.PlaybackServiceSearchTest" --quiet
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.service.PlaybackServiceSearchTest" --quiet
 ```
 
 Expected: FAILED — `findEpisodeForQuery` not defined yet.
@@ -365,9 +365,9 @@ Add this function at the bottom of `PlaybackService.kt`, after the existing exte
 ```kotlin
 internal fun findEpisodeForQuery(
     query: String,
-    podcasts: List<com.frybynite.podcastapp.domain.model.Podcast>,
-    episodesByFeed: Map<String, List<com.frybynite.podcastapp.domain.model.Episode>>
-): Pair<com.frybynite.podcastapp.domain.model.Episode, String?>? {
+    podcasts: List<com.frybynite.podlore.domain.model.Podcast>,
+    episodesByFeed: Map<String, List<com.frybynite.podlore.domain.model.Episode>>
+): Pair<com.frybynite.podlore.domain.model.Episode, String?>? {
     val q = query.lowercase()
     for (podcast in podcasts) {
         val episodes = episodesByFeed[podcast.feedUrl] ?: emptyList()
@@ -382,7 +382,7 @@ internal fun findEpisodeForQuery(
 - [ ] **Step 4: Run tests to confirm they pass**
 
 ```bash
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.service.PlaybackServiceSearchTest" --quiet
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.service.PlaybackServiceSearchTest" --quiet
 ```
 
 Expected: `BUILD SUCCESSFUL` — 7 tests pass.
@@ -456,8 +456,8 @@ Expected: `BUILD SUCCESSFUL` — all tests pass.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/service/PlaybackService.kt \
-        app/src/test/kotlin/com/frybynite/podcastapp/service/PlaybackServiceSearchTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/service/PlaybackService.kt \
+        app/src/test/kotlin/com/frybynite/podlore/service/PlaybackServiceSearchTest.kt
 git commit -m "feat: resolve Google Assistant play-from-search in PlaybackService"
 ```
 

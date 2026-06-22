@@ -14,27 +14,27 @@
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtils.kt` | Create | Pure function: filter transcript segments by chapter time range |
-| `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt` | Modify | Remove `TranscriptPanel` block; add inline sentence rows + loading row + auto-scroll |
-| `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt` | Delete | No longer needed |
-| `app/src/test/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtilsTest.kt` | Create | Unit tests for `segmentsForChapter` |
+| `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptUtils.kt` | Create | Pure function: filter transcript segments by chapter time range |
+| `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt` | Modify | Remove `TranscriptPanel` block; add inline sentence rows + loading row + auto-scroll |
+| `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt` | Delete | No longer needed |
+| `app/src/test/kotlin/com/frybynite/podlore/ui/player/TranscriptUtilsTest.kt` | Create | Unit tests for `segmentsForChapter` |
 
 ---
 
 ## Task 1: `TranscriptUtils.kt` — segment-to-chapter mapping
 
 **Files:**
-- Create: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtils.kt`
-- Create: `app/src/test/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtilsTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptUtils.kt`
+- Create: `app/src/test/kotlin/com/frybynite/podlore/ui/player/TranscriptUtilsTest.kt`
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `app/src/test/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtilsTest.kt`:
+Create `app/src/test/kotlin/com/frybynite/podlore/ui/player/TranscriptUtilsTest.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
-import com.frybynite.podcastapp.domain.model.TranscriptSegment
+import com.frybynite.podlore.domain.model.TranscriptSegment
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -86,19 +86,19 @@ class TranscriptUtilsTest {
 - [ ] **Step 2: Run tests to confirm they fail**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.ui.player.TranscriptUtilsTest" 2>&1 | tail -10
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.ui.player.TranscriptUtilsTest" 2>&1 | tail -10
 ```
 
 Expected: compilation error — `segmentsForChapter` not found.
 
 - [ ] **Step 3: Create `TranscriptUtils.kt`**
 
-Create `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtils.kt`:
+Create `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptUtils.kt`:
 
 ```kotlin
-package com.frybynite.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
-import com.frybynite.podcastapp.domain.model.TranscriptSegment
+import com.frybynite.podlore.domain.model.TranscriptSegment
 
 fun segmentsForChapter(
     segments: List<TranscriptSegment>,
@@ -111,7 +111,7 @@ fun segmentsForChapter(
 - [ ] **Step 4: Run tests to confirm they pass**
 
 ```
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.ui.player.TranscriptUtilsTest" 2>&1 | tail -10
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.ui.player.TranscriptUtilsTest" 2>&1 | tail -10
 ```
 
 Expected: `BUILD SUCCESSFUL`, 6 tests pass.
@@ -119,8 +119,8 @@ Expected: `BUILD SUCCESSFUL`, 6 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtils.kt
-git add app/src/test/kotlin/com/frybynite/podcastapp/ui/player/TranscriptUtilsTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptUtils.kt
+git add app/src/test/kotlin/com/frybynite/podlore/ui/player/TranscriptUtilsTest.kt
 git commit -m "feat: add segmentsForChapter utility for inline transcript chapter grouping"
 ```
 
@@ -129,8 +129,8 @@ git commit -m "feat: add segmentsForChapter utility for inline transcript chapte
 ## Task 2: Inline sentences in `PlayerScreen` + delete `TranscriptPanel`
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt`
-- Delete: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`
+- Delete: `app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt`
 
 No unit tests for this task (pure Compose UI). Verified by successful build.
 
@@ -230,7 +230,7 @@ Inside the `itemsIndexed(chapters) { idx, chapter ->` lambda, after the `Horizon
 - [ ] **Step 5: Delete `TranscriptPanel.kt`**
 
 ```bash
-rm app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt
+rm app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt
 ```
 
 - [ ] **Step 6: Remove unused `TranscriptPanel` import from `PlayerScreen.kt`**
@@ -256,8 +256,8 @@ Expected: same pass/fail count as before this task (18 pre-existing failures, no
 - [ ] **Step 9: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt
-git rm app/src/main/kotlin/com/frybynite/podcastapp/ui/player/TranscriptPanel.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
+git rm app/src/main/kotlin/com/frybynite/podlore/ui/player/TranscriptPanel.kt
 git commit -m "feat: render transcript sentences inline in chapter list, remove TranscriptPanel bottom sheet"
 ```
 

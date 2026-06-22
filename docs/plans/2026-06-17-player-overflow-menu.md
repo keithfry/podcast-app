@@ -19,7 +19,7 @@
 ### Task 1: Replace TopAppBar actions with conditional overflow
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt:202-231`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt:202-231`
 
 **Interfaces:**
 - Consumes: `hasTranscript: Boolean`, `sleepTimerSeconds: Int?`, `showSleepSheet: Boolean` (already in scope), `vm.toggleTranscript()`, `formatSleepTimer(Int): String`
@@ -105,7 +105,7 @@ Expected: `BUILD SUCCESSFUL` with no errors.
 - [ ] **Step 3: Run existing sleep timer format tests**
 
 ```bash
-./gradlew :app:testDebugUnitTest --tests "com.frybynite.podcastapp.ui.player.SleepTimerFormatTest"
+./gradlew :app:testDebugUnitTest --tests "com.frybynite.podlore.ui.player.SleepTimerFormatTest"
 ```
 
 Expected: `BUILD SUCCESSFUL`, all 8 tests pass.
@@ -128,7 +128,7 @@ Open an episode with no transcript. Verify:
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/src/main/kotlin/com/frybynite/podcastapp/ui/player/PlayerScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
 git commit -m "feat: move sleep and transcript into overflow menu when transcript available"
 ```
 

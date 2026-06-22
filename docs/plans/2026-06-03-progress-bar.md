@@ -13,19 +13,19 @@
 ## Task 1: Expose position + duration from PlayerViewModel
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/podcastapp/ui/player/PlayerViewModel.kt`
-- Test: `app/src/test/kotlin/com/podcastapp/ui/player/PlayerViewModelPositionTest.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt`
+- Test: `app/src/test/kotlin/com/frybynite/podlore/ui/player/PlayerViewModelPositionTest.kt`
 
 **Step 1: Write failing test**
 
-`app/src/test/kotlin/com/podcastapp/ui/player/PlayerViewModelPositionTest.kt`:
+`app/src/test/kotlin/com/frybynite/podlore/ui/player/PlayerViewModelPositionTest.kt`:
 ```kotlin
-package com.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
-import com.podcastapp.data.db.dao.EpisodeDao
-import com.podcastapp.data.db.dao.PodcastDao
-import com.podcastapp.data.preferences.SpeedPreferences
-import com.podcastapp.data.repository.ChapterRepository
+import com.frybynite.podlore.data.db.dao.EpisodeDao
+import com.frybynite.podlore.data.db.dao.PodcastDao
+import com.frybynite.podlore.data.preferences.SpeedPreferences
+import com.frybynite.podlore.data.repository.ChapterRepository
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,7 +70,7 @@ class PlayerViewModelPositionTest {
 
 **Step 2: Run — expect FAIL**
 ```bash
-./gradlew :app:test --tests "com.podcastapp.ui.player.PlayerViewModelPositionTest"
+./gradlew :app:test --tests "com.frybynite.podlore.ui.player.PlayerViewModelPositionTest"
 ```
 Expected: `Unresolved reference: currentPositionMs` / `durationMs`
 
@@ -99,13 +99,13 @@ fun updateCurrentChapterIndex() {
 
 **Step 4: Run — expect PASS**
 ```bash
-./gradlew :app:test --tests "com.podcastapp.ui.player.PlayerViewModelPositionTest"
+./gradlew :app:test --tests "com.frybynite.podlore.ui.player.PlayerViewModelPositionTest"
 ```
 
 **Step 5: Commit**
 ```bash
-git add app/src/main/kotlin/com/podcastapp/ui/player/PlayerViewModel.kt \
-        app/src/test/kotlin/com/podcastapp/ui/player/PlayerViewModelPositionTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerViewModel.kt \
+        app/src/test/kotlin/com/frybynite/podlore/ui/player/PlayerViewModelPositionTest.kt
 git commit -m "feat: expose currentPositionMs and durationMs from PlayerViewModel"
 ```
 
@@ -114,16 +114,16 @@ git commit -m "feat: expose currentPositionMs and durationMs from PlayerViewMode
 ## Task 2: snapToChapter utility (pure function, TDD)
 
 **Files:**
-- Create: `app/src/main/kotlin/com/podcastapp/ui/player/ChapterProgressBar.kt` (stub + function)
-- Test: `app/src/test/kotlin/com/podcastapp/ui/player/SnapToChapterTest.kt`
+- Create: `app/src/main/kotlin/com/frybynite/podlore/ui/player/ChapterProgressBar.kt` (stub + function)
+- Test: `app/src/test/kotlin/com/frybynite/podlore/ui/player/SnapToChapterTest.kt`
 
 **Step 1: Write failing test**
 
-`app/src/test/kotlin/com/podcastapp/ui/player/SnapToChapterTest.kt`:
+`app/src/test/kotlin/com/frybynite/podlore/ui/player/SnapToChapterTest.kt`:
 ```kotlin
-package com.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
-import com.podcastapp.domain.model.Chapter
+import com.frybynite.podlore.domain.model.Chapter
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -164,17 +164,17 @@ class SnapToChapterTest {
 
 **Step 2: Run — expect FAIL**
 ```bash
-./gradlew :app:test --tests "com.podcastapp.ui.player.SnapToChapterTest"
+./gradlew :app:test --tests "com.frybynite.podlore.ui.player.SnapToChapterTest"
 ```
 Expected: `Unresolved reference: snapToChapter`
 
 **Step 3: Create ChapterProgressBar.kt with snapToChapter**
 
-`app/src/main/kotlin/com/podcastapp/ui/player/ChapterProgressBar.kt`:
+`app/src/main/kotlin/com/frybynite/podlore/ui/player/ChapterProgressBar.kt`:
 ```kotlin
-package com.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
-import com.podcastapp.domain.model.Chapter
+import com.frybynite.podlore.domain.model.Chapter
 import kotlin.math.abs
 
 internal fun snapToChapter(
@@ -189,13 +189,13 @@ internal fun snapToChapter(
 
 **Step 4: Run — expect PASS**
 ```bash
-./gradlew :app:test --tests "com.podcastapp.ui.player.SnapToChapterTest"
+./gradlew :app:test --tests "com.frybynite.podlore.ui.player.SnapToChapterTest"
 ```
 
 **Step 5: Commit**
 ```bash
-git add app/src/main/kotlin/com/podcastapp/ui/player/ChapterProgressBar.kt \
-        app/src/test/kotlin/com/podcastapp/ui/player/SnapToChapterTest.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/ChapterProgressBar.kt \
+        app/src/test/kotlin/com/frybynite/podlore/ui/player/SnapToChapterTest.kt
 git commit -m "feat: snapToChapter utility with TDD"
 ```
 
@@ -204,12 +204,12 @@ git commit -m "feat: snapToChapter utility with TDD"
 ## Task 3: ChapterProgressBar composable
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/podcastapp/ui/player/ChapterProgressBar.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/ChapterProgressBar.kt`
 
 **Step 1: Replace stub with full composable**
 
 ```kotlin
-package com.podcastapp.ui.player
+package com.frybynite.podlore.ui.player
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -225,7 +225,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import com.podcastapp.domain.model.Chapter
+import com.frybynite.podlore.domain.model.Chapter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -376,7 +376,7 @@ Expected: `BUILD SUCCESSFUL`
 
 **Step 3: Commit**
 ```bash
-git add app/src/main/kotlin/com/podcastapp/ui/player/ChapterProgressBar.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/ChapterProgressBar.kt
 git commit -m "feat: ChapterProgressBar composable with free-drag and long-press snap mode"
 ```
 
@@ -385,7 +385,7 @@ git commit -m "feat: ChapterProgressBar composable with free-drag and long-press
 ## Task 4: Wire progress bar into PlayerScreen
 
 **Files:**
-- Modify: `app/src/main/kotlin/com/podcastapp/ui/player/PlayerScreen.kt`
+- Modify: `app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt`
 
 **Step 1: Collect new state**
 
@@ -445,7 +445,7 @@ Expected: all pass.
 
 **Step 5: Commit**
 ```bash
-git add app/src/main/kotlin/com/podcastapp/ui/player/PlayerScreen.kt
+git add app/src/main/kotlin/com/frybynite/podlore/ui/player/PlayerScreen.kt
 git commit -m "feat: wire ChapterProgressBar into PlayerScreen with time labels"
 ```
 

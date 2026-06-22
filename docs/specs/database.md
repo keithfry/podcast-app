@@ -2,7 +2,7 @@
 
 Room database (`PodcastDatabase`), SQLite via Android Room.  
 Current version: **7**  
-Package: `com.frybynite.podcastapp.data.db`
+Package: `com.frybynite.podlore.data.db`
 
 ---
 

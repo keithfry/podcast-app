@@ -32,6 +32,6 @@ echo "Installing..."
 adb install -r "$APK"
 
 echo "Launching..."
-adb shell am start -n "com.frybynite.podcastapp/.MainActivity"
+adb shell am start -n "com.frybynite.podlore/.MainActivity"
 
 echo "Done."
