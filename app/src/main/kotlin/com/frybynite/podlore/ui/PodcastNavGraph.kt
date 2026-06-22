@@ -10,13 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -38,10 +36,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.frybynite.podlore.ui.discover.DiscoverScreen
 import com.frybynite.podlore.ui.discover.DiscoverViewModel
-import com.frybynite.podlore.ui.discover.PodcastDetailScreen
-import com.frybynite.podlore.ui.episodes.EpisodeListScreen
 import com.frybynite.podlore.ui.player.MiniPlayerBar
 import com.frybynite.podlore.ui.player.PlayerScreen
+import com.frybynite.podlore.ui.podcast.PodcastScreen
 import com.frybynite.podlore.ui.podcasts.PodcastListScreen
 import java.net.URLEncoder
 
@@ -106,19 +103,20 @@ fun PodcastNavGraph(
                     AppTab.Podcasts -> NavHost(navController = libraryNav, startDestination = "podcasts") {
                         composable("podcasts") {
                             PodcastListScreen(onPodcastClick = { feedUrl ->
-                                libraryNav.navigate("episodes/${URLEncoder.encode(feedUrl, "UTF-8")}")
+                                libraryNav.navigate("podcast/${URLEncoder.encode(feedUrl, "UTF-8")}")
                             })
                         }
                         composable(
-                            "episodes/{feedUrl}",
+                            "podcast/{feedUrl}",
                             arguments = listOf(navArgument("feedUrl") { type = NavType.StringType }),
                         ) {
-                            EpisodeListScreen(
+                            PodcastScreen(
                                 onBack = { libraryNav.popBackStack() },
                                 onEpisodeClick = { audioUrl ->
                                     playerAudioUrl = audioUrl
                                     appState.openPlayer()
                                 },
+                                onUnsubscribed = { libraryNav.popBackStack() },
                             )
                         }
                     }
@@ -126,23 +124,37 @@ fun PodcastNavGraph(
                         val discoverNav = rememberNavController()
                         NavHost(navController = discoverNav, startDestination = "search") {
                             composable("search") {
-                                val vm: DiscoverViewModel = hiltViewModel()
+                                val discoverVm: DiscoverViewModel = hiltViewModel()
                                 DiscoverScreen(
-                                    vm = vm,
+                                    vm = discoverVm,
                                     onResultClick = { result ->
-                                        vm.selectResult(result)
-                                        discoverNav.navigate("detail")
+                                        val enc = { s: String -> URLEncoder.encode(s, "UTF-8") }
+                                        discoverNav.navigate(
+                                            "podcast/${enc(result.feedUrl)}" +
+                                                "?title=${enc(result.title)}" +
+                                                "&author=${enc(result.author)}" +
+                                                "&artworkUrl=${enc(result.artworkUrl ?: "")}" +
+                                                "&description=${enc(result.description ?: "")}"
+                                        )
                                     },
                                 )
                             }
-                            composable("detail") {
-                                val vm: DiscoverViewModel = hiltViewModel(
-                                    remember(discoverNav) { discoverNav.getBackStackEntry("search") }
-                                )
-                                PodcastDetailScreen(
-                                    vm = vm,
+                            composable(
+                                "podcast/{feedUrl}?title={title}&author={author}&artworkUrl={artworkUrl}&description={description}",
+                                arguments = listOf(
+                                    navArgument("feedUrl") { type = NavType.StringType },
+                                    navArgument("title") { type = NavType.StringType; defaultValue = "" },
+                                    navArgument("author") { type = NavType.StringType; defaultValue = "" },
+                                    navArgument("artworkUrl") { type = NavType.StringType; defaultValue = "" },
+                                    navArgument("description") { type = NavType.StringType; defaultValue = "" },
+                                ),
+                            ) {
+                                PodcastScreen(
                                     onBack = { discoverNav.popBackStack() },
-                                    onSubscribeSuccess = { discoverNav.popBackStack() },
+                                    onEpisodeClick = { audioUrl ->
+                                        playerAudioUrl = audioUrl
+                                        appState.openPlayer()
+                                    },
                                 )
                             }
                         }

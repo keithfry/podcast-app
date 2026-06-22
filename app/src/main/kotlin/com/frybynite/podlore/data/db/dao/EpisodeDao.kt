@@ -12,6 +12,12 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE audioUrl = :audioUrl")
     suspend fun getByAudioUrl(audioUrl: String): EpisodeEntity?
 
+    @Query("SELECT * FROM episodes WHERE podcastFeedUrl = :feedUrl")
+    suspend fun getForPodcastOnce(feedUrl: String): List<EpisodeEntity>
+
+    @Query("DELETE FROM episodes WHERE podcastFeedUrl = :feedUrl")
+    suspend fun deleteForPodcast(feedUrl: String)
+
     @Query("SELECT * FROM episodes WHERE audioUrl = :audioUrl")
     fun getByAudioUrlFlow(audioUrl: String): Flow<EpisodeEntity?>
 

@@ -52,6 +52,20 @@ class PodcastRepository @Inject constructor(
         podcastDao.getByUrl(feedUrl)?.let { podcastDao.delete(it) }
     }
 
+    suspend fun removePodcastCompletely(feedUrl: String) {
+        val podcast = podcastDao.getByUrl(feedUrl) ?: return
+        val episodes = episodeDao.getForPodcastOnce(feedUrl)
+        for (ep in episodes) {
+            workManager.cancelUniqueWork("download_${ep.audioUrl}")
+            ep.downloadPath?.let { File(it).delete() }
+            ep.transcriptUrl?.let { transcriptRepository.deleteCache(it) }
+            deepDiveDao.deleteForEpisode(ep.audioUrl)
+        }
+        cacheStorage.podcastDir(feedUrl, podcast.title).deleteRecursively()
+        episodeDao.deleteForPodcast(feedUrl)
+        podcastDao.delete(podcast)
+    }
+
     fun downloadProgressFlow(): Flow<Map<String, Float>> =
         workManager.getWorkInfosByTagFlow(DownloadWorker.TAG).map { infos ->
             infos.filter { it.state == WorkInfo.State.RUNNING }
