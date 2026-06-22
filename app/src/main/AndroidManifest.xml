@@ -16,9 +16,9 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="Podcast App"
+        android:label="Podlore"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PodcastApp">
+        android:theme="@style/Theme.Podlore">
 
         <meta-data
             android:name="com.google.android.gms.car.application"
@@ -26,7 +26,7 @@
 
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-            android:value="com.frybynite.podcastapp.cast.CastOptionsProvider" />
+            android:value="com.frybynite.podlore.cast.CastOptionsProvider" />
 
         <!-- LiteRT-LM GPU: optional vendor libs, engine falls back to CPU if absent -->
         <uses-native-library android:name="libvndksupport.so" android:required="false"/>

@@ -14,11 +14,11 @@ val localProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.frybynite.podcastapp"
+    namespace = "com.frybynite.podlore"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.frybynite.podcastapp"
+        applicationId = "com.frybynite.podlore"
         minSdk = 29
         targetSdk = 34
         versionCode = 1

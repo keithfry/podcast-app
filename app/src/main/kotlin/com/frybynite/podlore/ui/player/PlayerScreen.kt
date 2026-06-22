@@ -1,0 +1,970 @@
+package com.frybynite.podlore.ui.player
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.core.content.ContextCompat
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.ThumbUp
+import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
+import com.frybynite.podlore.ui.common.AutoSizeText
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import androidx.hilt.navigation.compose.hiltViewModel
+import android.content.res.Configuration
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.mediarouter.app.MediaRouteButton
+import androidx.mediarouter.media.MediaControlIntent
+import androidx.mediarouter.media.MediaRouteSelector
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun PlayerScreen(
+    audioUrl: String,
+    onDismiss: () -> Unit,
+    vm: PlayerViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
+    val isAutomotive = context.packageManager.hasSystemFeature("android.hardware.type.automotive")
+    val chapters by vm.chapters.collectAsStateWithLifecycle()
+    val currentIdx by vm.currentChapterIndex.collectAsStateWithLifecycle()
+    val isPlaying by vm.isPlaying.collectAsStateWithLifecycle()
+    val playbackSpeed by vm.playbackSpeed.collectAsStateWithLifecycle()
+    val artworkUrl by vm.artworkUrl.collectAsStateWithLifecycle()
+    val podcastTitle by vm.podcastTitle.collectAsStateWithLifecycle()
+    val episodeTitle by vm.episodeTitle.collectAsStateWithLifecycle()
+    val sleepTimerSeconds by vm.sleepTimerSeconds.collectAsStateWithLifecycle()
+    val currentPositionMs by vm.currentPositionMs.collectAsStateWithLifecycle()
+    val durationMs by vm.durationMs.collectAsStateWithLifecycle()
+    val deepDiveState by vm.deepDiveState.collectAsStateWithLifecycle()
+    val deepDiveChapterIndex by vm.deepDiveChapterIndex.collectAsStateWithLifecycle()
+    val cachedDeepDiveUrls by vm.cachedDeepDiveUrls.collectAsStateWithLifecycle()
+    val modelDownloadState by vm.modelDownloadState.collectAsStateWithLifecycle()
+    val isCasting by vm.isCasting.collectAsStateWithLifecycle()
+    val hasTranscript by vm.hasTranscript.collectAsStateWithLifecycle()
+    val showTranscript by vm.showTranscript.collectAsStateWithLifecycle()
+    val transcriptSegments by vm.transcriptSegments.collectAsStateWithLifecycle()
+    val activeSegmentIndex by vm.activeSegmentIndex.collectAsStateWithLifecycle()
+    val transcriptLoading by vm.transcriptLoading.collectAsStateWithLifecycle()
+    val isLiked by vm.isLiked.collectAsStateWithLifecycle()
+    var showSleepSheet by remember { mutableStateOf(false) }
+    val currentChapter = chapters.getOrNull(currentIdx)
+    var showSpeedSheet by remember { mutableStateOf(false) }
+    var draggingPositionMs by remember { mutableStateOf<Long?>(null) }
+    var snapHoverIdx by remember { mutableStateOf<Int?>(null) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val hasNotificationPermission = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+        } else true
+    }
+    var notificationPermissionGranted by remember { mutableStateOf(hasNotificationPermission) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> notificationPermissionGranted = granted }
+
+    LaunchedEffect(audioUrl) {
+        vm.connect(audioUrl)
+    }
+
+    BackHandler { onDismiss() }
+
+    if (showSleepSheet) {
+        SleepTimerBottomSheet(
+            activeSeconds = sleepTimerSeconds,
+            onSelect = { minutes -> vm.setSleepTimer(minutes); showSleepSheet = false },
+            onDismiss = { showSleepSheet = false }
+        )
+    }
+
+    if (showSpeedSheet) {
+        SpeedBottomSheet(
+            currentSpeed = playbackSpeed,
+            onSpeedChange = { vm.setSpeed(it) },
+            onDismiss = { showSpeedSheet = false }
+        )
+    }
+
+    if (deepDiveState is DeepDiveState.ModelRequired) {
+        AlertDialog(
+            onDismissRequest = { vm.dismissDeepDiveError() },
+            title = { Text("Download AI Model") },
+            text = { Text("\"More about this\" requires a ~1.3 GB on-device AI model. Download over Wi-Fi?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.downloadModel()
+                    vm.dismissDeepDiveError()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionGranted) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }) { Text("Download") }
+            },
+            dismissButton = {
+                TextButton(onClick = { vm.dismissDeepDiveError() }) { Text("Cancel") }
+            }
+        )
+    }
+
+    LaunchedEffect(isPlaying) {
+        while (isPlaying) {
+            vm.updateCurrentChapterIndex()
+            delay(1_000L)
+        }
+    }
+
+    LaunchedEffect(modelDownloadState) {
+        if (modelDownloadState is com.frybynite.podlore.deepdive.ModelDownloadState.Complete
+            && !notificationPermissionGranted) {
+            snackbarHostState.showSnackbar("AI model ready — try \"More about this\" again")
+        }
+    }
+
+    val voiceLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val matches = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+        val best = matches?.firstOrNull() ?: return@rememberLauncherForActivityResult
+        when (VoiceCommandHandler.parse(best)) {
+            VoiceCommand.NEXT_CHAPTER -> vm.nextChapter()
+            VoiceCommand.PREV_CHAPTER -> vm.prevChapter()
+            VoiceCommand.SEEK_FORWARD -> vm.seekForward30s()
+            VoiceCommand.SEEK_BACK -> vm.seekBack10s()
+            VoiceCommand.OPEN_LINK -> currentChapter?.url?.let {
+                CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it))
+            }
+            VoiceCommand.SHARE_LINK -> if (!isAutomotive) currentChapter?.url?.let { url ->
+                context.startActivity(Intent.createChooser(
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, url)
+                    }, "Share link"
+                ))
+            }
+            VoiceCommand.MORE_ABOUT_THIS -> vm.moreAboutThis()
+            null -> {}
+        }
+    }
+
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val chapterListState = rememberLazyListState()
+
+    LaunchedEffect(currentIdx, showTranscript) {
+        if (chapters.isNotEmpty() && snapHoverIdx == null && !showTranscript)
+            chapterListState.animateScrollToItem(currentIdx)
+    }
+    LaunchedEffect(snapHoverIdx) {
+        val idx = snapHoverIdx ?: return@LaunchedEffect
+        if (chapters.isNotEmpty()) chapterListState.animateScrollToItem(idx)
+    }
+    LaunchedEffect(activeSegmentIndex, showTranscript) {
+        if (!showTranscript || activeSegmentIndex < 0 || transcriptSegments.isEmpty()) return@LaunchedEffect
+        val activeSeg = transcriptSegments.getOrNull(activeSegmentIndex) ?: return@LaunchedEffect
+        val chapterIdx = chapters.indexOfLast { it.startTimeMs / 1000f <= activeSeg.startTimeSec }
+        if (chapterIdx < 0) return@LaunchedEffect
+        val chapterStartSec = chapters[chapterIdx].startTimeMs / 1000f
+        val nextChapterStartSec = chapters.getOrNull(chapterIdx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
+        val sentences = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
+        val localIdx = sentences.indexOf(activeSeg)
+        if (localIdx >= 0) chapterListState.animateScrollToItem(chapterIdx + 1 + localIdx)
+    }
+
+    // Icons that appear top-left/top-right alongside artwork top edge
+    val topBarIcons: @Composable () -> Unit = {
+        IconButton(onClick = onDismiss) {
+            Icon(Icons.Filled.KeyboardArrowDown, "Close player")
+        }
+    }
+    val topBarActions: @Composable () -> Unit = {
+        if (!isAutomotive) {
+            AndroidView(
+                factory = { ctx ->
+                    MediaRouteButton(ctx).apply {
+                        val selector = MediaRouteSelector.Builder()
+                            .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+                            .build()
+                        routeSelector = selector
+                    }
+                },
+                modifier = Modifier.size(48.dp)
+            )
+        }
+        if (hasTranscript) {
+            var showOverflow by remember { mutableStateOf(false) }
+            Box {
+                IconButton(onClick = { showOverflow = true }) {
+                    Icon(Icons.Filled.MoreVert, "More options")
+                }
+                DropdownMenu(
+                    expanded = showOverflow,
+                    onDismissRequest = { showOverflow = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(if (showTranscript) "Hide Transcript" else "Show Transcript") },
+                        leadingIcon = { Icon(Icons.Filled.Article, null) },
+                        onClick = {
+                            vm.toggleTranscript()
+                            showOverflow = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Sleep") },
+                        leadingIcon = { Icon(Icons.Filled.Bedtime, null) },
+                        onClick = {
+                            showSleepSheet = true
+                            showOverflow = false
+                        }
+                    )
+                }
+            }
+        } else {
+            IconButton(onClick = { showSleepSheet = true }) {
+                Icon(Icons.Filled.Bedtime, "Sleep timer")
+            }
+        }
+    }
+
+    // Reusable content blocks
+    val artworkAndControls: @Composable ColumnScope.(artworkSize: Int) -> Unit = { artworkSize ->
+        // Artwork with dismiss/cast/sleep icons top-aligned at same row
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(artworkSize.dp)
+                    .align(Alignment.TopCenter)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = artworkUrl,
+                    contentDescription = "Episode artwork",
+                    contentScale = ContentScale.Crop,
+                    placeholder = androidx.compose.ui.res.painterResource(com.frybynite.podlore.R.drawable.ic_podcast_placeholder),
+                    error = androidx.compose.ui.res.painterResource(com.frybynite.podlore.R.drawable.ic_podcast_placeholder),
+                    fallback = androidx.compose.ui.res.painterResource(com.frybynite.podlore.R.drawable.ic_podcast_placeholder),
+                    modifier = Modifier.fillMaxSize()
+                )
+                if (isCasting) {
+                    Icon(
+                        imageVector = Icons.Filled.Cast,
+                        contentDescription = "Casting",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(4.dp)
+                            .size(20.dp)
+                    )
+                }
+            }
+            // Dismiss — top-left, aligned with artwork top
+            Box(modifier = Modifier.align(Alignment.TopStart)) { topBarIcons() }
+            // Cast + sleep — top-right, aligned with artwork top
+            Row(modifier = Modifier.align(Alignment.TopEnd)) { topBarActions() }
+        }
+            Spacer(Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val epTitle = episodeTitle
+                val podTitle = podcastTitle
+                if (epTitle != null) {
+                    Text(
+                        text = epTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                if (podTitle != null) {
+                    Text(
+                        text = podTitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = formatMs(draggingPositionMs ?: currentPositionMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.width(48.dp)
+                )
+                ChapterProgressBar(
+                    positionMs = currentPositionMs,
+                    durationMs = durationMs,
+                    chapters = if (deepDiveState is DeepDiveState.Playing) emptyList() else chapters,
+                    onSeek = { ms -> vm.controller?.seekTo(ms) },
+                    onSnapHoverIndex = { snapHoverIdx = it },
+                    onDragging = { draggingPositionMs = it },
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = formatMs(durationMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.width(48.dp),
+                    textAlign = TextAlign.End
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {
+                        if (deepDiveState is DeepDiveState.Playing) vm.controller?.seekTo(0)
+                        else vm.prevChapter()
+                    }) {
+                        Icon(Icons.Filled.SkipPrevious, "Previous chapter", Modifier.size(40.dp))
+                    }
+                    IconButton(onClick = { vm.seekBack10s() }) {
+                        SeekIcon(seconds = 10, isForward = false)
+                    }
+                }
+                IconButton(
+                    onClick = { vm.togglePlayPause() },
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayCircle,
+                        if (isPlaying) "Pause" else "Play",
+                        Modifier.size(56.dp)
+                    )
+                }
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { vm.seekForward30s() }) {
+                        SeekIcon(seconds = 30, isForward = true)
+                    }
+                    IconButton(onClick = {
+                        if (deepDiveState is DeepDiveState.Playing) vm.skipDeepDive()
+                        else vm.nextChapter()
+                    }) {
+                        Icon(Icons.Filled.SkipNext, "Next chapter", Modifier.size(40.dp))
+                    }
+                }
+            }
+            val chapterUrl = currentChapter?.url
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = { showSpeedSheet = true }) {
+                    Text(
+                        "${"%.1f".format(playbackSpeed)}×",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                IconButton(
+                    onClick = { chapterUrl?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) } },
+                    enabled = chapterUrl != null
+                ) {
+                    Icon(
+                        Icons.Filled.Link,
+                        contentDescription = "Open link",
+                        modifier = Modifier.size(26.dp),
+                        tint = LocalContentColor.current.copy(alpha = if (chapterUrl != null) 1f else 0.38f)
+                    )
+                }
+                if (!isAutomotive) IconButton(
+                    onClick = {
+                        chapterUrl?.let { url ->
+                            context.startActivity(Intent.createChooser(
+                                Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, url)
+                                }, "Share link"
+                            ))
+                        }
+                    },
+                    enabled = chapterUrl != null
+                ) {
+                    Icon(
+                        Icons.Filled.Share,
+                        contentDescription = "Share link",
+                        modifier = Modifier.size(26.dp),
+                        tint = LocalContentColor.current.copy(alpha = if (chapterUrl != null) 1f else 0.38f)
+                    )
+                }
+                IconButton(
+                    onClick = { vm.moreAboutThis(chapterUrl, currentIdx) },
+                    enabled = chapterUrl != null
+                ) {
+                    Icon(
+                        Icons.Filled.PlayCircle,
+                        contentDescription = "More about this",
+                        modifier = Modifier.size(26.dp),
+                        tint = LocalContentColor.current.copy(alpha = if (chapterUrl != null) 1f else 0.38f)
+                    )
+                }
+                IconButton(onClick = { vm.toggleLike() }) {
+                    Icon(
+                        if (isLiked) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
+                        contentDescription = if (isLiked) "Unlike" else "Like",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+            val seconds = sleepTimerSeconds
+            if (seconds != null) {
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(onClick = { showSleepSheet = true }) {
+                        Icon(Icons.Filled.Bedtime, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(formatSleepTimer(seconds))
+                    }
+                }
+            }
+        }
+
+        val chapterList: @Composable ColumnScope.() -> Unit = {
+            HorizontalDivider()
+            Text(
+                "Chapters",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(8.dp).align(Alignment.Start)
+            )
+            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), state = chapterListState) {
+                chapters.forEachIndexed { idx, chapter ->
+                    item(key = "chapter_$idx") {
+                        val isSnapHovered = snapHoverIdx == idx
+                        val isActive = idx == currentIdx && deepDiveState !is DeepDiveState.Playing
+                        val hasUrl = chapter.url != null
+                        val revealScope = rememberCoroutineScope()
+                        val revealWidth = 192.dp
+                        val revealWidthPx = with(LocalDensity.current) { revealWidth.toPx() }
+                        val offsetX = remember(chapter.episodeAudioUrl, chapter.startTimeMs) { Animatable(0f) }
+
+                        fun snapTo(target: Float) = revealScope.launch {
+                            offsetX.animateTo(target, spring(stiffness = Spring.StiffnessMedium))
+                        }
+                        fun collapse() = snapTo(0f)
+
+                        Box {
+                            // Reveal panel (behind the row) — only when chapter has a URL
+                            if (hasUrl) Row(
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .width(revealWidth)
+                                    .matchParentSize(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Open
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFF5B8DB8))
+                                        .clickable {
+                                            chapter.url?.let { CustomTabsIntent.Builder().build().launchUrl(context, Uri.parse(it)) }
+                                            collapse()
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Filled.Link, contentDescription = "Open", modifier = Modifier.size(22.dp), tint = Color.White)
+                                    Text("Open", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                                }
+                                // Share
+                                if (!isAutomotive) Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFF5A9E6F))
+                                        .clickable {
+                                            chapter.url?.let { url ->
+                                                context.startActivity(Intent.createChooser(
+                                                    Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, url)
+                                                    }, "Share link"
+                                                ))
+                                            }
+                                            collapse()
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Filled.Share, contentDescription = "Share", modifier = Modifier.size(22.dp), tint = Color.White)
+                                    Text("Share", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                                }
+                                // More
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .background(Color(0xFFB05C5C))
+                                        .clickable {
+                                            vm.moreAboutThis(chapter.url, idx)
+                                            collapse()
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(Icons.Filled.PlayCircle, contentDescription = "More", modifier = Modifier.size(22.dp), tint = Color.White)
+                                    Text("More", style = MaterialTheme.typography.labelSmall, color = Color.White)
+                                }
+                            }
+
+                            // Chapter row (draggable, on top)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .offset { IntOffset(offsetX.value.toInt(), 0) }
+                                    .background(
+                                        when {
+                                            isSnapHovered -> MaterialTheme.colorScheme.tertiaryContainer
+                                            isActive -> MaterialTheme.colorScheme.primaryContainer
+                                            else -> MaterialTheme.colorScheme.surface
+                                        }
+                                    )
+                                    .then(
+                                        if (isSnapHovered) Modifier.border(
+                                            2.dp,
+                                            MaterialTheme.colorScheme.tertiary,
+                                            androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                        ) else Modifier
+                                    )
+                                    .then(
+                                        if (hasUrl) Modifier.draggable(
+                                            orientation = Orientation.Horizontal,
+                                            state = rememberDraggableState { delta ->
+                                                revealScope.launch {
+                                                    offsetX.snapTo((offsetX.value + delta).coerceIn(-revealWidthPx, 0f))
+                                                }
+                                            },
+                                            onDragStopped = { velocity ->
+                                                val target = if (offsetX.value < -revealWidthPx * 0.35f || velocity < -600f) -revealWidthPx else 0f
+                                                snapTo(target)
+                                            }
+                                        ) else Modifier
+                                    )
+                                    .combinedClickable(
+                                        onClick = { vm.jumpToChapter(chapter.startTimeMs); collapse() },
+                                        onLongClick = { collapse() }
+                                    )
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    formatMs(chapter.startTimeMs),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.width(52.dp)
+                                )
+                                Text(
+                                    chapter.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (chapter.url != null) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        if (chapter.url in cachedDeepDiveUrls) {
+                                            Icon(Icons.Filled.PlayCircle, contentDescription = "Deep dive ready", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        HorizontalDivider()
+                        if (deepDiveState is DeepDiveState.Playing && deepDiveChapterIndex == idx) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Spacer(Modifier.width(52.dp))
+                                Text(
+                                    "More About This…",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    fontStyle = FontStyle.Italic,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            HorizontalDivider()
+                        }
+                    }
+                    if (showTranscript && idx == currentIdx) {
+                        if (transcriptLoading) {
+                            item(key = "transcript_loading") {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
+                            }
+                        } else {
+                            val chapterStartSec = chapter.startTimeMs / 1000f
+                            val nextChapterStartSec =
+                                chapters.getOrNull(idx + 1)?.startTimeMs?.div(1000f) ?: Float.MAX_VALUE
+                            val chapterSegs = segmentsForChapter(transcriptSegments, chapterStartSec, nextChapterStartSec)
+                            itemsIndexed(chapterSegs, key = { _, seg -> "seg_${seg.startTimeSec}" }) { segIdx, segment ->
+                                val isSegActive = segment == transcriptSegments.getOrNull(activeSegmentIndex)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { vm.seekToSegment(segment) }
+                                        .background(
+                                            color = if (isSegActive)
+                                                if (isSystemInDarkTheme()) Color(0xFF1A3A5C) else Color(0xFFDCEEFD)
+                                            else Color.Transparent
+                                        )
+                                        .padding(start = 64.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
+                                ) {
+                                    Text(
+                                        text = segment.text,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                if (segIdx < chapterSegs.lastIndex) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 64.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isLandscape) {
+            Row(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) { artworkAndControls(100) }
+                VerticalDivider()
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                ) { chapterList() }
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize().navigationBarsPadding(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                artworkAndControls(160)
+                Spacer(Modifier.height(12.dp))
+                chapterList()
+            }
+        }
+
+        FloatingActionButton(
+            onClick = {
+                voiceLauncher.launch(
+                    Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(
+                            android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                        )
+                    }
+                )
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .navigationBarsPadding()
+        ) {
+            Icon(Icons.Filled.Mic, "Voice command")
+        }
+
+        SnackbarHost(
+            snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+        )
+
+        if (deepDiveState is DeepDiveState.Loading) {
+            val step = (deepDiveState as DeepDiveState.Loading).step
+            val stepLabel = when (step) {
+                DeepDiveStep.FETCHING -> "Getting link details"
+                DeepDiveStep.SUMMARIZING -> "Generating summary"
+                DeepDiveStep.SYNTHESIZING -> "Converting to audio"
+            }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.width(280.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "More About This",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Text(
+                                text = stepLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (deepDiveState is DeepDiveState.Error) {
+            LaunchedEffect(deepDiveState) {
+                delay(3000)
+                vm.dismissDeepDiveError()
+            }
+            Box(
+                Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 80.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.errorContainer) {
+                    Text(
+                        text = (deepDiveState as DeepDiveState.Error).message,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+
+        if (modelDownloadState is com.frybynite.podlore.deepdive.ModelDownloadState.Downloading) {
+            val progress = (modelDownloadState as com.frybynite.podlore.deepdive.ModelDownloadState.Downloading).progress
+            Box(
+                Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 80.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 4.dp) {
+                    Column(Modifier.padding(16.dp).fillMaxWidth(0.8f)) {
+                        Text("Downloading model: ${(progress * 100).toInt()}%")
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SleepTimerBottomSheet(
+    activeSeconds: Int?,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val options = listOf(15, 30, 45, 60)
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Text(
+                "Sleep Timer",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            options.forEach { mins ->
+                TextButton(
+                    onClick = { onSelect(mins) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("$mins minutes")
+                }
+            }
+            if (activeSeconds != null) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                TextButton(
+                    onClick = { onSelect(0) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel timer (${formatSleepTimer(activeSeconds)} left)")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SpeedBottomSheet(
+    currentSpeed: Float,
+    onSpeedChange: (Float) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "Playback Speed",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                "${"%.1f".format(currentSpeed)}×",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold
+            )
+            Slider(
+                value = currentSpeed,
+                onValueChange = onSpeedChange,
+                valueRange = 0.5f..2.0f,
+                steps = 14, // 16 positions - 2 endpoints - 1 = 14 internal steps → 0.1 increments
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("0.5×", style = MaterialTheme.typography.bodySmall)
+                Text("2.0×", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun SeekIcon(seconds: Int, isForward: Boolean) {
+    Box(contentAlignment = Alignment.Center) {
+        Icon(
+            Icons.Filled.Replay,
+            contentDescription = if (isForward) "+${seconds}s" else "-${seconds}s",
+            modifier = Modifier
+                .size(36.dp)
+                .graphicsLayer { scaleX = if (isForward) -1f else 1f }
+        )
+        Text(
+            text = "$seconds",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 10.sp,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+    }
+}
+
+private operator fun DeepDiveStep.compareTo(other: DeepDiveStep): Int = ordinal.compareTo(other.ordinal)
+
+internal fun formatSleepTimer(seconds: Int): String {
+    val m = seconds / 60
+    val s = seconds % 60
+    return if (m > 0) "%d:%02d".format(m, s) else "${s}s"
+}
+
+
+private fun formatMs(ms: Long): String {
+    val s = ms / 1000
+    val m = s / 60
+    val h = m / 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m % 60, s % 60)
+    else "%d:%02d".format(m, s % 60)
+}
