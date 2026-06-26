@@ -4,8 +4,8 @@ import androidx.media3.common.MediaItem
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 
 /**
  * Tests the URI resolution logic from PlaybackService.onAddMediaItems:
@@ -21,7 +21,7 @@ class AddMediaItemsTest {
             else item.buildUpon().setUri(item.mediaId).build()
         }
 
-    @Test fun `item with uri is returned unchanged`() {
+    @Test fun itemWithUriReturnedUnchanged() {
         val item = MediaItem.Builder()
             .setMediaId("https://ep.mp3")
             .setUri("https://ep.mp3")
@@ -33,7 +33,7 @@ class AddMediaItemsTest {
         assertEquals("https://ep.mp3", result[0].mediaId)
     }
 
-    @Test fun `item without uri gets uri set from mediaId`() {
+    @Test fun itemWithoutUriGetsUriFromMediaId() {
         val item = MediaItem.Builder()
             .setMediaId("https://ep.mp3")
             .build()
@@ -45,7 +45,7 @@ class AddMediaItemsTest {
         assertEquals("https://ep.mp3", result[0].mediaId)
     }
 
-    @Test fun `mixed list resolves correctly`() {
+    @Test fun mixedListResolvesCorrectly() {
         val withUri = MediaItem.Builder().setMediaId("https://a.mp3").setUri("https://a.mp3").build()
         val withoutUri = MediaItem.Builder().setMediaId("https://b.mp3").build()
 
@@ -56,7 +56,7 @@ class AddMediaItemsTest {
         assertEquals("https://b.mp3", result[1].mediaId)
     }
 
-    @Test fun `local file uri preserved when already set`() {
+    @Test fun localFileUriPreservedWhenAlreadySet() {
         val item = MediaItem.Builder()
             .setMediaId("https://ep.mp3")
             .setUri("file:///data/user/0/com.example/files/ep.mp3")
@@ -70,7 +70,7 @@ class AddMediaItemsTest {
         )
     }
 
-    @Test fun `empty list returns empty list`() {
-        assertEquals(emptyList(), resolveUri(emptyList()))
+    @Test fun emptyListReturnsEmptyList() {
+        assertEquals(emptyList<MediaItem>(), resolveUri(emptyList()))
     }
 }

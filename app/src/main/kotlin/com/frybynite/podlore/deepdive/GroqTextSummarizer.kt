@@ -67,7 +67,7 @@ ${depthLine}Focus on technical details, how it works, implications, and anything
 
         val requestBody = requestAdapter.toJson(
             GroqRequest(
-                model = "llama-3.1-8b-instant",
+                model = "openai/gpt-oss-20b",
                 messages = listOf(GroqRequestMessage(role = "user", content = prompt)),
                 maxTokens = maxTokens
             )

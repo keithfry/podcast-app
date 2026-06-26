@@ -32,8 +32,8 @@ class ChapterDaoTest {
                 PodcastEntity("https://feed.com", "Feed", "Author", "Desc", null, 0L)
             )
             db.episodeDao().upsertAll(listOf(
-                EpisodeEntity("https://ep1.mp3", "https://feed.com", "Ep1", 0L, 120, null, null),
-                EpisodeEntity("https://ep2.mp3", "https://feed.com", "Ep2", 0L, 120, null, null)
+                EpisodeEntity("https://ep1.mp3", "https://feed.com", "Ep1", 0L, 120, null, null, null, null),
+                EpisodeEntity("https://ep2.mp3", "https://feed.com", "Ep2", 0L, 120, null, null, null, null)
             ))
         }
     }

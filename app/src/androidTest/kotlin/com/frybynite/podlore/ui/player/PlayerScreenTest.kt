@@ -12,10 +12,12 @@ import com.frybynite.podlore.data.db.dao.PodcastDao
 import com.frybynite.podlore.data.preferences.SpeedPreferences
 import com.frybynite.podlore.data.repository.ChapterRepository
 import com.frybynite.podlore.data.repository.PodcastRepository
+import com.frybynite.podlore.data.repository.TranscriptRepository
 import com.frybynite.podlore.deepdive.DeepDiveOrchestrator
 import com.frybynite.podlore.deepdive.ModelDownloadManager
 import com.frybynite.podlore.deepdive.ModelDownloadState
 import com.frybynite.podlore.deepdive.TextSummarizer
+import com.frybynite.podlore.playback.PlaybackController
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,51 +50,51 @@ class PlayerScreenTest {
             speedPrefs = mockk<SpeedPreferences>(relaxed = true) { every { speed } returns 1f },
             deepDiveOrchestrator = mockk(relaxed = true),
             summarizer = mockk<TextSummarizer>(relaxed = true) { every { isModelAvailable() } returns false },
-            modelDownloadManager = modelDownloadManager
+            modelDownloadManager = modelDownloadManager,
+            transcriptRepo = mockk(relaxed = true),
+            playbackController = mockk(relaxed = true),
         )
     }
 
-    @Test fun `play button shown initially`() {
+    @Test fun playButtonShownInitially() {
         val vm = makeVm()
         composeRule.setContent {
-            PlayerScreen(audioUrl = "https://ep.mp3", onBack = {}, vm = vm)
+            PlayerScreen(audioUrl = "https://ep.mp3", onDismiss = {}, vm = vm)
         }
         composeRule.onNodeWithContentDescription("Play").assertIsDisplayed()
     }
 
-    @Test fun `speed label shows 1-0x initially`() {
+    @Test fun speedLabelShows1x0Initially() {
         val vm = makeVm()
         composeRule.setContent {
-            PlayerScreen(audioUrl = "https://ep.mp3", onBack = {}, vm = vm)
+            PlayerScreen(audioUrl = "https://ep.mp3", onDismiss = {}, vm = vm)
         }
         composeRule.onNodeWithText("1.0×").assertIsDisplayed()
     }
 
-    @Test fun `sleep timer text not shown initially`() {
+    @Test fun sleepTimerTextNotShownInitially() {
         val vm = makeVm()
         composeRule.setContent {
-            PlayerScreen(audioUrl = "https://ep.mp3", onBack = {}, vm = vm)
+            PlayerScreen(audioUrl = "https://ep.mp3", onDismiss = {}, vm = vm)
         }
-        // Timer text only appears when sleepTimerSeconds != null
         composeRule.onNodeWithText("5:00").assertDoesNotExist()
     }
 
-    @Test fun `speed updates to 1-5x after setSpeed`() {
+    @Test fun speedUpdatesTo1x5AfterSetSpeed() {
         val vm = makeVm()
         composeRule.setContent {
-            PlayerScreen(audioUrl = "https://ep.mp3", onBack = {}, vm = vm)
+            PlayerScreen(audioUrl = "https://ep.mp3", onDismiss = {}, vm = vm)
         }
         vm.setSpeed(1.5f)
         composeRule.waitForIdle()
         composeRule.onNodeWithText("1.5×").assertIsDisplayed()
     }
 
-    @Test fun `sleep timer text appears after setSleepTimer`() {
+    @Test fun sleepTimerTextAppearsAfterSetSleepTimer() {
         val vm = makeVm()
         composeRule.setContent {
-            PlayerScreen(audioUrl = "https://ep.mp3", onBack = {}, vm = vm)
+            PlayerScreen(audioUrl = "https://ep.mp3", onDismiss = {}, vm = vm)
         }
-        // setSleepTimer sets _sleepTimerSeconds synchronously before coroutine launches
         vm.setSleepTimer(5)
         composeRule.waitForIdle()
         composeRule.onNodeWithText("5:00").assertIsDisplayed()

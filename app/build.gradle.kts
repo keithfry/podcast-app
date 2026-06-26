@@ -53,6 +53,12 @@ android {
         unitTests.isReturnDefaultValues = true
         unitTests.all { it.jvmArgs("-Dnet.bytebuddy.experimental=true") }
     }
+    packaging {
+        resources.excludes += setOf(
+            "META-INF/LICENSE.md",
+            "META-INF/LICENSE-notice.md",
+        )
+    }
 }
 
 dependencies {
@@ -109,6 +115,7 @@ dependencies {
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.turbine)
+    androidTestImplementation("io.mockk:mockk-android:1.13.11")
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
