@@ -160,6 +160,13 @@ class PlaybackController @Inject constructor(
 
     fun pause() { _controller.value?.pause() }
 
+    /** Stops playback and clears state if the currently loaded episode is one of [audioUrls] — used before deleting its backing file so the session doesn't reference a now-missing file. */
+    fun stopIfPlaying(audioUrls: Set<String>) {
+        if (_currentlyPlayingUrl.value !in audioUrls) return
+        _controller.value?.stop()
+        clearCurrentEpisode()
+    }
+
     fun resume() {
         val ctrl = _controller.value ?: return
         if (ctrl.currentMediaItem != null) {

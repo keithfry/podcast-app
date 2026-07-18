@@ -527,8 +527,8 @@ class PlayerViewModel @Inject constructor(
             if (ctrl?.currentMediaItem == null) {
                 currentEpisode?.let { playEpisode(it, it.lastPositionMs) }
             }
-            deepDiveResumePositionMs = currentEpisode?.lastPositionMs
-                ?: ctrl?.currentPosition
+            deepDiveResumePositionMs = ctrl?.currentPosition
+                ?: currentEpisode?.lastPositionMs
                 ?: 0L
             deepDiveResumeEpisodeUri = currentEpisode?.audioUrl ?: currentMediaId
         }

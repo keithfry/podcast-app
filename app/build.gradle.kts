@@ -100,7 +100,7 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.mediapipe.tasks.genai)
     implementation("com.google.mlkit:genai-prompt:1.0.0-beta2") // AiCore path (kept, not in active pipeline)
-    implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
     implementation(libs.jsoup)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.kxml2)

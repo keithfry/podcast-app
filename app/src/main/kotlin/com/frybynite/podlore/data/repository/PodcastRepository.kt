@@ -29,7 +29,8 @@ class PodcastRepository @Inject constructor(
     private val workManager: WorkManager,
     private val cacheStorage: CacheStorage,
     private val transcriptRepository: TranscriptRepository,
-    private val deepDiveDao: com.frybynite.podlore.data.db.dao.DeepDiveDao
+    private val deepDiveDao: com.frybynite.podlore.data.db.dao.DeepDiveDao,
+    private val chapterDao: com.frybynite.podlore.data.db.dao.ChapterDao
 ) {
     val podcasts: Flow<List<Podcast>> = podcastDao.getAll().map { list ->
         list.map { it.toDomain() }
@@ -60,6 +61,7 @@ class PodcastRepository @Inject constructor(
             ep.downloadPath?.let { File(it).delete() }
             ep.transcriptUrl?.let { transcriptRepository.deleteCache(it) }
             deepDiveDao.deleteForEpisode(ep.audioUrl)
+            chapterDao.deleteForEpisode(ep.audioUrl)
         }
         cacheStorage.podcastDir(feedUrl, podcast.title).deleteRecursively()
         episodeDao.deleteForPodcast(feedUrl)
@@ -112,6 +114,7 @@ class PodcastRepository @Inject constructor(
         entity.transcriptUrl?.let { transcriptRepository.deleteCache(it) }
         deepDiveDao.deleteForEpisode(audioUrl)
         episodeDao.updateDownloadStatus(audioUrl, null, "NONE")
+        // chapters retained here: episode row still exists, chapters remain valid for it
     }
 }
 

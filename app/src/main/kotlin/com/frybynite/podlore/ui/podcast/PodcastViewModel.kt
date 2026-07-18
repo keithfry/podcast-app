@@ -105,9 +105,14 @@ class PodcastViewModel @Inject constructor(
         _showUnsubscribeConfirm.value = false
         viewModelScope.launch {
             _subscribeState.value = SubscribeUiState.Loading
+            val audioUrls = episodes.value.map { it.audioUrl }.toSet()
+            playbackController.stopIfPlaying(audioUrls)
             runCatching { repo.removePodcastCompletely(feedUrl) }
                 .onFailure { _subscribeState.value = SubscribeUiState.Error("Failed to unsubscribe.") }
-                .onSuccess { _subscribeState.value = SubscribeUiState.Idle }
+                .onSuccess {
+                    episodeListPrefs.clearShowHeard(feedUrl)
+                    _subscribeState.value = SubscribeUiState.Idle
+                }
         }
     }
 
