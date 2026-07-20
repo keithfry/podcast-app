@@ -95,10 +95,10 @@ private fun PodcastRow(podcast: Podcast, onClick: () -> Unit) {
 
 private val QUICK_FEEDS_ROW1 = listOf(
     "Raging Moderates" to "https://api.substack.com/feed/podcast/7157411/s/338591/private/3f666b6a-9d88-4054-82e4-1c167744b3aa.rss",
-    "AI Daily" to "https://keithfry.github.io/web-pages/techradar/AI/podcast.rss",
+    "AI Daily" to "https://keithfry.github.io/techradar/AI/podcast.rss",
 )
 private val QUICK_FEEDS_ROW2 = listOf(
-    "Robotics Daily" to "https://keithfry.github.io/web-pages/techradar/Robotics/podcast.rss",
+    "Robotics Daily" to "https://keithfry.github.io/techradar/Robotics/podcast.rss",
 )
 
 private val chipColors @Composable get() = FilterChipDefaults.filterChipColors(

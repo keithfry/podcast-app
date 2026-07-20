@@ -51,7 +51,7 @@ Run unit tests:
 1. Launch the app
 2. Tap **+** and paste an RSS feed URL, e.g.:
    ```
-   https://keithfry.github.io/web-pages/techradar/AI/podcast.xml
+   https://keithfry.github.io/techradar/AI/podcast.xml
    ```
 3. Tap a podcast → tap an episode → play
 

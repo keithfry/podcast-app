@@ -45,7 +45,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 - [ ] Open app → Podcast List is empty
-- [ ] Tap + → enter `https://keithfry.github.io/web-pages/techradar/AI/podcast.xml` → tap Add
+- [ ] Tap + → enter `https://keithfry.github.io/techradar/AI/podcast.xml` → tap Add
 - [ ] Podcast appears in list with title "AI & Robotics Daily Radar"
 - [ ] Tap podcast → episode list shows dated episodes
 - [ ] Tap episode → player screen opens

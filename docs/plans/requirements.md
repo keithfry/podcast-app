@@ -6,7 +6,7 @@ Native Android podcast app (Kotlin, Jetpack Compose, min API 29) with chapter-aw
 
 ## Feed Format
 
-RSS 2.0 with iTunes + Podcast Index namespaces. Sample feed: `https://keithfry.github.io/web-pages/techradar/AI/podcast.xml`
+RSS 2.0 with iTunes + Podcast Index namespaces. Sample feed: `https://keithfry.github.io/techradar/AI/podcast.xml`
 
 Chapters stored as external JSON per episode (Podcast Index JSON Chapters 1.2.0):
 ```json
